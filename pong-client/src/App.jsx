@@ -4,36 +4,32 @@ import { useEffect, useRef } from 'react';
 function Canvas() {
     const canvasRef = useRef(null);
 
-    let ballX = useRef(300);
-
-    let ballDir = useRef(1);
-
-    let leftPaddleY = 0;
-
-    let upPressed = false;
-    let downPressed = false;
-
-    function keyDownHandler(e) {
-        if (e.code === "ArrowUp") {
-            upPressed = true;
-        }
-        if (e.code === "ArrowDown") {
-            downPressed = true;
-        }
-    }
-
-    function keyUpHandler(e) {
-        if (e.code === "ArrowUp") {
-            upPressed = false;
-        }
-        if (e.code === "ArrowDown") {
-            downPressed = false;
-        }
-    }
-
     useEffect(() => {
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
+
+        // ~60 updates/second
+        const MS_PER_UPDATE = 16.67;
+
+        const PADDLE_HEIGHT = 100;
+        const PADDLE_THICKNESS = 10;
+
+        let ballX = 300;
+        let ballY = 300;
+
+        let ballSpeedX = 3;
+        let ballSpeedY = 2;
+
+        let leftPaddleY = canvas.height / 2 - PADDLE_HEIGHT / 2;
+        let rightPaddleY = canvas.height / 2 - PADDLE_HEIGHT / 2;
+
+        // Player1 controls
+        let qPressed = false;
+        let aPressed = false;
+
+        // Player2 controls
+        let upPressed = false;
+        let downPressed = false;
 
         document.addEventListener("keydown", keyDownHandler, false);
         document.addEventListener("keyup", keyUpHandler, false);
@@ -41,12 +37,10 @@ function Canvas() {
         let lastFrame;
         let lag = 0.0;
 
-        const MS_PER_UPDATE = 16.7;
-
         // Immediately-Invoked Function Expression (IIFE)
         ; (() => {
             function main(tFrame) {
-                requestAnimationFrame(main);
+                window.requestAnimationFrame(main);
 
                 if (lastFrame === undefined) {
                     lastFrame = tFrame;
@@ -58,41 +52,130 @@ function Canvas() {
 
                 // Fixed update timestep, variable rendering
                 while (lag >= MS_PER_UPDATE) {
-                    ballX.current += 1 * ballDir.current;
-
-                    if (upPressed) {
-                        leftPaddleY -= 5;
-                    }
-                    if (downPressed) {
-                        leftPaddleY += 5;
-                    }
-
-                    // Handle collision for horizontal edges
-                    if (ballX.current + 20 > canvas.width) {
-                        ballDir.current = -ballDir.current;
-                    }
-                    if (ballX.current < 0) {
-                        ballDir.current = -ballDir.current;
-                    }
-
+                    update();
                     lag -= MS_PER_UPDATE;
                 }
+                render(lag / MS_PER_UPDATE);
 
-                // Field
-                ctx.fillStyle = 'black';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                // Ball
-                ctx.fillStyle = 'white';
-                ctx.fillRect(ballX.current + (lag / 16.7), 50, 20, 20);
-
-                // Left paddle
-                ctx.fillStyle = 'white';
-                ctx.fillRect(0, leftPaddleY, 10, 100);
             }
             window.requestAnimationFrame(main);
-
         })();
+
+        function update() {
+            // Ball MOVEMENT
+            ballX += ballSpeedX;
+            ballY += ballSpeedY;
+
+            // Left Paddle MOVEMENT
+            if (qPressed) {
+                leftPaddleY -= 5;
+            }
+            if (aPressed) {
+                leftPaddleY += 5;
+            }
+
+            if (upPressed) {
+                rightPaddleY -= 5;
+            }
+            if (downPressed) {
+                rightPaddleY += 5;
+            }
+
+            // COLLISION for PADDLES
+            if (ballX + 20 > canvas.width) {
+                if (ballY > rightPaddleY &&
+                    ballY < rightPaddleY + PADDLE_HEIGHT
+                ) {
+                    ballSpeedX = -ballSpeedX;
+                } else {
+                    ballReset();
+                }
+            }
+            if (ballX < 0) {
+                if (ballY > leftPaddleY &&
+                    ballY < leftPaddleY + PADDLE_HEIGHT
+                ) {
+                    ballSpeedX = -ballSpeedX;
+                } else {
+                    ballReset();
+                }
+            }
+
+            // COLLISION for vertical boundaries
+            if (ballY + 20 > canvas.height) {
+                ballSpeedY = -ballSpeedY;
+            }
+            if (ballY < 0) {
+                ballSpeedY = -ballSpeedY;
+            }
+        }
+
+        function render(lag) {
+            // Field
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Ball
+            ctx.fillStyle = 'white';
+            ctx.fillRect(ballX + (ballSpeedX * lag), ballY + (ballSpeedY * lag), 20, 20);
+
+            // Left paddle
+            ctx.fillStyle = 'white';
+            ctx.fillRect(
+                0,
+                leftPaddleY,
+                PADDLE_THICKNESS,
+                PADDLE_HEIGHT
+            );
+
+            // Right paddle
+            ctx.fillStyle = 'white';
+            ctx.fillRect(
+                canvas.width - 10,
+                rightPaddleY,
+                PADDLE_THICKNESS,
+                PADDLE_HEIGHT
+            );
+        }
+
+        function keyDownHandler(e) {
+            if (e.code === "ArrowUp") {
+                upPressed = true;
+            }
+            if (e.code === "ArrowDown") {
+                downPressed = true;
+            }
+
+            if (e.code === "KeyQ") {
+                qPressed = true;
+            }
+            if (e.code === "KeyA") {
+                aPressed = true;
+            }
+        }
+
+        function keyUpHandler(e) {
+            if (e.code === "ArrowUp") {
+                upPressed = false;
+            }
+            if (e.code === "ArrowDown") {
+                downPressed = false;
+            }
+
+            if (e.code === "KeyQ") {
+                qPressed = false;
+            }
+            if (e.code === "KeyA") {
+                aPressed = false;
+            }
+        }
+
+        function ballReset() {
+            ballX = canvas.width / 2;
+            ballY = canvas.height / 2;
+
+            ballSpeedX = -ballSpeedX;
+        }
 
     }, []);
 
