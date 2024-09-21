@@ -4,6 +4,12 @@ import { useEffect, useRef } from 'react';
 function Canvas() {
     const canvasRef = useRef(null);
 
+    let SinglePlayerMode = false;
+
+    function toggleGameMode() {
+        SinglePlayerMode = !SinglePlayerMode;
+    }
+
     useEffect(() => {
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
@@ -17,8 +23,8 @@ function Canvas() {
         let ballX = 300;
         let ballY = 300;
 
-        let ballSpeedX = 3;
-        let ballSpeedY = 2;
+        let ballSpeedX = 6;
+        let ballSpeedY = 6;
 
         let leftPaddleY = canvas.height / 2 - PADDLE_HEIGHT / 2;
         let rightPaddleY = canvas.height / 2 - PADDLE_HEIGHT / 2;
@@ -61,6 +67,25 @@ function Canvas() {
             window.requestAnimationFrame(main);
         })();
 
+        function handleAIMovement() {
+            const rightPaddleCenter = rightPaddleY + (PADDLE_HEIGHT / 2);
+            if (ballSpeedX > 0) {
+                if (ballY > rightPaddleCenter) {
+                    rightPaddleY += 5;
+                }
+                if (ballY < rightPaddleCenter) {
+                    rightPaddleY -= 5;
+                }
+            } else {
+                if (rightPaddleCenter > canvas.height / 2) {
+                    rightPaddleY -= 5;
+                }
+                if (rightPaddleCenter < canvas.height / 2) {
+                    rightPaddleY += 5;
+                }
+            }
+        }
+
         function update() {
             // Ball MOVEMENT
             ballX += ballSpeedX;
@@ -74,11 +99,16 @@ function Canvas() {
                 leftPaddleY += 5;
             }
 
-            if (upPressed) {
-                rightPaddleY -= 5;
-            }
-            if (downPressed) {
-                rightPaddleY += 5;
+            // Right Paddle MOVEMENT
+            if (SinglePlayerMode) {
+                handleAIMovement();
+            } else {
+                if (upPressed) {
+                    rightPaddleY -= 5;
+                }
+                if (downPressed) {
+                    rightPaddleY += 5;
+                }
             }
 
             // COLLISION for PADDLES
@@ -182,6 +212,7 @@ function Canvas() {
     return (
         <>
             <canvas ref={canvasRef} width={800} height={590}></canvas>
+            <button onClick={toggleGameMode}>COM Player</button>
         </>
     );
 }
