@@ -4,10 +4,10 @@ import { useEffect, useRef } from 'react';
 function Canvas() {
     const canvasRef = useRef(null);
 
-    let SinglePlayerMode = false;
+    let singlePlayerMode = false;
 
     function toggleGameMode() {
-        SinglePlayerMode = !SinglePlayerMode;
+        singlePlayerMode = !singlePlayerMode;
     }
 
     useEffect(() => {
@@ -23,8 +23,8 @@ function Canvas() {
         let ballX = 300;
         let ballY = 300;
 
-        let ballSpeedX = 6;
-        let ballSpeedY = 6;
+        let ballSpeedX = 4;
+        let ballSpeedY = 3;
 
         let leftPaddleY = canvas.height / 2 - PADDLE_HEIGHT / 2;
         let rightPaddleY = canvas.height / 2 - PADDLE_HEIGHT / 2;
@@ -36,6 +36,11 @@ function Canvas() {
         // Player2 controls
         let upPressed = false;
         let downPressed = false;
+
+        let player1Score = 0;
+        let player2Score = 0;
+
+        const WINNING_SCORE = 3;
 
         document.addEventListener("keydown", keyDownHandler, false);
         document.addEventListener("keyup", keyUpHandler, false);
@@ -67,25 +72,6 @@ function Canvas() {
             window.requestAnimationFrame(main);
         })();
 
-        function handleAIMovement() {
-            const rightPaddleCenter = rightPaddleY + (PADDLE_HEIGHT / 2);
-            if (ballSpeedX > 0) {
-                if (ballY > rightPaddleCenter) {
-                    rightPaddleY += 5;
-                }
-                if (ballY < rightPaddleCenter) {
-                    rightPaddleY -= 5;
-                }
-            } else {
-                if (rightPaddleCenter > canvas.height / 2) {
-                    rightPaddleY -= 5;
-                }
-                if (rightPaddleCenter < canvas.height / 2) {
-                    rightPaddleY += 5;
-                }
-            }
-        }
-
         function update() {
             // Ball MOVEMENT
             ballX += ballSpeedX;
@@ -100,7 +86,7 @@ function Canvas() {
             }
 
             // Right Paddle MOVEMENT
-            if (SinglePlayerMode) {
+            if (singlePlayerMode) {
                 handleAIMovement();
             } else {
                 if (upPressed) {
@@ -117,7 +103,11 @@ function Canvas() {
                     ballY < rightPaddleY + PADDLE_HEIGHT
                 ) {
                     ballSpeedX = -ballSpeedX;
+
+                    let deltaY = ballY - (rightPaddleY + PADDLE_HEIGHT / 2);
+                    ballSpeedY = deltaY * 0.35; // Normalized deltaY
                 } else {
+                    player1Score++;
                     ballReset();
                 }
             }
@@ -126,7 +116,11 @@ function Canvas() {
                     ballY < leftPaddleY + PADDLE_HEIGHT
                 ) {
                     ballSpeedX = -ballSpeedX;
+
+                    let deltaY = ballY - (leftPaddleY + PADDLE_HEIGHT / 2);
+                    ballSpeedY = deltaY * 0.35;
                 } else {
+                    player2Score++;
                     ballReset();
                 }
             }
@@ -166,6 +160,28 @@ function Canvas() {
                 PADDLE_THICKNESS,
                 PADDLE_HEIGHT
             );
+
+            ctx.fillText(player1Score, 100, 100);
+            ctx.fillText(player2Score, canvas.width - 100, 100);
+        }
+
+        function handleAIMovement() {
+            const rightPaddleCenter = rightPaddleY + (PADDLE_HEIGHT / 2);
+            if (ballSpeedX > 0) {
+                if (ballY > rightPaddleCenter + 35) {
+                    rightPaddleY += 5;
+                }
+                if (ballY < rightPaddleCenter - 35) {
+                    rightPaddleY -= 5;
+                }
+            } else {
+                if (rightPaddleCenter > canvas.height / 2) {
+                    rightPaddleY -= 5;
+                }
+                if (rightPaddleCenter < canvas.height / 2) {
+                    rightPaddleY += 5;
+                }
+            }
         }
 
         function keyDownHandler(e) {
@@ -201,10 +217,18 @@ function Canvas() {
         }
 
         function ballReset() {
+
+            if (player1Score >= WINNING_SCORE ||
+                player2Score >= WINNING_SCORE) {
+                player1Score = 0;
+                player2Score = 0;
+            }
+
             ballX = canvas.width / 2;
             ballY = canvas.height / 2;
 
             ballSpeedX = -ballSpeedX;
+            ballSpeedY = 4;
         }
 
     }, []);
