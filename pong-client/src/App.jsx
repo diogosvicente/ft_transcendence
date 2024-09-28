@@ -1,8 +1,13 @@
 import { useEffect, useRef } from 'react';
 //import './App.css'
 
+import { drawPaddle, PADDLE_THICKNESS, PADDLE_HEIGHT } from './paddle.js';
+
 function Canvas() {
     const canvasRef = useRef(null);
+
+    const CANVAS_WIDTH = 800;
+    const CANVAS_HEIGHT = 590;
 
     let singlePlayerMode = false;
 
@@ -17,23 +22,20 @@ function Canvas() {
         // ~60 updates/second
         const MS_PER_UPDATE = 16.67;
 
-        const PADDLE_HEIGHT = 100;
-        const PADDLE_THICKNESS = 10;
-
         let ballX = 300;
         let ballY = 300;
 
-        let ballSpeedX = 4;
+        let ballSpeedX = 8;
         let ballSpeedY = 3;
 
         let leftPaddleY = canvas.height / 2 - PADDLE_HEIGHT / 2;
         let rightPaddleY = canvas.height / 2 - PADDLE_HEIGHT / 2;
 
-        // Player1 controls
+        // Left player controls
         let qPressed = false;
         let aPressed = false;
 
-        // Player2 controls
+        // Right player controls
         let upPressed = false;
         let downPressed = false;
 
@@ -144,22 +146,10 @@ function Canvas() {
             ctx.fillRect(ballX + (ballSpeedX * lag), ballY + (ballSpeedY * lag), 20, 20);
 
             // Left paddle
-            ctx.fillStyle = 'white';
-            ctx.fillRect(
-                0,
-                leftPaddleY,
-                PADDLE_THICKNESS,
-                PADDLE_HEIGHT
-            );
+            drawPaddle(ctx, 0, leftPaddleY);
 
             // Right paddle
-            ctx.fillStyle = 'white';
-            ctx.fillRect(
-                canvas.width - 10,
-                rightPaddleY,
-                PADDLE_THICKNESS,
-                PADDLE_HEIGHT
-            );
+            drawPaddle(ctx, canvas.width - PADDLE_THICKNESS, rightPaddleY);
 
             ctx.fillText(player1Score, 100, 100);
             ctx.fillText(player2Score, canvas.width - 100, 100);
@@ -192,10 +182,10 @@ function Canvas() {
                 downPressed = true;
             }
 
-            if (e.code === "KeyQ") {
+            if (e.code === "KeyW") {
                 qPressed = true;
             }
-            if (e.code === "KeyA") {
+            if (e.code === "KeyS") {
                 aPressed = true;
             }
         }
@@ -208,10 +198,10 @@ function Canvas() {
                 downPressed = false;
             }
 
-            if (e.code === "KeyQ") {
+            if (e.code === "KeyW") {
                 qPressed = false;
             }
-            if (e.code === "KeyA") {
+            if (e.code === "KeyS") {
                 aPressed = false;
             }
         }
@@ -235,7 +225,12 @@ function Canvas() {
 
     return (
         <>
-            <canvas ref={canvasRef} width={800} height={590}></canvas>
+            <canvas
+                ref={canvasRef}
+                width={CANVAS_WIDTH}
+                height={CANVAS_HEIGHT}>
+            </canvas>
+
             <button onClick={toggleGameMode}>COM Player</button>
         </>
     );
@@ -251,4 +246,4 @@ function App() {
 
 }
 
-export default App
+export default App;
