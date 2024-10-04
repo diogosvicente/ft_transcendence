@@ -22,7 +22,7 @@ const WINNING_SCORE = 3;
 document.addEventListener("keydown", keyDownHandler, false);
 document.addEventListener("keyup", keyUpHandler, false);
 
-export function gameCore(canvas) {
+export function loadGameCore(canvas) {
 
     const ctx = canvas.getContext('2d');
 
@@ -33,10 +33,6 @@ export function gameCore(canvas) {
 
     function start() {
 
-        if (animationFrameId) {
-            cancelAnimationFrame(animationFrameId);
-        }
-
         // ~60 updates/second
         const MS_PER_UPDATE = 16.67;
 
@@ -46,13 +42,14 @@ export function gameCore(canvas) {
         // Immediately-Invoked Function Expression (IIFE)
         ; (() => {
             function main(tFrame) {
-                animationFrameId = window.requestAnimationFrame(main);
+                animationFrameId = requestAnimationFrame(main);
 
                 if (lastFrame === undefined) {
                     lastFrame = tFrame;
                 }
 
                 let dt = tFrame - lastFrame;
+                //console.log(1000 / dt); FPS
                 lastFrame = tFrame;
                 lag += dt;
 
@@ -61,12 +58,19 @@ export function gameCore(canvas) {
                     update();
                     lag -= MS_PER_UPDATE;
                 }
-                //render(ctx, lag / MS_PER_UPDATE);
-                render(ctx, 1);
+                render(ctx, lag / MS_PER_UPDATE);
 
             }
-            animationFrameId = window.requestAnimationFrame(main);
+            animationFrameId = requestAnimationFrame(main);
         })();
+
+        return animationFrameId;
+    }
+
+    function stop() {
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+        }
     }
 
     function update() {
@@ -181,7 +185,10 @@ export function gameCore(canvas) {
         ballSpeedY = 3;
     }
 
-    return start;
+    return {
+        start,
+        stop
+    };
 }
 
 function keyDownHandler(e) {
