@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-import { loadGameCore } from './gameCore';
+import { gameCore } from './gameCore.js';
 
 function Canvas() {
     const canvasRef = useRef(null);
@@ -11,12 +11,8 @@ function Canvas() {
     useEffect(() => {
         const canvas = canvasRef.current;
 
-        const gameCore = loadGameCore(canvas);
-        gameCore.start();
-
-        return () => {
-            gameCore.stop();
-        };
+        const game = new gameCore(canvas);
+        game.start();
 
     }, []);
 

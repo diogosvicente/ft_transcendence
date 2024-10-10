@@ -3,8 +3,9 @@ import { drawPaddle, PADDLE_HEIGHT, PADDLE_THICKNESS } from './paddle.js';
 let ballX = 300;
 let ballY = 300;
 
-let ballSpeedX = 6;
-let ballSpeedY = 3;
+// Speed target in pixels/second
+let ballSpeedX = 300;
+let ballSpeedY = 300;
 
 // Left player controls
 let qPressed = false;
@@ -22,61 +23,59 @@ const WINNING_SCORE = 3;
 document.addEventListener("keydown", keyDownHandler, false);
 document.addEventListener("keyup", keyUpHandler, false);
 
-export function loadGameCore(canvas) {
+export const gameCore = function(canvas) {
 
     const ctx = canvas.getContext('2d');
 
     let leftPaddleY = canvas.height / 2 - PADDLE_HEIGHT / 2;
     let rightPaddleY = canvas.height / 2 - PADDLE_HEIGHT / 2;
 
-    let animationFrameId;
+    let frameCount = 0;
+    let fps;
+    let timestampFps;
 
-    function start() {
+    let timestampPrev;
+    const mainLoop = function(timestamp) {
+        requestAnimationFrame(mainLoop);
 
-        // ~60 updates/second
-        const MS_PER_UPDATE = 16.67;
+        // Clear the canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        let lastFrame;
-        let lag = 0.0;
-
-        // Immediately-Invoked Function Expression (IIFE)
-        ; (() => {
-            function main(tFrame) {
-                animationFrameId = requestAnimationFrame(main);
-
-                if (lastFrame === undefined) {
-                    lastFrame = tFrame;
-                }
-
-                let dt = tFrame - lastFrame;
-                //console.log(1000 / dt); FPS
-                lastFrame = tFrame;
-                lag += dt;
-
-                // Fixed update timestep, variable rendering
-                while (lag >= MS_PER_UPDATE) {
-                    update();
-                    lag -= MS_PER_UPDATE;
-                }
-                render(ctx, lag / MS_PER_UPDATE);
-
-            }
-            animationFrameId = requestAnimationFrame(main);
-        })();
-
-        return animationFrameId;
-    }
-
-    function stop() {
-        if (animationFrameId) {
-            cancelAnimationFrame(animationFrameId);
+        /* FPS measure */
+        if (timestampFps === undefined) {
+            timestampFps = timestamp;
         }
+
+        const dtFps = timestamp - timestampFps;
+        if (dtFps >= 1000) {
+            fps = frameCount;
+            console.log(fps);
+            frameCount = 0;
+            timestampFps = timestamp;
+        }
+        frameCount++;
+        /**/
+
+        // Delta for time-based update
+        if (timestampPrev === undefined) {
+            timestampPrev = timestamp;
+        }
+        const dt = timestamp - timestampPrev;
+
+        update(dt);
+        draw(ctx);
+
+        timestampPrev = timestamp;
     }
 
-    function update() {
+    const start = function() {
+        requestAnimationFrame(mainLoop);
+    }
+
+    const update = function(dt) {
         // Ball MOVEMENT
-        ballX += ballSpeedX;
-        ballY += ballSpeedY;
+        ballX += ballSpeedX * dt / 1000;
+        ballY += ballSpeedY * dt / 1000;
 
         // Left Paddle MOVEMENT
         if (qPressed) {
@@ -95,27 +94,29 @@ export function loadGameCore(canvas) {
         }
 
         // COLLISION for PADDLES
-        if (ballX + 20 > canvas.width) {
+        if (ballX + 20 >= canvas.width) {
             if (ballY > rightPaddleY &&
                 ballY < rightPaddleY + PADDLE_HEIGHT
             ) {
+                ballX -= ballSpeedX * dt / 1000;
                 ballSpeedX = -ballSpeedX;
 
                 let deltaY = ballY - (rightPaddleY + PADDLE_HEIGHT / 2);
-                ballSpeedY = deltaY * 0.35; // Normalized deltaY
+                ballSpeedY = deltaY * 4; // Normalized deltaY
             } else {
                 player1Score++;
                 ballReset();
             }
         }
-        if (ballX < 0) {
+        if (ballX <= 0) {
             if (ballY > leftPaddleY &&
                 ballY < leftPaddleY + PADDLE_HEIGHT
             ) {
+                ballX -= ballSpeedX * dt / 1000;
                 ballSpeedX = -ballSpeedX;
 
                 let deltaY = ballY - (leftPaddleY + PADDLE_HEIGHT / 2);
-                ballSpeedY = deltaY * 0.35;
+                ballSpeedY = deltaY * 4;
             } else {
                 player2Score++;
                 ballReset();
@@ -131,14 +132,14 @@ export function loadGameCore(canvas) {
         }
     }
 
-    function render(ctx, lag) {
+    const draw = function(ctx) {
         // Field
         ctx.fillStyle = 'black';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         // Ball
         ctx.fillStyle = 'white';
-        ctx.fillRect(ballX + (ballSpeedX * lag), ballY + (ballSpeedY * lag), 20, 20);
+        ctx.fillRect(ballX, ballY, 20, 20);
 
         // Left paddle
         drawPaddle(ctx, 0, leftPaddleY);
@@ -151,7 +152,7 @@ export function loadGameCore(canvas) {
     }
 
     // NOTE: Disabled for now
-    function handleAIMovement() {
+    const handleAIMovement = function() {
         const rightPaddleCenter = rightPaddleY + (PADDLE_HEIGHT / 2);
         if (ballSpeedX > 0) {
             if (ballY > rightPaddleCenter + 35) {
@@ -170,7 +171,7 @@ export function loadGameCore(canvas) {
         }
     }
 
-    function ballReset() {
+    const ballReset = function() {
 
         if (player1Score >= WINNING_SCORE ||
             player2Score >= WINNING_SCORE) {
@@ -186,8 +187,7 @@ export function loadGameCore(canvas) {
     }
 
     return {
-        start,
-        stop
+        start: start,
     };
 }
 
