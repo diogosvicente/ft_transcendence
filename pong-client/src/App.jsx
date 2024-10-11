@@ -11,9 +11,10 @@ function Canvas() {
     useEffect(() => {
         const canvas = canvasRef.current;
 
-        const game = new gameCore(canvas);
+        const game = gameCore(canvas);
         game.start();
 
+        // TODO: Add a cleanup function
     }, []);
 
     return (

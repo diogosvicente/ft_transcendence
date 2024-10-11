@@ -20,9 +20,6 @@ let player2Score = 0;
 
 const WINNING_SCORE = 3;
 
-document.addEventListener("keydown", keyDownHandler, false);
-document.addEventListener("keyup", keyUpHandler, false);
-
 export const gameCore = function(canvas) {
 
     const ctx = canvas.getContext('2d');
@@ -32,50 +29,44 @@ export const gameCore = function(canvas) {
 
     let frameCount = 0;
     let fps;
-    let timestampFps;
+    let prevTimeFpsMeasure;
 
-    let timestampPrev;
-    const mainLoop = function(timestamp) {
+    let prevTime;
+
+    const mainLoop = function(currTime) {
         requestAnimationFrame(mainLoop);
 
-        // Clear the canvas
+        measureFps(currTime);
+
+        // Calc delta time for time-based animation
+        if (prevTime === undefined) {
+            prevTime = currTime;
+        }
+        const deltaTime = currTime - prevTime;
+
+        update(deltaTime);
+
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        /* FPS measure */
-        if (timestampFps === undefined) {
-            timestampFps = timestamp;
-        }
-
-        const dtFps = timestamp - timestampFps;
-        if (dtFps >= 1000) {
-            fps = frameCount;
-            console.log(fps);
-            frameCount = 0;
-            timestampFps = timestamp;
-        }
-        frameCount++;
-        /**/
-
-        // Delta for time-based update
-        if (timestampPrev === undefined) {
-            timestampPrev = timestamp;
-        }
-        const dt = timestamp - timestampPrev;
-
-        update(dt);
         draw(ctx);
 
-        timestampPrev = timestamp;
+        prevTime = currTime;
     }
 
     const start = function() {
+        window.addEventListener("keydown", keyDownHandler, false);
+        window.addEventListener("keyup", keyUpHandler, false);
+
         requestAnimationFrame(mainLoop);
     }
 
-    const update = function(dt) {
+    const calcDistToMove = function(deltaTime, speed) {
+        return (speed * deltaTime) / 1000;
+    }
+
+    const update = function(deltaTime) {
         // Ball MOVEMENT
-        ballX += ballSpeedX * dt / 1000;
-        ballY += ballSpeedY * dt / 1000;
+        ballX += calcDistToMove(ballSpeedX, deltaTime);
+        ballY += calcDistToMove(ballSpeedY, deltaTime);
 
         // Left Paddle MOVEMENT
         if (qPressed) {
@@ -98,7 +89,7 @@ export const gameCore = function(canvas) {
             if (ballY > rightPaddleY &&
                 ballY < rightPaddleY + PADDLE_HEIGHT
             ) {
-                ballX -= ballSpeedX * dt / 1000;
+                ballX -= ballSpeedX * deltaTime / 1000;
                 ballSpeedX = -ballSpeedX;
 
                 let deltaY = ballY - (rightPaddleY + PADDLE_HEIGHT / 2);
@@ -112,7 +103,7 @@ export const gameCore = function(canvas) {
             if (ballY > leftPaddleY &&
                 ballY < leftPaddleY + PADDLE_HEIGHT
             ) {
-                ballX -= ballSpeedX * dt / 1000;
+                ballX -= ballSpeedX * deltaTime / 1000;
                 ballSpeedX = -ballSpeedX;
 
                 let deltaY = ballY - (leftPaddleY + PADDLE_HEIGHT / 2);
@@ -133,6 +124,8 @@ export const gameCore = function(canvas) {
     }
 
     const draw = function(ctx) {
+        ctx.save();
+
         // Field
         ctx.fillStyle = 'black';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -149,6 +142,22 @@ export const gameCore = function(canvas) {
 
         ctx.fillText(player1Score, 100, 100);
         ctx.fillText(player2Score, canvas.width - 100, 100);
+
+        ctx.restore();
+    }
+
+    const measureFps = function(currTime) {
+        if (prevTimeFpsMeasure === undefined) {
+            prevTimeFpsMeasure = currTime;
+        }
+
+        const deltaTime = currTime - prevTimeFpsMeasure;
+        if (deltaTime >= 1000) {
+            fps = frameCount;
+            frameCount = 0;
+            prevTimeFpsMeasure = currTime;
+        }
+        frameCount++;
     }
 
     // NOTE: Disabled for now
@@ -183,7 +192,7 @@ export const gameCore = function(canvas) {
         ballY = canvas.height / 2;
 
         ballSpeedX = -ballSpeedX;
-        ballSpeedY = 3;
+        ballSpeedY = 300;
     }
 
     return {
