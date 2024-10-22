@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-import { gameCore } from './gameCore.js';
+import { GameCore } from './GameCore.js';
 
 function Canvas() {
     const canvasRef = useRef(null);
@@ -11,7 +11,7 @@ function Canvas() {
     useEffect(() => {
         const canvas = canvasRef.current;
 
-        const game = gameCore(canvas);
+        const game = new GameCore(canvas);
         game.start();
 
         // TODO: Add a cleanup function

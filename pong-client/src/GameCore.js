@@ -1,5 +1,3 @@
-import { drawPaddle, PADDLE_HEIGHT, PADDLE_THICKNESS } from './paddle.js';
-
 let ballX = 300;
 let ballY = 300;
 
@@ -8,8 +6,8 @@ let ballSpeedX = 300;
 let ballSpeedY = 300;
 
 // Left player controls
-let qPressed = false;
-let aPressed = false;
+let wPressed = false;
+let sPressed = false;
 
 // Right player controls
 let upPressed = false;
@@ -20,7 +18,10 @@ let player2Score = 0;
 
 const WINNING_SCORE = 3;
 
-export const gameCore = function(canvas) {
+const PADDLE_THICKNESS = 10;
+const PADDLE_HEIGHT = 100;
+
+export const GameCore = function(canvas) {
 
     const ctx = canvas.getContext('2d');
 
@@ -36,7 +37,7 @@ export const gameCore = function(canvas) {
     const mainLoop = function(currTime) {
         requestAnimationFrame(mainLoop);
 
-        measureFps(currTime);
+        //measureFps(currTime);
 
         // Calc delta time for time-based animation
         if (prevTime === undefined) {
@@ -46,7 +47,9 @@ export const gameCore = function(canvas) {
 
         update(deltaTime);
 
+        // Clear canvas before drawing again
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
         draw(ctx);
 
         prevTime = currTime;
@@ -69,10 +72,10 @@ export const gameCore = function(canvas) {
         ballY += calcDistToMove(ballSpeedY, deltaTime);
 
         // Left Paddle MOVEMENT
-        if (qPressed) {
+        if (wPressed) {
             leftPaddleY -= 5;
         }
-        if (aPressed) {
+        if (sPressed) {
             leftPaddleY += 5;
         }
 
@@ -85,10 +88,11 @@ export const gameCore = function(canvas) {
         }
 
         // COLLISION for PADDLES
-        if (ballX + 20 >= canvas.width) {
+        if (ballX + 20 > canvas.width) {
             if (ballY > rightPaddleY &&
                 ballY < rightPaddleY + PADDLE_HEIGHT
             ) {
+                // Cancel move and invert ball direction
                 ballX -= ballSpeedX * deltaTime / 1000;
                 ballSpeedX = -ballSpeedX;
 
@@ -99,7 +103,7 @@ export const gameCore = function(canvas) {
                 ballReset();
             }
         }
-        if (ballX <= 0) {
+        if (ballX < 0) {
             if (ballY > leftPaddleY &&
                 ballY < leftPaddleY + PADDLE_HEIGHT
             ) {
@@ -116,34 +120,39 @@ export const gameCore = function(canvas) {
 
         // COLLISION for vertical boundaries
         if (ballY + 20 > canvas.height) {
+            ballY -= ballSpeedY * deltaTime / 1000;
             ballSpeedY = -ballSpeedY;
         }
         if (ballY < 0) {
+            ballY -= ballSpeedY * deltaTime / 1000;
             ballSpeedY = -ballSpeedY;
         }
     }
 
     const draw = function(ctx) {
-        ctx.save();
-
-        // Field
+        // Fill the canvas in black
         ctx.fillStyle = 'black';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Ball
-        ctx.fillStyle = 'white';
-        ctx.fillRect(ballX, ballY, 20, 20);
+        drawBall(ctx);
 
-        // Left paddle
+        // Draw player paddles
         drawPaddle(ctx, 0, leftPaddleY);
-
-        // Right paddle
         drawPaddle(ctx, canvas.width - PADDLE_THICKNESS, rightPaddleY);
 
+        // Draw score text
         ctx.fillText(player1Score, 100, 100);
         ctx.fillText(player2Score, canvas.width - 100, 100);
+    }
 
-        ctx.restore();
+    const drawBall = function(ctx) {
+        ctx.fillStyle = 'white';
+        ctx.fillRect(ballX, ballY, 20, 20);
+    }
+
+    const drawPaddle = function(ctx, topLeftX, topLeftY) {
+        ctx.fillStyle = 'white';
+        ctx.fillRect(topLeftX, topLeftY, PADDLE_THICKNESS, PADDLE_HEIGHT);
     }
 
     const measureFps = function(currTime) {
@@ -195,39 +204,39 @@ export const gameCore = function(canvas) {
         ballSpeedY = 300;
     }
 
+    const keyDownHandler = function(e) {
+        if (e.code === "ArrowUp") {
+            upPressed = true;
+        }
+        if (e.code === "ArrowDown") {
+            downPressed = true;
+        }
+
+        if (e.code === "KeyW") {
+            wPressed = true;
+        }
+        if (e.code === "KeyS") {
+            sPressed = true;
+        }
+    }
+
+    const keyUpHandler = function(e) {
+        if (e.code === "ArrowUp") {
+            upPressed = false;
+        }
+        if (e.code === "ArrowDown") {
+            downPressed = false;
+        }
+
+        if (e.code === "KeyW") {
+            wPressed = false;
+        }
+        if (e.code === "KeyS") {
+            sPressed = false;
+        }
+    }
+
     return {
         start: start,
     };
-}
-
-function keyDownHandler(e) {
-    if (e.code === "ArrowUp") {
-        upPressed = true;
-    }
-    if (e.code === "ArrowDown") {
-        downPressed = true;
-    }
-
-    if (e.code === "KeyW") {
-        qPressed = true;
-    }
-    if (e.code === "KeyS") {
-        aPressed = true;
-    }
-}
-
-function keyUpHandler(e) {
-    if (e.code === "ArrowUp") {
-        upPressed = false;
-    }
-    if (e.code === "ArrowDown") {
-        downPressed = false;
-    }
-
-    if (e.code === "KeyW") {
-        qPressed = false;
-    }
-    if (e.code === "KeyS") {
-        aPressed = false;
-    }
 }
