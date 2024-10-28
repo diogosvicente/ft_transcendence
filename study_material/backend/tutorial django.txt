@@ -1,0 +1,22 @@
+python -m venv venv
+pip install django
+django-admin startproject setup . (não cria uma subpasta com o mesmo nome)
+America/Sao_Paulo
+python manage.py runserver
+pip install python-dotenv
+
+criar .env com SECRET_KEY
+
+no arquivo settings.py
+{
+	from pathlib import Path, os
+	from dotenv import load_dotenv
+
+	load_dotenv()
+
+	SECRET_KEY = str(os.getenv('SECRET_KEY'))
+}
+
+https://www.toptal.com/developers/gitignore/
+
+python manage.py help
