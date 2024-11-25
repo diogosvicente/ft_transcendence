@@ -40,6 +40,7 @@ mv env .env
 Com o ambiente virtual ativo, instale as dependências necessárias para o projeto com os seguintes comandos:
 ```bash
 pip install django
+python.exe -m pip install --upgrade pip
 pip install djangorestframework
 pip install markdown
 pip install Pillow
