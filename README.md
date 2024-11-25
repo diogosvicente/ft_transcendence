@@ -4,7 +4,7 @@
 ### 1. Faça o download do projeto
 Clone este repositório para o seu ambiente local:
 ```bash
-git clone git@github.com:diogosvicente/ft_transcendence.git
+git clone --branch dev git@github.com:diogosvicente/ft_transcendence.git
 ```
 
 ### 2. Navegue até o diretório do backend
