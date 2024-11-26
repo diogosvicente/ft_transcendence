@@ -29,10 +29,11 @@ Ative o ambiente virtual:
   source venv/bin/activate
   ```
 
-### 4. Renomeie o arquivo de variáveis de ambiente
-Renomeie o arquivo `env` para `.env` no diretório principal do backend:
+### 4. Crie o arquivo .env a partir do template .env.example
+Crie uma cópia do .env.example e altere o arquivo com os valores da sua chave
+secreta gerada localmente e senha do postgreSQL.
 ```bash
-mv env .env
+cp .env.example .env
 ```
 > Certifique-se de configurar os valores necessários no arquivo `.env`, como a secret key do django e as variáveis de conexão com o banco de dados.
 
