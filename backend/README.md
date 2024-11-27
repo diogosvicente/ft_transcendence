@@ -57,6 +57,11 @@ Configure os valores necessários no arquivo `.env`, como:
 - A chave secreta do Django.
 - Variáveis de conexão com o banco de dados PostgreSQL.
 
+**Use o seguinte comando para gerar uma chave secreta do django para uso local.**
+```bash
+python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'
+```
+
 ### 2.5. Configurando o PostgreSQL
 
 - **Windows**:
