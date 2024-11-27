@@ -155,3 +155,6 @@ CHANNEL_LAYERS = {
         }
     }
 }
+
+MEDIA_URL = '/media/'  # URL base para acessar arquivos de mídia
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # Diretório físico onde os arquivos de mídia serão armazenados
