@@ -1,4 +1,3 @@
-
 ## Passos para Configuração
 
 ### 1. Faça o download do projeto
@@ -38,22 +37,16 @@ cp .env.example .env
 > Certifique-se de configurar os valores necessários no arquivo `.env`, como a secret key do django e as variáveis de conexão com o banco de dados.
 
 ### 5. Instale as dependências
-Com o ambiente virtual ativo, instale as dependências necessárias para o projeto com os seguintes comandos:
+Com o ambiente virtual ativo, instale as dependências necessárias para o projeto com o seguinte comando:
 ```bash
-pip install django
-python.exe -m pip install --upgrade pip
-pip install djangorestframework
-pip install markdown
-pip install Pillow
-pip install python-dotenv
-pip install psycopg2
-pip install psycopg2-binary
+python -m pip install -r requirements.txt
+
 ```
 
 ### 6. Gere o arquivo de requisitos
 Salve as dependências instaladas no arquivo `requirements.txt` para uso futuro:
 ```bash
-pip freeze > requirements.txt
+python -m pip freeze > requirements.txt
 ```
 
 ---
@@ -71,6 +64,13 @@ Após configurar o ambiente, você pode iniciar o servidor de desenvolvimento:
 3. Acesse o projeto no navegador em: [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
 ---
+
+## Utilizando o Redis
+O Redis é um mensageiro que gerencia a comunicação
+entre diferentes usuários e servidores
+```bash
+docker run --rm -p 6379:6379 redis:7
+```
 
 ## Estrutura do Projeto
 - **backend/**: Contém todo o código do backend utilizando Django.
