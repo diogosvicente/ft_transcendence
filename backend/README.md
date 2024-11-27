@@ -79,4 +79,26 @@ docker run --rm -p 6379:6379 redis:7
 
 ---
 
+## Configurando o PostgreSQL
+
+1. **Instale o PostgreSQL**:
+   Caso esteja utilizando Windows, faça o download do PostgreSQL e do PgAdmin através do site oficial:  
+   https://www.enterprisedb.com/downloads/postgres-postgresql-downloads
+
+2. **Configure o Banco de Dados**:
+   - Abra o PgAdmin após a instalação.
+   - Crie um **servidor** com o nome `ft_transcendence`.
+   - Dentro deste servidor, crie um **database** também chamado `ft_transcendence`.
+
+3. **Atualize o Arquivo `.env`**:
+   - Certifique-se de que o arquivo `.env` contém as credenciais corretas para se conectar ao banco de dados que você configurou:
+     - Nome do banco: `ft_transcendence`.
+     - Usuário e senha conforme definidos no PgAdmin.
+
+4. **Referência Detalhada**:
+   Para uma explicação visual e detalhada sobre como configurar o PostgreSQL e o PgAdmin, assista ao vídeo abaixo:  
+   [Como configurar o PostgreSQL e PgAdmin](https://www.youtube.com/watch?v=UbX-2Xud1JA&t=128s).
+
+---
+
 Agora você está pronto para usar e explorar o projeto! 🎉
