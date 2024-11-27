@@ -1,8 +1,8 @@
 # Índice
 
-1. [Pré-requisitos](#pre-requisitos)
-2. [Instalação](#instalação)
-3. [Uso](#uso)
+1. [Pré-requisitos](#1-pré-requisitos)
+2. [Instalação](#2-instalação)
+3. [Uso](#3-uso)
 ---
 
 ## 1. Pré-requisitos
