@@ -1,5 +1,5 @@
 a cada dependência instalada, use o comando abaixo para listar essa dependência em um aruqivo, para controle
-pip freeze > .\requeriments.txt
+pip freeze > .\requirements.txt
 
 python -m venv venv
 pip install django
@@ -43,3 +43,11 @@ DATABASES = {
 
 baixar o pgadmin nesse site
 https://www.enterprisedb.com/downloads/postgres-postgresql-downloads (caso esteja utilizando Windows)
+
+
+---
+
+sobre o login
+
+pip install djangorestframework-simplejwt
+
