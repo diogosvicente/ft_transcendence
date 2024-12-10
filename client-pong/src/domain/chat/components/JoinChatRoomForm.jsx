@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { useRef } from 'react'
 import { useNavigate } from 'react-router-dom';
 
-export function JoinChatForm() {
+export function JoinChatRoomForm() {
   const inputRef = useRef(null);
   const submitButtonRef = useRef(null);
 

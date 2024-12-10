@@ -1,11 +1,12 @@
 import { Route, Routes } from 'react-router-dom';
-import { JoinChatForm } from './domain/chat/components/JoinChatForm.jsx';
+
+import { JoinChatRoomForm } from './domain/chat/components/JoinChatRoomForm.jsx';
 import Chat from './domain/chat/containers/Chat.jsx'
 
 function App() {
   return (
     <Routes>
-      <Route path='/' element={<JoinChatForm />} />
+      <Route path='/' element={<JoinChatRoomForm />} />
       <Route path='chat/:roomName' element={<Chat />} />
     </Routes>
   );
