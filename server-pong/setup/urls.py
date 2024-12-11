@@ -22,7 +22,6 @@ from django.conf.urls.static import static
 
 
 urlpatterns = [
-    path('chat/', include('chat.urls')),
     path('admin/', admin.site.urls),
     path('api/user-management/', include('user_management.urls')),
 ]
