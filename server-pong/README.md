@@ -26,7 +26,7 @@ git clone --branch dev git@github.com:diogosvicente/ft_transcendence.git
 
 Entre no diretório correspondente ao backend do projeto:
 ```bash
-cd ft_transcendence/backend
+cd ft_transcendence/server-pong
 ```
 
 ### 2.3. Criando um Ambiente Virtual
