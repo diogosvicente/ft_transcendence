@@ -1,4 +1,4 @@
-import { drawPaddle, PADDLE_HEIGHT, PADDLE_THICKNESS } from "../../paddle.js";
+import { drawPaddle, PADDLE_HEIGHT, PADDLE_THICKNESS } from "./paddle.js";
 
 let ballX = 300;
 let ballY = 300;
@@ -26,8 +26,8 @@ export const gameCore = function (canvas) {
   let leftPaddleY = canvas.height / 2 - PADDLE_HEIGHT / 2;
   let rightPaddleY = canvas.height / 2 - PADDLE_HEIGHT / 2;
 
-  let frameCount = 0;
-  let fps;
+//   let frameCount = 0;
+//   let fps;
   let prevTimeFpsMeasure;
 
   let prevTime;
@@ -148,32 +148,32 @@ export const gameCore = function (canvas) {
 
     const deltaTime = currTime - prevTimeFpsMeasure;
     if (deltaTime >= 1000) {
-      fps = frameCount;
-      frameCount = 0;
+    //   fps = frameCount;
+    //   frameCount = 0;
       prevTimeFpsMeasure = currTime;
     }
-    frameCount++;
+    // frameCount++;
   };
 
   // NOTE: Disabled for now
-  const handleAIMovement = function () {
-    const rightPaddleCenter = rightPaddleY + PADDLE_HEIGHT / 2;
-    if (ballSpeedX > 0) {
-      if (ballY > rightPaddleCenter + 35) {
-        rightPaddleY += 5;
-      }
-      if (ballY < rightPaddleCenter - 35) {
-        rightPaddleY -= 5;
-      }
-    } else {
-      if (rightPaddleCenter > canvas.height / 2) {
-        rightPaddleY -= 5;
-      }
-      if (rightPaddleCenter < canvas.height / 2) {
-        rightPaddleY += 5;
-      }
-    }
-  };
+//   const handleAIMovement = function () {
+//     const rightPaddleCenter = rightPaddleY + PADDLE_HEIGHT / 2;
+//     if (ballSpeedX > 0) {
+//       if (ballY > rightPaddleCenter + 35) {
+//         rightPaddleY += 5;
+//       }
+//       if (ballY < rightPaddleCenter - 35) {
+//         rightPaddleY -= 5;
+//       }
+//     } else {
+//       if (rightPaddleCenter > canvas.height / 2) {
+//         rightPaddleY -= 5;
+//       }
+//       if (rightPaddleCenter < canvas.height / 2) {
+//         rightPaddleY += 5;
+//       }
+//     }
+//   };
 
   const ballReset = function () {
     if (player1Score >= WINNING_SCORE || player2Score >= WINNING_SCORE) {
