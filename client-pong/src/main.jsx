@@ -14,7 +14,8 @@ const router = createBrowserRouter([
     path: "/game",
     element: <GameCanvas />,
   },
-]);
+])
+;
 
 createRoot(document.getElementById("root")).render(
   <StrictMode cl>
