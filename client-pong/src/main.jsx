@@ -1,24 +1,13 @@
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import "bootstrap/dist/css/bootstrap.min.css";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import LandingPage from "./pages/landing/LandingPage.jsx";
-import { GameCanvas } from "./pages/game/GameCanvas.jsx";
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import App from './App.jsx'
 
-const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <LandingPage />,
-  },
-  {
-    path: "/game",
-    element: <GameCanvas />,
-  },
-])
-;
+import { BrowserRouter } from 'react-router-dom'
 
-createRoot(document.getElementById("root")).render(
-  <StrictMode cl>
-    <RouterProvider router={router} />
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
   </StrictMode>
 );
