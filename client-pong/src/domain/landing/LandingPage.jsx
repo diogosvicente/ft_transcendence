@@ -24,7 +24,7 @@ const Header = () => {
         <h1>Pong</h1>
       </Row>
       <Row>
-        <p className="fs-4 fw-light">Jogue online com seus amigos!</p>
+        <p className="fs-4 fw-light">Jogue online com seus amigos!!!!!!!</p>
       </Row>
     </Col>
   );

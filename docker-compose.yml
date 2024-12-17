@@ -1,4 +1,4 @@
-# version: "3"
+name: ft_transcendence
 
 services:
   react:
@@ -16,6 +16,52 @@ services:
       - /app/node_modules
     environment:
       - CHOCKIDAR_USEPOLLING=true
+    depends_on:
+      - django
+
+  django:
+    build:
+      context: .
+      dockerfile: ./server-pong/Dockerfile
+    container_name: django
+    ports:
+      - "8000:8000"
+    networks:
+      - pong
+    restart: always
+    env_file:
+      - ./server-pong/.env.example
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - pong
+    restart: always
+    environment:
+      - POSTGRES_DB=pong
+      - POSTGRES_USER=pong
+      - POSTGRES_PASSWORD=pong
+
+  adminer:
+    image: adminer
+    container_name: adminer
+    ports:
+      - "8080:8080"
+    networks:
+      - pong
+    restart: always
+
+# volumes:
+#   postgres-volume:
+#     driver_opts:
+#       o: bind
+#       type: none
+#       device: ./data-base/pgdata
 
 networks:
   pong:
