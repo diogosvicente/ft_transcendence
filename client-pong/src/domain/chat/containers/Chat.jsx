@@ -14,14 +14,12 @@ export default function Chat() {
 
   const chatSocketRef = useRef(null);
 
-  const WS_SERVER_HOST = 'localhost:8000';
-  const socketUrl = `ws://${WS_SERVER_HOST}/ws/chat/${roomName}/`;
-
   // Start WS server connection on component mounting
   useEffect(() => {
     if (chatSocketRef.current) { return; } // Prevent react's strict mode re-render
 
-    const socket = new WebSocket(socketUrl);
+    const socketUrlDev = `ws://localhost:8000/ws/chat/${roomName}/`;
+    const socket = new WebSocket(socketUrlDev);
 
     socket.onmessage = function(e) {
       const data = JSON.parse(e.data);
@@ -40,7 +38,8 @@ export default function Chat() {
 
   return (
     <>
-      <ChatLog messages={chatLogMessages} /><br />
+      <ChatLog messages={chatLogMessages} />
+      <br />
       <ChatMessageInput
         onChatSendButtonClick={handleChatSendButtonClick}
         onMessageChange={setMessage}

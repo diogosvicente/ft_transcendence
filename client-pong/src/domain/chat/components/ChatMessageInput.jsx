@@ -3,8 +3,7 @@ import { useRef } from "react";
 export function ChatMessageInput({ onChatSendButtonClick, onMessageChange, message }) {
   const chatSendButtonRef = useRef(null);
 
-  // Manually triggers click event for send button
-  // when Enter key is pressed
+  // Manually triggers click event from "Send" button on pressing Enter key
   const handleKeyUp = (e) => {
     if (e.key === 'Enter') {
       chatSendButtonRef.current.click();

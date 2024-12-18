@@ -15,7 +15,7 @@ export function JoinChatRoomForm() {
     inputRef.current.focus();
   }, []);
 
-  // Triggers the click event when Enter key is pressed
+  // Manually triggers click event from "Submit" button on pressing Enter key
   const handleKeyUp = (e) => {
     if (e.key === 'Enter') {
       submitButtonRef.current.click();
