@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
+    'corsheaders',
 ]
 
 REST_FRAMEWORK = {
@@ -68,6 +69,7 @@ SIMPLE_JWT = {
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # Adicione isso antes de CommonMiddleware
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -166,3 +168,11 @@ MEDIA_URL = '/media/'  # URL base para acessar arquivos de mídia
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # Diretório físico onde os arquivos de mídia serão armazenados
 
 AUTH_USER_MODEL = 'user_management.User'
+
+CORS_ALLOW_ALL_ORIGINS = True  # Permite todas as origens (apenas para testes!)
+
+# COLOQUE DO JEITO ABAIXO QUANDO ESTIVER EM PRODUÇÃO
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:5173",  # Origem do seu frontend React
+#     "https://example.com",    # Substitua pelo domínio em produção
+# ]
