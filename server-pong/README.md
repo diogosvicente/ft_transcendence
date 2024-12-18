@@ -103,7 +103,7 @@ o arquivo `requirements.txt` para que os outros devs possam ter acesso
 ao ambiente atualizado.**
 
 ```bash
-python pip freeze > requirements.txt
+pip freeze > requirements.txt
 ```
 ---
 
