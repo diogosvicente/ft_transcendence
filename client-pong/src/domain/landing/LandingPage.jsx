@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button, Stack, Form, Container, Alert } from "react-bootstrap";
 import LoadingModal from "./LoadingModal";
+import { useNavigate } from "react-router-dom";
 
 const LoginAndRegisterForm = () => {
   const [validated, setValidated] = useState(false);
@@ -11,6 +12,15 @@ const LoginAndRegisterForm = () => {
   });
   const [errorMessage, setErrorMessage] = useState(""); // Armazena mensagens de erro
   const [successMessage, setSuccessMessage] = useState(""); // Armazena mensagens de sucesso
+  const navigate = useNavigate(); // Para redirecionamento
+
+  useEffect(() => {
+    // Verifica se o usuário já está logado
+    const accessToken = localStorage.getItem("access");
+    if (accessToken) {
+      navigate("/dashboard");
+    }
+  }, [navigate]);
 
   const handleClose = () => setShowLoading(false);
   const handleShow = () => setShowLoading(true);
@@ -20,7 +30,8 @@ const LoginAndRegisterForm = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSubmit = async (event) => {
+  // Função para lidar com o registro de usuário
+  const handleRegister = async (event) => {
     event.preventDefault();
     setValidated(true);
     setErrorMessage(""); // Limpa erros anteriores
@@ -46,16 +57,54 @@ const LoginAndRegisterForm = () => {
       const data = await response.json();
 
       if (response.ok) {
-        setSuccessMessage("Usuário cadastrado com sucesso!"); // Define mensagem de sucesso
-        setErrorMessage(""); // Limpa erro
+        setSuccessMessage("Usuário cadastrado com sucesso!");
       } else {
-        // Captura a mensagem de erro do backend
         setErrorMessage(data.email ? data.email[0] : "Erro desconhecido.");
-        setSuccessMessage(""); // Limpa sucesso
       }
     } catch (error) {
       setErrorMessage("Erro ao conectar ao servidor.");
-      setSuccessMessage(""); // Limpa sucesso
+    } finally {
+      handleClose();
+    }
+  };
+
+  // Função para lidar com o login de usuário
+  const handleLogin = async (event) => {
+    event.preventDefault();
+    setValidated(true);
+    setErrorMessage(""); // Limpa erros anteriores
+    setSuccessMessage(""); // Limpa sucessos anteriores
+
+    handleShow(); // Mostra o modal de loading
+
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/user-management/login/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSuccessMessage("Login realizado com sucesso!");
+        localStorage.setItem("access", data.access);
+        localStorage.setItem("refresh", data.refresh);
+        localStorage.setItem("email", formData.email);
+        navigate("/dashboard"); // Redireciona para o dashboard
+      } else {
+        setErrorMessage(data.error || "Credenciais inválidas.");
+      }
+    } catch (error) {
+      setErrorMessage("Erro ao conectar ao servidor.");
     } finally {
       handleClose();
     }
@@ -64,7 +113,7 @@ const LoginAndRegisterForm = () => {
   return (
     <div className="vh-100 d-flex justify-content-center align-items-center">
       <Container className="col-lg-4 border rounded p-4 mx-auto">
-        <Form noValidate validated={validated} onSubmit={handleSubmit}>
+        <Form noValidate validated={validated}>
           <Form.Group className="mb-3" controlId="formBasicEmail">
             <Form.Label>E-mail</Form.Label>
             <Form.Control
@@ -80,7 +129,6 @@ const LoginAndRegisterForm = () => {
             </Form.Control.Feedback>
           </Form.Group>
 
-          {/* Campo Senha */}
           <Form.Group className="mb-3" controlId="formBasicPassword">
             <Form.Label>Senha</Form.Label>
             <Form.Control
@@ -102,16 +150,23 @@ const LoginAndRegisterForm = () => {
           {/* Exibição de Erro */}
           {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
 
-          {/* Botões */}
           <Stack
             direction="horizontal"
             gap={4}
             className="py-4 d-flex justify-content-center"
           >
-            <Button variant="outline-secondary" type="submit" className="w-50">
+            <Button
+              variant="outline-secondary"
+              className="w-50"
+              onClick={handleLogin} // Chama a função de login
+            >
               Entre
             </Button>
-            <Button variant="dark" type="submit" className="w-50">
+            <Button
+              variant="dark"
+              className="w-50"
+              onClick={handleRegister} // Chama a função de registro
+            >
               Registre-se
             </Button>
           </Stack>

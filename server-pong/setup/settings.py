@@ -51,12 +51,14 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
+    'axes',
 ]
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'EXCEPTION_HANDLER': 'setup.utils.custom_exception_handler',  # Adicione um handler customizado
 }
 
 SIMPLE_JWT = {
@@ -75,6 +77,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'axes.middleware.AxesMiddleware'
 ]
 
 ROOT_URLCONF = 'setup.urls'
@@ -176,3 +179,11 @@ CORS_ALLOW_ALL_ORIGINS = True  # Permite todas as origens (apenas para testes!)
 #     "http://localhost:5173",  # Origem do seu frontend React
 #     "https://example.com",    # Substitua pelo domínio em produção
 # ]
+
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesStandaloneBackend',  # Backend do django-axes
+    'django.contrib.auth.backends.ModelBackend',  # Backend padrão do Django
+]
+
+AXES_FAILURE_LIMIT = 5  # Número de tentativas permitidas
+AXES_COOLOFF_TIME = timedelta(minutes=30)  # Bloqueio por 30 minutos após falhas consecutivas
