@@ -1,8 +1,10 @@
+from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import UserSerializer, LoginSerializer
+from .models import User
 
 class UserRegistrationView(APIView):
     """
@@ -47,3 +49,25 @@ class LogoutView(APIView):
             return Response({"message": "Logout realizado com sucesso."}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class GetAvatarView(APIView):
+    """
+    View para retornar o avatar do usuário.
+    """
+    def get(self, request):
+        email = request.GET.get('email')
+        default_avatar_url = f"{settings.MEDIA_URL}avatars/default.png"
+
+        if not email:
+            return Response({"avatar": default_avatar_url}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(email=email)
+            if user.avatar:
+                avatar_url = f"{settings.MEDIA_URL}{user.avatar}"
+            else:
+                avatar_url = default_avatar_url
+            return Response({"avatar": avatar_url}, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({"avatar": default_avatar_url}, status=status.HTTP_404_NOT_FOUND)

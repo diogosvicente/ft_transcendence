@@ -9,16 +9,17 @@ const LoginAndRegisterForm = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    avatar: null, // Inicializa o campo avatar como null
+    avatar: null,
   });
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const navigate = useNavigate();
 
+  // Redireciona para /home caso o usuário já esteja logado
   useEffect(() => {
     const accessToken = localStorage.getItem("access");
     if (accessToken) {
-      navigate("/dashboard");
+      navigate("/home");
     }
   }, [navigate]);
 
@@ -30,11 +31,10 @@ const LoginAndRegisterForm = () => {
     if (name === "avatar") {
       const file = files[0];
       if (file && file.size > 1024 * 1024) {
-        // Verifica se o arquivo tem mais de 1MB
         setErrorMessage("O arquivo deve ter no máximo 1MB.");
         setFormData({ ...formData, avatar: null });
       } else {
-        setErrorMessage(""); // Remove a mensagem de erro se o arquivo for válido
+        setErrorMessage("");
         setFormData({ ...formData, avatar: file });
       }
     } else {
@@ -59,7 +59,7 @@ const LoginAndRegisterForm = () => {
     formDataToSend.append("email", formData.email);
     formDataToSend.append("password", formData.password);
     if (formData.avatar) {
-      formDataToSend.append("avatar", formData.avatar); // Adiciona o avatar ao FormData
+      formDataToSend.append("avatar", formData.avatar);
     }
 
     try {
@@ -115,7 +115,7 @@ const LoginAndRegisterForm = () => {
         localStorage.setItem("access", data.access);
         localStorage.setItem("refresh", data.refresh);
         localStorage.setItem("email", formData.email);
-        navigate("/dashboard");
+        navigate("/home"); // Redireciona para a página inicial
       } else {
         setErrorMessage(data.error || "Credenciais inválidas.");
       }
@@ -174,7 +174,6 @@ const LoginAndRegisterForm = () => {
           </Form.Group>
 
           {successMessage && <Alert variant="success">{successMessage}</Alert>}
-
           {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
 
           <Stack
