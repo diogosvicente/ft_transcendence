@@ -9,13 +9,13 @@ const LoginAndRegisterForm = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
+    avatar: null, // Inicializa o campo avatar como null
   });
-  const [errorMessage, setErrorMessage] = useState(""); // Armazena mensagens de erro
-  const [successMessage, setSuccessMessage] = useState(""); // Armazena mensagens de sucesso
-  const navigate = useNavigate(); // Para redirecionamento
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Verifica se o usuário já está logado
     const accessToken = localStorage.getItem("access");
     if (accessToken) {
       navigate("/dashboard");
@@ -26,31 +26,48 @@ const LoginAndRegisterForm = () => {
   const handleShow = () => setShowLoading(true);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    const { name, value, files } = e.target;
+    if (name === "avatar") {
+      const file = files[0];
+      if (file && file.size > 1024 * 1024) {
+        // Verifica se o arquivo tem mais de 1MB
+        setErrorMessage("O arquivo deve ter no máximo 1MB.");
+        setFormData({ ...formData, avatar: null });
+      } else {
+        setErrorMessage(""); // Remove a mensagem de erro se o arquivo for válido
+        setFormData({ ...formData, avatar: file });
+      }
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
-  // Função para lidar com o registro de usuário
   const handleRegister = async (event) => {
     event.preventDefault();
     setValidated(true);
-    setErrorMessage(""); // Limpa erros anteriores
-    setSuccessMessage(""); // Limpa sucessos anteriores
+    setErrorMessage("");
+    setSuccessMessage("");
 
-    handleShow(); // Mostra o modal de loading
+    if (formData.avatar && formData.avatar.size > 1024 * 1024) {
+      setErrorMessage("O arquivo deve ter no máximo 1MB.");
+      return;
+    }
+
+    handleShow();
+
+    const formDataToSend = new FormData();
+    formDataToSend.append("email", formData.email);
+    formDataToSend.append("password", formData.password);
+    if (formData.avatar) {
+      formDataToSend.append("avatar", formData.avatar); // Adiciona o avatar ao FormData
+    }
 
     try {
       const response = await fetch(
         "http://127.0.0.1:8000/api/user-management/register/",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: formData.email,
-            password: formData.password,
-          }),
+          body: formDataToSend,
         }
       );
 
@@ -68,14 +85,13 @@ const LoginAndRegisterForm = () => {
     }
   };
 
-  // Função para lidar com o login de usuário
   const handleLogin = async (event) => {
     event.preventDefault();
     setValidated(true);
-    setErrorMessage(""); // Limpa erros anteriores
-    setSuccessMessage(""); // Limpa sucessos anteriores
+    setErrorMessage("");
+    setSuccessMessage("");
 
-    handleShow(); // Mostra o modal de loading
+    handleShow();
 
     try {
       const response = await fetch(
@@ -99,7 +115,7 @@ const LoginAndRegisterForm = () => {
         localStorage.setItem("access", data.access);
         localStorage.setItem("refresh", data.refresh);
         localStorage.setItem("email", formData.email);
-        navigate("/dashboard"); // Redireciona para o dashboard
+        navigate("/dashboard");
       } else {
         setErrorMessage(data.error || "Credenciais inválidas.");
       }
@@ -144,10 +160,21 @@ const LoginAndRegisterForm = () => {
             </Form.Control.Feedback>
           </Form.Group>
 
-          {/* Exibição de Sucesso */}
+          <Form.Group className="mb-3" controlId="formAvatar">
+            <Form.Label>Avatar (opcional)</Form.Label>
+            <Form.Control
+              type="file"
+              name="avatar"
+              accept=".jpg,.png"
+              onChange={handleChange}
+            />
+            <Form.Text className="text-muted">
+              O arquivo deve ser no formato JPG ou PNG e ter no máximo 1MB.
+            </Form.Text>
+          </Form.Group>
+
           {successMessage && <Alert variant="success">{successMessage}</Alert>}
 
-          {/* Exibição de Erro */}
           {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
 
           <Stack
@@ -158,14 +185,14 @@ const LoginAndRegisterForm = () => {
             <Button
               variant="outline-secondary"
               className="w-50"
-              onClick={handleLogin} // Chama a função de login
+              onClick={handleLogin}
             >
               Entre
             </Button>
             <Button
               variant="dark"
               className="w-50"
-              onClick={handleRegister} // Chama a função de registro
+              onClick={handleRegister}
             >
               Registre-se
             </Button>
