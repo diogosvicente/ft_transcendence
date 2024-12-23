@@ -3,8 +3,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.core.cache import cache
 from .serializers import UserSerializer, LoginSerializer
 from .models import User
+from .utils import generate_2fa_code, send_2fa_code
 
 class UserRegistrationView(APIView):
     """
@@ -17,7 +19,6 @@ class UserRegistrationView(APIView):
             return Response({"message": "Usuário cadastrado com sucesso!"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 class LoginView(APIView):
     """
     View para autenticação de usuários.
@@ -26,13 +27,56 @@ class LoginView(APIView):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['user']
-            # Gera tokens JWT
+            
+            # Verifica se o 2FA está ativado
+            if user.is_2fa_verified:
+                # Gera e envia o código 2FA
+                code = generate_2fa_code()
+                cache.set(f'2fa_{user.email}', code, timeout=300)  # Código válido por 5 minutos
+                send_2fa_code(user.email, code)
+
+                return Response({
+                    "message": "Código 2FA enviado para o e-mail.",
+                    "requires_2fa": True  # Indica que o 2FA é necessário
+                }, status=status.HTTP_200_OK)
+            
+            # Se o 2FA não está ativado, retorna os tokens JWT diretamente
             refresh = RefreshToken.for_user(user)
             return Response({
-                'refresh': str(refresh),
-                'access': str(refresh.access_token)
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "requires_2fa": False  # Indica que o 2FA não é necessário
             }, status=status.HTTP_200_OK)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class Validate2FACodeView(APIView):
+    """
+    View para validação do código 2FA.
+    """
+    def post(self, request):
+        email = request.data.get('email')
+        code = request.data.get('code')
+        cached_code = cache.get(f'2fa_{email}')
+
+        if cached_code and str(cached_code) == str(code):
+            try:
+                user = User.objects.get(email=email)
+                user.is_2fa_verified = True
+                user.save()
+
+                # Gera tokens JWT após validação bem-sucedida
+                refresh = RefreshToken.for_user(user)
+                return Response({
+                    "message": "2FA verificado com sucesso.",
+                    "refresh": str(refresh),
+                    "access": str(refresh.access_token)
+                }, status=status.HTTP_200_OK)
+            except User.DoesNotExist:
+                return Response({"error": "Usuário não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+        
+        return Response({"error": "Código inválido ou expirado."}, status=status.HTTP_400_BAD_REQUEST)
 
 class LogoutView(APIView):
     """
@@ -49,7 +93,6 @@ class LogoutView(APIView):
             return Response({"message": "Logout realizado com sucesso."}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
 
 class GetAvatarView(APIView):
     """

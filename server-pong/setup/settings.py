@@ -187,3 +187,11 @@ AUTHENTICATION_BACKENDS = [
 
 AXES_FAILURE_LIMIT = 5  # Número de tentativas permitidas
 AXES_COOLOFF_TIME = timedelta(minutes=30)  # Bloqueio por 30 minutos após falhas consecutivas
+
+# Configurações de e-mail
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')  # Defina no .env
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  # Defina no .env

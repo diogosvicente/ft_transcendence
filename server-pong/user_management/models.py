@@ -37,6 +37,7 @@ class User(AbstractBaseUser):
     is_active = models.BooleanField(default=True)  # Necessário para autenticação
     is_staff = models.BooleanField(default=False)  # Permissão de administrador
     is_superuser = models.BooleanField(default=False)  # Indica superusuário
+    is_2fa_verified = models.BooleanField(default=False)  # Indica se o 2FA foi verificado
 
     objects = UserManager()
 

@@ -9,13 +9,14 @@ const LoginAndRegisterForm = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
+    code: "",
     avatar: null,
   });
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [is2FARequired, setIs2FARequired] = useState(false); // Indica se o 2FA é necessário
   const navigate = useNavigate();
 
-  // Redireciona para /home caso o usuário já esteja logado
   useEffect(() => {
     const accessToken = localStorage.getItem("access");
     if (accessToken) {
@@ -90,9 +91,9 @@ const LoginAndRegisterForm = () => {
     setValidated(true);
     setErrorMessage("");
     setSuccessMessage("");
-
+  
     handleShow();
-
+  
     try {
       const response = await fetch(
         "http://127.0.0.1:8000/api/user-management/login/",
@@ -107,17 +108,63 @@ const LoginAndRegisterForm = () => {
           }),
         }
       );
-
+  
       const data = await response.json();
-
+  
       if (response.ok) {
-        setSuccessMessage("Login realizado com sucesso!");
+        if (data.requires_2fa) {
+          setSuccessMessage("Código 2FA enviado para o e-mail. Insira o código para continuar.");
+          setIs2FARequired(true); // Exibe o campo para o código 2FA
+        } else {
+          setSuccessMessage("Login realizado com sucesso!");
+          localStorage.setItem("access", data.access);
+          localStorage.setItem("refresh", data.refresh);
+          localStorage.setItem("email", formData.email);
+          navigate("/home"); // Redireciona para a página inicial
+        }
+      } else {
+        setErrorMessage(data.error || "Credenciais inválidas.");
+      }
+    } catch (error) {
+      setErrorMessage("Erro ao conectar ao servidor.");
+    } finally {
+      handleClose();
+    }
+  };
+
+  const handleValidate2FA = async (event) => {
+    event.preventDefault();
+    setValidated(true);
+    setErrorMessage("");
+    setSuccessMessage("");
+  
+    handleShow();
+  
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/user-management/2fa/validate/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: formData.email,
+            code: formData.code,
+          }),
+        }
+      );
+  
+      const data = await response.json();
+  
+      if (response.ok) {
+        setSuccessMessage("Login realizado com sucesso! Você foi autenticado com 2FA.");
         localStorage.setItem("access", data.access);
         localStorage.setItem("refresh", data.refresh);
         localStorage.setItem("email", formData.email);
         navigate("/home"); // Redireciona para a página inicial
       } else {
-        setErrorMessage(data.error || "Credenciais inválidas.");
+        setErrorMessage(data.error || "Código inválido ou expirado. Solicite um novo login para receber outro código.");
       }
     } catch (error) {
       setErrorMessage("Erro ao conectar ao servidor.");
@@ -173,6 +220,23 @@ const LoginAndRegisterForm = () => {
             </Form.Text>
           </Form.Group>
 
+          {is2FARequired && (
+            <Form.Group className="mb-3" controlId="form2FACode">
+              <Form.Label>Código 2FA</Form.Label>
+              <Form.Control
+                required
+                type="text"
+                placeholder="Digite o código enviado ao e-mail"
+                name="code"
+                value={formData.code}
+                onChange={handleChange}
+              />
+              <Form.Control.Feedback type="invalid">
+                Campo obrigatório.
+              </Form.Control.Feedback>
+            </Form.Group>
+          )}
+
           {successMessage && <Alert variant="success">{successMessage}</Alert>}
           {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
 
@@ -181,20 +245,32 @@ const LoginAndRegisterForm = () => {
             gap={4}
             className="py-4 d-flex justify-content-center"
           >
-            <Button
-              variant="outline-secondary"
-              className="w-50"
-              onClick={handleLogin}
-            >
-              Entre
-            </Button>
-            <Button
-              variant="dark"
-              className="w-50"
-              onClick={handleRegister}
-            >
-              Registre-se
-            </Button>
+            {is2FARequired ? (
+              <Button
+                variant="dark"
+                className="w-50"
+                onClick={handleValidate2FA}
+              >
+                Validar Código
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="outline-secondary"
+                  className="w-50"
+                  onClick={handleLogin}
+                >
+                  Entrar
+                </Button>
+                <Button
+                  variant="dark"
+                  className="w-50"
+                  onClick={handleRegister}
+                >
+                  Registre-se
+                </Button>
+              </>
+            )}
           </Stack>
         </Form>
         <LoadingModal showLoading={showLoading} handleClose={handleClose} />
