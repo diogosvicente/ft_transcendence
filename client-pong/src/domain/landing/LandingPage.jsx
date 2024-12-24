@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button, Stack, Form, Container, Alert, Tabs, Tab } from "react-bootstrap";
 import LoadingModal from "./LoadingModal";
 import { useNavigate } from "react-router-dom";
+import API_BASE_URL from "../../config/config.js";  // Importando a URL da API
 
 const LoginAndRegisterForm = () => {
   const [validated, setValidated] = useState(false);
@@ -96,7 +97,7 @@ const LoginAndRegisterForm = () => {
   
     try {
       const response = await fetch(
-        "http://127.0.0.1:8000/api/user-management/register/",
+        `${API_BASE_URL}/api/user-management/register/`,
         {
           method: "POST",
           body: formDataToSend,
@@ -128,7 +129,7 @@ const LoginAndRegisterForm = () => {
 
     try {
       const response = await fetch(
-        "http://127.0.0.1:8000/api/user-management/login/",
+        `${API_BASE_URL}/api/user-management/login/`,
         {
           method: "POST",
           headers: {
@@ -174,7 +175,7 @@ const LoginAndRegisterForm = () => {
 
     try {
       const response = await fetch(
-        "http://127.0.0.1:8000/api/user-management/2fa/validate/",
+        `${API_BASE_URL}/api/user-management/2fa/validate/`,
         {
           method: "POST",
           headers: {

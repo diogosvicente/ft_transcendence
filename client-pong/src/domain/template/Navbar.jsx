@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import { Navbar, Nav, Button, Container, Image } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
+import API_BASE_URL from "../../config/config.js";  // Importando a URL da API
 
 const CustomNavbar = () => {
   const navigate = useNavigate();
@@ -10,11 +11,11 @@ const CustomNavbar = () => {
   useEffect(() => {
     // Obtém o email do usuário logado
     const email = localStorage.getItem("email");
-    const defaultAvatar = "http://127.0.0.1:8000/media/avatars/default.png"; // URL completa da imagem padrão
+    const defaultAvatar = `${API_BASE_URL}/media/avatars/default.png`; // URL completa da imagem padrão
 
     if (email) {
       // Faz a requisição ao backend para obter o avatar
-      fetch(`http://127.0.0.1:8000/api/user-management/avatar?email=${email}`)
+      fetch(`${API_BASE_URL}/api/user-management/avatar?email=${email}`)
         .then((response) => {
           if (!response.ok) {
             throw new Error("Erro ao buscar o avatar");
@@ -23,7 +24,7 @@ const CustomNavbar = () => {
         })
         .then((data) => {
           // Constrói a URL completa do avatar
-          const fullAvatarUrl = `http://127.0.0.1:8000${data.avatar}`;
+          const fullAvatarUrl = `${API_BASE_URL}${data.avatar}`;
           setAvatar(fullAvatarUrl || defaultAvatar); // Define o avatar retornado ou o padrão
         })
         .catch(() => {
