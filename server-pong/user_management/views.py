@@ -7,6 +7,8 @@ from django.core.cache import cache
 from .serializers import UserSerializer, LoginSerializer
 from .models import User
 from .utils import generate_2fa_code, send_2fa_code
+from django.contrib.auth.password_validation import get_password_validators
+
 
 class UserRegistrationView(APIView):
     """
@@ -19,6 +21,7 @@ class UserRegistrationView(APIView):
             return Response({"message": "Usuário cadastrado com sucesso!"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class LoginView(APIView):
     """
     View para autenticação de usuários.
@@ -27,7 +30,7 @@ class LoginView(APIView):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['user']
-            
+
             # Verifica se o 2FA está ativado
             if user.is_2fa_verified:
                 # Gera e envia o código 2FA
@@ -39,7 +42,7 @@ class LoginView(APIView):
                     "message": "Código 2FA enviado para o e-mail.",
                     "requires_2fa": True  # Indica que o 2FA é necessário
                 }, status=status.HTTP_200_OK)
-            
+
             # Se o 2FA não está ativado, retorna os tokens JWT diretamente
             refresh = RefreshToken.for_user(user)
             return Response({
@@ -75,8 +78,9 @@ class Validate2FACodeView(APIView):
                 }, status=status.HTTP_200_OK)
             except User.DoesNotExist:
                 return Response({"error": "Usuário não encontrado."}, status=status.HTTP_404_NOT_FOUND)
-        
+
         return Response({"error": "Código inválido ou expirado."}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class LogoutView(APIView):
     """
@@ -87,12 +91,13 @@ class LogoutView(APIView):
             refresh_token = request.data.get("refresh")
             if not refresh_token:
                 return Response({"error": "Refresh token é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
-            
+
             token = RefreshToken(refresh_token)
             token.blacklist()
             return Response({"message": "Logout realizado com sucesso."}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class GetAvatarView(APIView):
     """
@@ -114,3 +119,18 @@ class GetAvatarView(APIView):
             return Response({"avatar": avatar_url}, status=status.HTTP_200_OK)
         except User.DoesNotExist:
             return Response({"avatar": default_avatar_url}, status=status.HTTP_404_NOT_FOUND)
+
+
+class PasswordRequirementsView(APIView):
+    """
+    View para retornar os requisitos de senha do backend.
+    """
+    def get(self, request):
+        validators = get_password_validators(settings.AUTH_PASSWORD_VALIDATORS)
+        requirements = []
+
+        for validator in validators:
+            if hasattr(validator, 'get_help_text'):
+                requirements.append(validator.get_help_text())
+
+        return Response({"requirements": requirements}, status=status.HTTP_200_OK)

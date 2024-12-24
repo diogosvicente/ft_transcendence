@@ -1,6 +1,9 @@
 from rest_framework import serializers
-from .models import User
 from django.contrib.auth.hashers import make_password, check_password
+from django.contrib.auth.password_validation import validate_password
+from rest_framework.exceptions import ValidationError
+from .models import User
+
 
 class UserSerializer(serializers.ModelSerializer):
     """
@@ -11,6 +14,12 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['email', 'password', 'avatar']
 
     def create(self, validated_data):
+        # Valida a senha usando os validadores do Django
+        try:
+            validate_password(validated_data['password'])
+        except Exception as e:
+            raise ValidationError({'password': list(e.messages)})
+
         # Criptografa a senha antes de salvar
         validated_data['password'] = make_password(validated_data['password'])
         return super().create(validated_data)
