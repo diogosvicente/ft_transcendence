@@ -5,6 +5,10 @@ import { JoinChatRoomForm } from "./domain/chat/components/JoinChatRoomForm.jsx"
 import Chat from "./domain/chat/containers/Chat.jsx";
 import LandingPage from "./domain/landing/LandingPage.jsx";
 import Home from "./domain/home/Home.jsx";
+import Tournaments from "./domain/tournaments/Tournaments.jsx";
+import Profile from "./domain/profile/Profile.jsx";
+import History from "./domain/history/History.jsx";
+import Friends from "./domain/friends/Friends.jsx";
 
 function PrivateRoute({ children }) {
   const isAuthenticated = !!localStorage.getItem("access");
@@ -22,6 +26,38 @@ function App() {
         element={
           <PrivateRoute>
             <Home />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/tournaments"
+        element={
+          <PrivateRoute>
+            <Tournaments />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <PrivateRoute>
+            <Profile />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/history"
+        element={
+          <PrivateRoute>
+            <History />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/friends"
+        element={
+          <PrivateRoute>
+            <Friends />
           </PrivateRoute>
         }
       />
