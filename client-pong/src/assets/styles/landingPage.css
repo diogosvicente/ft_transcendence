@@ -1,0 +1,36 @@
+.language-selector {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  
+  .language-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    width: 60px;
+    text-align: center;
+    background-color: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease-in-out;
+  }
+  
+  .language-card:hover {
+    transform: scale(1.05);
+  }
+  
+  .language-flag {
+    cursor: pointer;
+    width: 30px;
+    height: auto;
+  }
+  
+  .language-text {
+    font-size: 0.75rem;
+    font-weight: bold;
+  }
+  

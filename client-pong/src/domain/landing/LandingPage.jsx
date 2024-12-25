@@ -3,10 +3,11 @@ import { Button, Stack, Form, Container, Alert, Tabs, Tab } from "react-bootstra
 import LoadingModal from "./LoadingModal";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import API_BASE_URL from "../../config/config.js"; // Importando a URL da API
-import brazilFlag from "../../assets/brazil.png";
-import spainFlag from "../../assets/spain.png";
-import ukFlag from "../../assets/unitedkingdon.png";
+import API_BASE_URL from "../../assets/config/config.js"; // Importando a URL da API
+import brazilFlag from "../../assets/icons/brazil-flag-round-circle-icon.svg"; // Imagem do Brasil
+import spainFlag from "../../assets/icons/spain-country-flag-round-icon.svg";
+import ukFlag from "../../assets/icons/uk-flag-round-circle-icon.svg";
+import "../../assets/styles/landingPage.css"; // Estilo personalizado (adicione o arquivo CSS)
 
 const LoginAndRegisterForm = () => {
   const { t, i18n } = useTranslation();
@@ -225,167 +226,197 @@ const LoginAndRegisterForm = () => {
 
   return (
     <div className="vh-100 d-flex flex-column justify-content-center align-items-center">
-      {/* Language Selector */}
-      <div className="position-absolute top-0 end-0 mt-3 me-3">
-        <Stack direction="horizontal" gap={3}>
-          <img
-            src={brazilFlag}
-            alt="Português (Brasil)"
-            width="30"
-            height="20"
-            onClick={() => handleLanguageChange("pt_BR")}
-            style={{ cursor: "pointer" }}
-          />
-          <img
-            src={ukFlag}
-            alt="English"
-            width="30"
-            height="20"
-            onClick={() => handleLanguageChange("en")}
-            style={{ cursor: "pointer" }}
-          />
-          <img
-            src={spainFlag}
-            alt="Español"
-            width="30"
-            height="20"
-            onClick={() => handleLanguageChange("es")}
-            style={{ cursor: "pointer" }}
-          />
-        </Stack>
+  {/* Language Selector */}
+  <div className="language-selector position-absolute top-0 end-0 mt-3 me-3">
+    <div className="d-flex gap-3">
+      <div
+        className="language-card"
+        onClick={() => handleLanguageChange("pt_BR")}
+      >
+        <img
+          src={brazilFlag}
+          alt="Português (Brasil)"
+          className="language-flag"
+        />
+        <span className="language-text">PT-BR</span>
       </div>
-
-      <h1 className="mb-4">{t("app_title")}</h1>
-      <Container className="col-lg-4 border rounded p-4 mx-auto">
-        <Tabs
-          activeKey={activeTab}
-          onSelect={(k) => setActiveTab(k)}
-          className="mb-3"
-        >
-          <Tab eventKey="login" title={t("login")}>
-            <Form noValidate validated={validated}>
-              <Form.Group className="mb-3" controlId="formBasicEmail">
-                <Form.Label>{t("email_label")}</Form.Label>
-                <Form.Control
-                  required
-                  type="text"
-                  placeholder={t("email_placeholder")}
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                />
-                <Form.Control.Feedback type="invalid">
-                  {t("required_field")}
-                </Form.Control.Feedback>
-              </Form.Group>
-
-              <Form.Group className="mb-3" controlId="formBasicPassword">
-                <Form.Label>{t("password_label")}</Form.Label>
-                <Form.Control
-                  required
-                  type="password"
-                  placeholder={t("password_placeholder")}
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                />
-                <Form.Control.Feedback type="invalid">
-                  {t("required_field")}
-                </Form.Control.Feedback>
-              </Form.Group>
-
-              {is2FARequired && (
-                <Form.Group className="mb-3" controlId="form2FACode">
-                  <Form.Label>{t("2fa_code_label")}</Form.Label>
-                  <Form.Control
-                    required
-                    type="text"
-                    placeholder={t("code_2fa_placeholder")}
-                    name="code"
-                    value={formData.code}
-                    onChange={handleChange}
-                  />
-                  <Form.Control.Feedback type="invalid">
-                    {t("required_field")}
-                  </Form.Control.Feedback>
-                </Form.Group>
-              )}
-
-              {successMessage && <Alert variant="success">{successMessage}</Alert>}
-              {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
-
-              <Stack direction="horizontal" gap={4} className="py-4 d-flex justify-content-center">
-                {is2FARequired ? (
-                  <Button variant="dark" className="w-50" onClick={handleValidate2FA}>
-                    {t("validate_code")}
-                  </Button>
-                ) : (
-                  <Button variant="outline-secondary" className="w-50" onClick={handleLogin}>
-                    {t("login")}
-                  </Button>
-                )}
-              </Stack>
-            </Form>
-          </Tab>
-
-          <Tab eventKey="register" title={t("register")}>
-            <Form noValidate validated={validated}>
-              <Form.Group className="mb-3" controlId="formBasicEmail">
-                <Form.Label>{t("email_label")}</Form.Label>
-                <Form.Control
-                  required
-                  type="text"
-                  placeholder={t("email_placeholder")}
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                />
-                <Form.Control.Feedback type="invalid">
-                  {t("required_field")}
-                </Form.Control.Feedback>
-              </Form.Group>
-
-              <Form.Group className="mb-3" controlId="formBasicPassword">
-                <Form.Label>{t("password_label")}</Form.Label>
-                <Form.Control
-                  required
-                  type="password"
-                  placeholder={t("password_placeholder")}
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                />
-                <Form.Control.Feedback type="invalid">
-                  {t("required_field")}
-                </Form.Control.Feedback>
-                {renderPasswordRequirements()}
-              </Form.Group>
-
-              <Form.Group className="mb-3" controlId="formAvatar">
-                <Form.Label>{t("avatar_label")}</Form.Label>
-                <Form.Control
-                  type="file"
-                  name="avatar"
-                  accept=".jpg,.png"
-                  onChange={handleChange}
-                />
-                <Form.Text className="text-muted">{t("avatar_info")}</Form.Text>
-              </Form.Group>
-
-              {successMessage && <Alert variant="success">{successMessage}</Alert>}
-              {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
-
-              <Stack direction="horizontal" gap={4} className="py-4 d-flex justify-content-center">
-                <Button variant="dark" className="w-50" onClick={handleRegister}>
-                  {t("register")}
-                </Button>
-              </Stack>
-            </Form>
-          </Tab>
-        </Tabs>
-        <LoadingModal showLoading={showLoading} handleClose={handleClose} />
-      </Container>
+      <div
+        className="language-card"
+        onClick={() => handleLanguageChange("en")}
+      >
+        <img
+          src={ukFlag}
+          alt="English"
+          className="language-flag"
+        />
+        <span className="language-text">EN</span>
+      </div>
+      <div
+        className="language-card"
+        onClick={() => handleLanguageChange("es")}
+      >
+        <img
+          src={spainFlag}
+          alt="Español"
+          className="language-flag"
+        />
+        <span className="language-text">ES</span>
+      </div>
     </div>
+  </div>
+
+  <h1 className="mb-4">{t("app_title")}</h1>
+  <Container className="col-lg-4 border rounded p-4 mx-auto">
+    <Tabs
+      activeKey={activeTab}
+      onSelect={(k) => setActiveTab(k)}
+      className="mb-3"
+    >
+      <Tab eventKey="login" title={t("login")}>
+        <Form noValidate validated={validated}>
+          <Form.Group className="mb-3" controlId="formBasicEmail">
+            <Form.Label>{t("email_label")}</Form.Label>
+            <Form.Control
+              required
+              type="text"
+              placeholder={t("email_placeholder")}
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+            />
+            <Form.Control.Feedback type="invalid">
+              {t("required_field")}
+            </Form.Control.Feedback>
+          </Form.Group>
+
+          <Form.Group className="mb-3" controlId="formBasicPassword">
+            <Form.Label>{t("password_label")}</Form.Label>
+            <Form.Control
+              required
+              type="password"
+              placeholder={t("password_placeholder")}
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+            />
+            <Form.Control.Feedback type="invalid">
+              {t("required_field")}
+            </Form.Control.Feedback>
+          </Form.Group>
+
+          {is2FARequired && (
+            <Form.Group className="mb-3" controlId="form2FACode">
+              <Form.Label>{t("2fa_code_label")}</Form.Label>
+              <Form.Control
+                required
+                type="text"
+                placeholder={t("code_2fa_placeholder")}
+                name="code"
+                value={formData.code}
+                onChange={handleChange}
+              />
+              <Form.Control.Feedback type="invalid">
+                {t("required_field")}
+              </Form.Control.Feedback>
+            </Form.Group>
+          )}
+
+          {successMessage && <Alert variant="success">{successMessage}</Alert>}
+          {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
+
+          <Stack
+            direction="horizontal"
+            gap={4}
+            className="py-4 d-flex justify-content-center"
+          >
+            {is2FARequired ? (
+              <Button
+                variant="dark"
+                className="w-50"
+                onClick={handleValidate2FA}
+              >
+                {t("validate_code")}
+              </Button>
+            ) : (
+              <Button
+                variant="outline-secondary"
+                className="w-50"
+                onClick={handleLogin}
+              >
+                {t("login")}
+              </Button>
+            )}
+          </Stack>
+        </Form>
+      </Tab>
+
+      <Tab eventKey="register" title={t("register")}>
+        <Form noValidate validated={validated}>
+          <Form.Group className="mb-3" controlId="formBasicEmail">
+            <Form.Label>{t("email_label")}</Form.Label>
+            <Form.Control
+              required
+              type="text"
+              placeholder={t("email_placeholder")}
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+            />
+            <Form.Control.Feedback type="invalid">
+              {t("required_field")}
+            </Form.Control.Feedback>
+          </Form.Group>
+
+          <Form.Group className="mb-3" controlId="formBasicPassword">
+            <Form.Label>{t("password_label")}</Form.Label>
+            <Form.Control
+              required
+              type="password"
+              placeholder={t("password_placeholder")}
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+            />
+            <Form.Control.Feedback type="invalid">
+              {t("required_field")}
+            </Form.Control.Feedback>
+            {renderPasswordRequirements()}
+          </Form.Group>
+
+          <Form.Group className="mb-3" controlId="formAvatar">
+            <Form.Label>{t("avatar_label")}</Form.Label>
+            <Form.Control
+              type="file"
+              name="avatar"
+              accept=".jpg,.png"
+              onChange={handleChange}
+            />
+            <Form.Text className="text-muted">{t("avatar_info")}</Form.Text>
+          </Form.Group>
+
+          {successMessage && <Alert variant="success">{successMessage}</Alert>}
+          {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
+
+          <Stack
+            direction="horizontal"
+            gap={4}
+            className="py-4 d-flex justify-content-center"
+          >
+            <Button
+              variant="dark"
+              className="w-50"
+              onClick={handleRegister}
+            >
+              {t("register")}
+            </Button>
+          </Stack>
+        </Form>
+      </Tab>
+    </Tabs>
+    <LoadingModal showLoading={showLoading} handleClose={handleClose} />
+  </Container>
+</div>
+
   );
 };
 
