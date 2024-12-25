@@ -3,7 +3,7 @@ from django.contrib.auth.hashers import make_password, check_password
 from django.contrib.auth.password_validation import validate_password
 from rest_framework.exceptions import ValidationError
 from .models import User
-
+from django.utils.translation import gettext_lazy as _  # Importando gettext_lazy
 
 class UserSerializer(serializers.ModelSerializer):
     """
@@ -27,7 +27,7 @@ class UserSerializer(serializers.ModelSerializer):
     def validate_email(self, value):
         # Verifica se o email já existe no banco de dados
         if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("O e-mail já está cadastrado.")
+            raise serializers.ValidationError(_("O e-mail já está cadastrado."))
         return value
 
 
@@ -45,7 +45,7 @@ class LoginSerializer(serializers.Serializer):
         # Verifica se o usuário existe
         user = User.objects.filter(email=email).first()
         if not user or not check_password(password, user.password):
-            raise serializers.ValidationError("Credenciais inválidas. Verifique o email e a senha.")
+            raise serializers.ValidationError(_("Credenciais inválidas. Verifique o email e a senha."))
 
         attrs['user'] = user
         return attrs

@@ -2,6 +2,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.db import models
 import os
 from datetime import datetime
+from django.utils.translation import gettext_lazy as _  # Importando gettext_lazy
 
 def avatar_upload_path(instance, filename):
     name, extension = os.path.splitext(filename)
@@ -15,7 +16,7 @@ class UserManager(BaseUserManager):
     """
     def create_user(self, email, password=None, **extra_fields):
         if not email:
-            raise ValueError('O campo email é obrigatório.')
+            raise ValueError(_('O campo email é obrigatório.'))  # Usando gettext_lazy para tradução
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)

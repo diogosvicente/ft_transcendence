@@ -8,7 +8,7 @@ from .serializers import UserSerializer, LoginSerializer
 from .models import User
 from .utils import generate_2fa_code, send_2fa_code
 from django.contrib.auth.password_validation import get_password_validators
-
+from django.utils.translation import gettext_lazy as _  # Importando gettext_lazy para tradução
 
 class UserRegistrationView(APIView):
     """
@@ -18,7 +18,7 @@ class UserRegistrationView(APIView):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({"message": "Usuário cadastrado com sucesso!"}, status=status.HTTP_201_CREATED)
+            return Response({"message": _("Usuário cadastrado com sucesso!")}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -39,7 +39,7 @@ class LoginView(APIView):
                 send_2fa_code(user.email, code)
 
                 return Response({
-                    "message": "Código 2FA enviado para o e-mail.",
+                    "message": _("Código 2FA enviado para o e-mail."),
                     "requires_2fa": True  # Indica que o 2FA é necessário
                 }, status=status.HTTP_200_OK)
 
@@ -72,14 +72,14 @@ class Validate2FACodeView(APIView):
                 # Gera tokens JWT após validação bem-sucedida
                 refresh = RefreshToken.for_user(user)
                 return Response({
-                    "message": "2FA verificado com sucesso.",
+                    "message": _("2FA verificado com sucesso."),
                     "refresh": str(refresh),
                     "access": str(refresh.access_token)
                 }, status=status.HTTP_200_OK)
             except User.DoesNotExist:
-                return Response({"error": "Usuário não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"error": _("Usuário não encontrado.")}, status=status.HTTP_404_NOT_FOUND)
 
-        return Response({"error": "Código inválido ou expirado."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": _("Código inválido ou expirado.")}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LogoutView(APIView):
@@ -90,11 +90,11 @@ class LogoutView(APIView):
         try:
             refresh_token = request.data.get("refresh")
             if not refresh_token:
-                return Response({"error": "Refresh token é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": _("Refresh token é obrigatório.")}, status=status.HTTP_400_BAD_REQUEST)
 
             token = RefreshToken(refresh_token)
             token.blacklist()
-            return Response({"message": "Logout realizado com sucesso."}, status=status.HTTP_200_OK)
+            return Response({"message": _("Logout realizado com sucesso.")}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 

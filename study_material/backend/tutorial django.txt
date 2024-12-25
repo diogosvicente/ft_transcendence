@@ -51,3 +51,5 @@ sobre o login
 
 pip install djangorestframework-simplejwt
 
+python ../manage.py makemessages -l pt_BR -l en -l es
+python ../manage.py compilemessages

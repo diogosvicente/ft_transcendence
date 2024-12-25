@@ -2,19 +2,23 @@ import React, { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import { Navbar, Nav, Button, Container, Image } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import API_BASE_URL from "../../config/config.js";  // Importando a URL da API
+import { useTranslation } from "react-i18next";
+import API_BASE_URL, { API_BASE_URL_NO_LANGUAGE } from "../../config/config.js";
+import brazilFlag from "../../assets/brazil.png"; // Imagem do Brasil
+import spainFlag from "../../assets/spain.png"; // Imagem da Espanha
+import ukFlag from "../../assets/unitedkingdon.png"; // Imagem do Reino Unido
+import "../../styles/navbar.css"; // Estilo personalizado (adicione o arquivo CSS)
 
 const CustomNavbar = () => {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const [avatar, setAvatar] = useState("");
 
   useEffect(() => {
-    // Obtém o email do usuário logado
     const email = localStorage.getItem("email");
-    const defaultAvatar = `${API_BASE_URL}/media/avatars/default.png`; // URL completa da imagem padrão
+    const defaultAvatar = `${API_BASE_URL_NO_LANGUAGE}/media/avatars/default.png`; // URL completa da imagem padrão
 
     if (email) {
-      // Faz a requisição ao backend para obter o avatar
       fetch(`${API_BASE_URL}/api/user-management/avatar?email=${email}`)
         .then((response) => {
           if (!response.ok) {
@@ -23,30 +27,30 @@ const CustomNavbar = () => {
           return response.json();
         })
         .then((data) => {
-          // Constrói a URL completa do avatar
-          const fullAvatarUrl = `${API_BASE_URL}${data.avatar}`;
-          setAvatar(fullAvatarUrl || defaultAvatar); // Define o avatar retornado ou o padrão
+          const fullAvatarUrl = `${API_BASE_URL_NO_LANGUAGE}${data.avatar}`;
+          setAvatar(fullAvatarUrl || defaultAvatar);
         })
         .catch(() => {
-          setAvatar(defaultAvatar); // Em caso de erro, usa o avatar padrão
+          setAvatar(defaultAvatar);
         });
     } else {
-      setAvatar(defaultAvatar); // Se não houver email, usa o avatar padrão
+      setAvatar(defaultAvatar);
     }
   }, []);
 
   const handleLogout = () => {
-    // Remove os tokens e o email do localStorage
     localStorage.removeItem("access");
     localStorage.removeItem("refresh");
     localStorage.removeItem("email");
-
-    // Redireciona para a página de login
     navigate("/");
   };
 
+  const handleLanguageChange = (language) => {
+    i18n.changeLanguage(language);
+  };
+
   return (
-    <Navbar bg="light" expand="lg" className="border-bottom shadow-sm">
+    <Navbar bg="light" expand="lg" className="border-bottom shadow-sm navbar-custom">
       <Container>
         {/* Lado esquerdo: Avatar e nome "Pong" */}
         <div className="d-flex align-items-center">
@@ -58,8 +62,8 @@ const CustomNavbar = () => {
             height="40"
             className="me-2"
           />
-          <Navbar.Brand href="/home" className="mb-0">
-            Pong Game
+          <Navbar.Brand href="/home" className="navbar-brand">
+            {t("navbar.app_title")}
           </Navbar.Brand>
         </div>
 
@@ -68,26 +72,54 @@ const CustomNavbar = () => {
         <Navbar.Collapse id="basic-navbar-nav" className="justify-content-end">
           <Nav className="me-3">
             <NavLink to="/chat" className="nav-link">
-              Chat
+              {t("navbar.chat")}
             </NavLink>
             <NavLink to="/tournaments" className="nav-link">
-              Torneios
+              {t("navbar.tournaments")}
             </NavLink>
             <NavLink to="/profile" className="nav-link">
-              Perfil
+              {t("navbar.profile")}
             </NavLink>
             <NavLink to="/history" className="nav-link">
-              Histórico
+              {t("navbar.history")}
             </NavLink>
             <NavLink to="/friends" className="nav-link">
-              Amigos
+              {t("navbar.friends")}
             </NavLink>
           </Nav>
           <Button variant="outline-secondary" onClick={handleLogout}>
-            Sair
+            {t("navbar.logout")}
           </Button>
         </Navbar.Collapse>
       </Container>
+
+      {/* Seletor de Idioma */}
+      <div className="language-selector">
+        <img
+          src={brazilFlag}
+          alt="Português (Brasil)"
+          width="30"
+          height="20"
+          onClick={() => handleLanguageChange("pt_BR")}
+          className="language-flag"
+        />
+        <img
+          src={ukFlag}
+          alt="English"
+          width="30"
+          height="20"
+          onClick={() => handleLanguageChange("en")}
+          className="language-flag"
+        />
+        <img
+          src={spainFlag}
+          alt="Español"
+          width="30"
+          height="20"
+          onClick={() => handleLanguageChange("es")}
+          className="language-flag"
+        />
+      </div>
     </Navbar>
   );
 };

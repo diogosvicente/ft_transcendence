@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 from dotenv import load_dotenv
 from datetime import timedelta
+from django.utils.translation import gettext_lazy as _
 
 import os
 
@@ -71,13 +72,13 @@ SIMPLE_JWT = {
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',  # Adicione isso antes de CommonMiddleware
+    'corsheaders.middleware.CorsMiddleware',  # Antes do CommonMiddleware
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.locale.LocaleMiddleware',  # Precisa estar aqui
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'axes.middleware.AxesMiddleware'
 ]
 
 ROOT_URLCONF = 'setup.urls'
@@ -143,6 +144,7 @@ LANGUAGE_CODE = 'pt-br'
 
 TIME_ZONE = 'America/Sao_Paulo'
 
+# Ativar internacionalização
 USE_I18N = True
 
 USE_TZ = True
@@ -197,3 +199,15 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')  # Defina no .env
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  # Defina no .env
+
+# Definir idiomas suportados
+LANGUAGES = [
+    ('pt', _('Portuguese')),
+    ('en', _('English')),
+    ('es', _('Spanish')),
+]
+
+# Caminho para os arquivos de tradução
+LOCALE_PATHS = [
+    os.path.join(BASE_DIR, 'locale'),
+]
