@@ -1,0 +1,41 @@
+{
+  "app_title": "Juego Pong",
+  "email_label": "Correo electrónico",
+  "email_placeholder": "Ingrese su correo electrónico",
+  "password_label": "Contraseña",
+  "password_placeholder": "Ingrese su contraseña",
+  "2fa_code_label": "Código de Autenticación de Dos Factores",
+  "code_2fa_placeholder": "Ingrese el código enviado a su correo",
+  "login": "Iniciar sesión",
+  "register": "Registrar",
+  "validate_code": "Validar Código",
+  "password_requirements": {
+    "minLength": "Debe tener al menos 12 caracteres",
+    "uppercase": "Debe incluir al menos una letra mayúscula",
+    "lowercase": "Debe incluir al menos una letra minúscula",
+    "number": "Debe incluir al menos un número",
+    "specialChar": "Debe incluir al menos un carácter especial (!@#$%^&*)"
+  },
+  "success_register": "¡Usuario registrado con éxito!",
+  "success_login": "¡Inicio de sesión exitoso!",
+  "success_2fa": "¡Código 2FA validado con éxito!",
+  "2fa_message": "Código 2FA enviado al correo. Ingrese el código para continuar.",
+  "error_invalid_credentials": "Credenciales inválidas.",
+  "error_connection": "Error al conectar con el servidor.",
+  "required_field": "Este campo es obligatorio",
+  "avatar_label": "Avatar (opcional)",
+  "avatar_info": "El archivo debe estar en formato JPG o PNG y tener un tamaño máximo de 1 MB.",
+  "error_avatar_size": "El archivo debe ser menor de 1 MB.",
+  "error_invalid_email": "Por favor, ingrese una dirección de correo electrónico válida.",
+  "error_password_requirements": "Por favor, cumpla con todos los requisitos de contraseña antes de continuar.",
+  "error_unknown": "Ocurrió un error desconocido.",
+  "navbar": {
+    "app_title": "Juego Pong",
+    "chat": "Chat",
+    "tournaments": "Torneos",
+    "profile": "Perfil",
+    "history": "Historial",
+    "friends": "Amigos",
+    "logout": "Cerrar sesión"
+  }
+}
