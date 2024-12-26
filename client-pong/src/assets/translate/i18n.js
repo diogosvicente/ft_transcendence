@@ -9,7 +9,7 @@ i18n
   .init({
     fallbackLng: "pt_BR", // Idioma padrão (fallback)
     lng: "pt_BR", // Idioma inicial (pode ser alterado)
-    debug: true, // Habilitar para logs durante o desenvolvimento
+    // debug: true, // Habilitar para logs durante o desenvolvimento
     interpolation: {
       escapeValue: false, // React já trata os escapes
     },

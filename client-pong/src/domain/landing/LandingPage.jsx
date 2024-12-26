@@ -301,7 +301,7 @@ const LoginAndRegisterForm = () => {
             }
           >
             <Form noValidate validated={validated}>
-              <Form.Group className="mb-3" controlId="formBasicEmail">
+              <Form.Group className="mb-3" controlId={`formBasicEmail-${activeTab}`}>
                 <Form.Label>{t("email_label")}</Form.Label>
                 <Form.Control
                   required
@@ -318,7 +318,7 @@ const LoginAndRegisterForm = () => {
 
               <Form.Group
                 className="mb-3 position-relative"
-                controlId="formBasicPassword"
+                controlId={`formBasicPassword-${activeTab}`}
               >
                 <Form.Label>{t("password_label")}</Form.Label>
                 <div className="d-flex">
@@ -346,7 +346,7 @@ const LoginAndRegisterForm = () => {
               </Form.Group>
 
               {is2FARequired && (
-                <Form.Group className="mb-3" controlId="form2FACode">
+                <Form.Group className="mb-3" controlId={`form2FACode-${activeTab}`}>
                   <Form.Label>{t("2fa_code_label")}</Form.Label>
                   <Form.Control
                     required
@@ -395,6 +395,7 @@ const LoginAndRegisterForm = () => {
                 )}
               </Stack>
             </Form>
+
           </Tab>
 
           <Tab
