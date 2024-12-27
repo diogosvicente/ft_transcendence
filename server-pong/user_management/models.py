@@ -3,6 +3,7 @@ from django.db import models
 import os
 from datetime import datetime
 from django.utils.translation import gettext_lazy as _  # Importando gettext_lazy
+from django.conf import settings
 
 def avatar_upload_path(instance, filename):
     name, extension = os.path.splitext(filename)
@@ -47,3 +48,16 @@ class User(AbstractBaseUser):
 
     def __str__(self):
         return self.email
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='user_management_profile'
+    )
+    wins = models.IntegerField(default=0)
+    losses = models.IntegerField(default=0)
+    online_status = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.user.email} - Wins: {self.wins}, Losses: {self.losses}"

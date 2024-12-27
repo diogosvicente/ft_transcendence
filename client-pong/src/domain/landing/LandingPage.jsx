@@ -1,18 +1,36 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef  } from "react";
 import { Button, Stack, Form, Container, Alert, Tabs, Tab } from "react-bootstrap";
 import LoadingModal from "./LoadingModal";
 import { useNavigate } from "react-router-dom";
+
+// Translate
 import { useTranslation } from "react-i18next";
+
+// BaseURL
 import API_BASE_URL from "../../assets/config/config.js";
+
+// CSS
+import "../../assets/styles/landingPage.css";
+
+// Flags
 import brazilFlag from "../../assets/icons/brazil-flag-round-circle-icon.svg";
 import spainFlag from "../../assets/icons/spain-country-flag-round-icon.svg";
 import ukFlag from "../../assets/icons/uk-flag-round-circle-icon.svg";
-import "../../assets/styles/landingPage.css";
 
-// ícones
+// Icons
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEye, faEyeSlash, faSignInAlt, faUserPlus, faKey } from "@fortawesome/free-solid-svg-icons";
-import { faTableTennis } from "@fortawesome/free-solid-svg-icons";
+import { 
+  faEye, 
+  faEyeSlash, 
+  faSignInAlt, 
+  faUserPlus, 
+  faKey, 
+  faTableTennis, 
+  faGamepad, 
+  faFile, 
+  faFileUpload, 
+  faTimes 
+} from "@fortawesome/free-solid-svg-icons";
 
 const LoginAndRegisterForm = () => {
   const { t, i18n } = useTranslation();
@@ -37,6 +55,30 @@ const LoginAndRegisterForm = () => {
   const [activeTab, setActiveTab] = useState("login");
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const fileInputRef = useRef(null); // Referência para o input do arquivo
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file && file.size > 1024 * 1024) {
+      setErrorMessage(t("error_avatar_size"));
+      setFormData({ ...formData, avatar: null });
+    } else {
+      setErrorMessage("");
+      setFormData({ ...formData, avatar: file });
+    }
+  };
+  
+  const handleFileRemove = () => {
+    setFormData({ ...formData, avatar: null });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""; // Redefine o valor do input
+    }
+  };
+
+  // Função para redirecionar para o modo de partida casual local
+  const handleLocalMatch = () => {
+    navigate("/local-match");
+  };
 
   useEffect(() => {
     const accessToken = localStorage.getItem("access");
@@ -139,13 +181,13 @@ const LoginAndRegisterForm = () => {
     // Validação de e-mail
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      setErrorMessage("Por favor, insira um e-mail válido.");
+      setErrorMessage(t("error_valid_email"));
       return;
     }
 
     // Validação de senha forte
     if (!isPasswordValid()) {
-      setErrorMessage("Por favor, preencha os requisitos de senha antes de continuar.");
+      setErrorMessage(t("error_password_requirements"));
       return;
     }
 
@@ -170,13 +212,13 @@ const LoginAndRegisterForm = () => {
       const data = await response.json();
 
       if (response.ok) {
-        setSuccessMessage("Usuário cadastrado com sucesso!");
+        setSuccessMessage(t("success_user_registered"));
         setActiveTab("login");
       } else {
-        setErrorMessage(data.email ? data.email[0] : "Erro desconhecido.");
+        setErrorMessage(data.email ? data.email[0] : t("error_unknown"));
       }
     } catch (error) {
-      setErrorMessage("Erro ao conectar ao servidor.");
+      setErrorMessage(t("error_connection"));
     } finally {
       handleClose();
     }
@@ -242,6 +284,13 @@ const LoginAndRegisterForm = () => {
 
   return (
     <div className="vh-100 d-flex flex-column justify-content-center align-items-center">
+      {/* Botão para o modo casual local */}
+      <div className="mb-4">
+        <Button variant="success" onClick={handleLocalMatch}>
+          <FontAwesomeIcon icon={faGamepad} className="me-2" />
+          {t("start_match")}
+        </Button>
+      </div>
       {/* Language Selector */}
       <div className="language-selector position-absolute top-0 end-0 mt-3 me-3">
         <div className="d-flex gap-3">
@@ -440,17 +489,39 @@ const LoginAndRegisterForm = () => {
               </Form.Group>
 
               <Form.Group className="mb-3" controlId="formAvatar">
-                <Form.Label>{t("avatar_label")}</Form.Label>
-                <Form.Control
-                  type="file"
-                  name="avatar"
-                  accept=".jpg,.png"
-                  onChange={handleChange}
-                />
-                <Form.Text className="text-muted">
-                  {t("avatar_info")}
-                </Form.Text>
-              </Form.Group>
+  <Form.Label>{t("avatar_label")}</Form.Label>
+  <div className="d-flex align-items-center">
+    <label
+      htmlFor="fileInput"
+      className="btn btn-outline-secondary w-100"
+      style={{ textAlign: "left" }}
+    >
+      <FontAwesomeIcon icon={formData.avatar ? faFile : faFileUpload} className="me-2" />
+      {formData.avatar ? formData.avatar.name : t("choose_file")}
+    </label>
+    <input
+      id="fileInput"
+      ref={fileInputRef} // Define a referência
+      type="file"
+      name="avatar"
+      accept=".jpg,.png"
+      onChange={handleFileChange} // Usa a nova função
+      style={{ display: "none" }} // Esconde o input padrão
+    />
+    {formData.avatar && (
+      <Button
+        variant="outline-danger"
+        className="ms-2"
+        onClick={handleFileRemove} // Usa a nova função
+      >
+        <FontAwesomeIcon icon={faTimes} />
+      </Button>
+    )}
+  </div>
+  <Form.Text className="text-muted">{t("avatar_info")}</Form.Text>
+</Form.Group>
+
+
 
               {successMessage && (
                 <Alert variant="success">{successMessage}</Alert>

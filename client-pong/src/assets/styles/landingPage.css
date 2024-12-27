@@ -34,3 +34,15 @@
     font-weight: bold;
   }
   
+  .custom-file-upload {
+    display: flex;
+    align-items: center;
+  }
+  .custom-file-upload label {
+    cursor: pointer;
+  }
+  .custom-file-upload span {
+    font-size: 0.9rem;
+    color: #555;
+  }
+  

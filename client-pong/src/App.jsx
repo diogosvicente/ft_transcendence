@@ -9,6 +9,7 @@ import Tournaments from "./domain/tournaments/Tournaments.jsx";
 import Profile from "./domain/profile/Profile.jsx";
 import History from "./domain/history/History.jsx";
 import Friends from "./domain/friends/Friends.jsx";
+import { GameCanvas } from "./domain/game/GameCanvas"; // Importa o componente do jogo
 
 function PrivateRoute({ children }) {
   const isAuthenticated = !!localStorage.getItem("access");
@@ -21,6 +22,7 @@ function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/chat" element={<JoinChatRoomForm />} />
       <Route path="/chat/:roomName" element={<Chat />} />
+      <Route path="/local-match" element={<GameCanvas />} /> {/* Adiciona a rota para Local Match */}
       <Route
         path="/home"
         element={

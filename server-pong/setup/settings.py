@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'chat',
     'rest_framework',
     'user_management',
+    'game',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
