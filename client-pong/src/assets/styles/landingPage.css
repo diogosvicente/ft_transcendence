@@ -45,4 +45,34 @@
     font-size: 0.9rem;
     color: #555;
   }
+
+  .password-input-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem; /* Espaçamento entre o input e o botão */
+  }
+  
+  .password-eye-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: calc(2.25rem + 2px); /* Mesma altura do input */
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 0.375rem;
+    background-color: #fff;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  .password-eye-button:hover {
+    background-color: #f8f9fa;
+  }
+  
+  /* Div separada para o feedback */
+  .password-feedback {
+    margin-top: 0.5rem; /* Espaçamento em relação ao input */
+    color: #dc3545; /* Vermelho */
+    font-size: 0.875rem; /* Tamanho do texto */
+  }
   

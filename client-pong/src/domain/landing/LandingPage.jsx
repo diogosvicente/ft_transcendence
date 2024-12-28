@@ -133,9 +133,13 @@ const LoginAndRegisterForm = () => {
   const handleLogin = async (event) => {
     event.preventDefault();
     setValidated(true);
-    setErrorMessage("");
-    setSuccessMessage("");
 
+    if (!formData.email.trim() || !formData.password.trim()) {
+        return;
+    }
+
+    setErrorMessage(""); // Limpa mensagens de erro
+    setSuccessMessage("");
     handleShow();
 
     try {
@@ -178,6 +182,7 @@ const LoginAndRegisterForm = () => {
     setValidated(true);
     setErrorMessage("");
     setSuccessMessage("");
+    
   
     // Validação de e-mail
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -217,8 +222,6 @@ const LoginAndRegisterForm = () => {
       );
   
       const data = await response.json();
-  
-      console.log(data);
   
       if (response.ok) {
         setSuccessMessage(t("success_user_registered"));
@@ -381,12 +384,9 @@ const LoginAndRegisterForm = () => {
                 </Form.Control.Feedback>
               </Form.Group>
 
-              <Form.Group
-                className="mb-3 position-relative"
-                controlId={`formBasicPassword-${activeTab}`}
-              >
+              <Form.Group className="mb-3" controlId={`formBasicPassword-${activeTab}`}>
                 <Form.Label>{t("password_label")}</Form.Label>
-                <div className="d-flex">
+                <div className="password-input-container">
                   <Form.Control
                     required
                     type={showPassword ? "text" : "password"}
@@ -394,20 +394,20 @@ const LoginAndRegisterForm = () => {
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
+                    isInvalid={validated && !formData.password.trim()} // Validação do campo
                   />
                   <Button
                     variant="outline-secondary"
-                    className="ms-2"
+                    className="password-eye-button"
                     onClick={handlePasswordToggle}
                   >
-                    <FontAwesomeIcon
-                      icon={showPassword ? faEyeSlash : faEye}
-                    />
+                    <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} />
                   </Button>
                 </div>
-                <Form.Control.Feedback type="invalid">
-                  {t("required_field")}
-                </Form.Control.Feedback>
+                {/* Feedback separado em uma div própria */}
+                {validated && !formData.password.trim() && (
+                  <div className="password-feedback">{t("required_field")}</div>
+                )}
               </Form.Group>
 
               {is2FARequired && (
