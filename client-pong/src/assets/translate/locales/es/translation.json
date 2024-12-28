@@ -4,6 +4,8 @@
   "back_to_home": "Volver a la página de inicio",
   "email_label": "Correo electrónico",
   "email_placeholder": "Ingrese su correo electrónico",
+  "display_name_label": "Nombre para Mostrar",
+  "display_name_placeholder": "Ingrese su nombre para mostrar",
   "password_label": "Contraseña",
   "password_placeholder": "Ingrese su contraseña",
   "error_valid_email": "Por favor introduce un correo electrónico válido",
@@ -34,6 +36,9 @@
   "error_invalid_email": "Por favor, ingrese una dirección de correo electrónico válida.",
   "error_password_requirements": "Por favor, cumpla con todos los requisitos de contraseña antes de continuar.",
   "error_unknown": "Ocurrió un error desconocido.",
+  "error_display_name_already_exists": "Este nombre de usuario ya está en uso.",
+  "error_valid_display_name": "Por favor, ingrese un nombre de usuario válido.",
+  "error_email_already_exists": "Ya existe un usuario con este correo electrónico.",
   "navbar": {
     "app_title": "Juego Pong",
     "chat": "Chat",

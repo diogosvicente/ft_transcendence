@@ -1,14 +1,25 @@
+# Imports padrão do Django
 from django.conf import settings
+from django.utils.translation import gettext_lazy as _
+
+# Imports de modelos e validações
+from django.contrib.auth.password_validation import get_password_validators
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
+from rest_framework_simplejwt.tokens import RefreshToken
+
+# Imports do Django REST Framework
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
-from rest_framework_simplejwt.tokens import RefreshToken
-from django.core.cache import cache
-from .serializers import UserSerializer, LoginSerializer
+
+# Imports do app local
 from .models import User
+from .serializers import UserSerializer, LoginSerializer
 from .utils import generate_2fa_code, send_2fa_code
-from django.contrib.auth.password_validation import get_password_validators
-from django.utils.translation import gettext_lazy as _  # Importando gettext_lazy para tradução
+
+# Outros
+from django.core.cache import cache
 
 class UserRegistrationView(APIView):
     """
@@ -134,3 +145,43 @@ class PasswordRequirementsView(APIView):
                 requirements.append(validator.get_help_text())
 
         return Response({"requirements": requirements}, status=status.HTTP_200_OK)
+
+
+class UserListView(APIView):
+    """
+    View para listar todos os usuários, exceto o autenticado.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        current_user = request.user
+        users = User.objects.exclude(id=current_user.id).values('id', 'email', 'avatar')
+        return Response(users, status=status.HTTP_200_OK)
+
+class ExcludeSelfUserListView(APIView):
+    """
+    View para listar todos os usuários, exceto o usuário autenticado.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        current_user = request.user
+        users = User.objects.exclude(id=current_user.id).values('id', 'email', 'display_name')
+        return Response({"users": list(users)}, status=200)
+
+class GetTokenView(APIView):
+    """
+    Retorna o access token atual do usuário logado.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        try:
+            # Busca o token mais recente do usuário logado
+            token = OutstandingToken.objects.filter(user=user).last()
+            if token:
+                return Response({"token": token.token}, status=200)
+            return Response({"error": "Token não encontrado."}, status=404)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)

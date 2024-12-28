@@ -4,6 +4,8 @@
   "back_to_home": "Return to Home Page",
   "email_label": "Email",
   "email_placeholder": "Enter your email",
+  "display_name_label": "Display Name",
+  "display_name_placeholder": "Enter your display name",
   "password_label": "Password",
   "password_placeholder": "Enter your password",
   "error_valid_email": "Please enter a valid email",
@@ -38,6 +40,9 @@
   "error_invalid_email": "Please enter a valid email address.",
   "error_password_requirements": "Please fulfill all password requirements before proceeding.",
   "error_unknown": "An unknown error occurred.",
+  "error_display_name_already_exists": "This display name is already in use.",
+  "error_valid_display_name": "Please enter a valid display name.",
+  "error_email_already_exists": "A user with this email already exists.",
   "navbar": {
     "app_title": "Pong Game",
     "chat": "Chat",

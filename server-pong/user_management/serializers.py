@@ -11,7 +11,7 @@ class UserSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = User
-        fields = ['email', 'password', 'avatar']
+        fields = ['email', 'password', 'avatar', 'display_name']  # Inclui o display_name
 
     def create(self, validated_data):
         # Valida a senha usando os validadores do Django
@@ -28,6 +28,12 @@ class UserSerializer(serializers.ModelSerializer):
         # Verifica se o email já existe no banco de dados
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError(_("O e-mail já está cadastrado."))
+        return value
+
+    def validate_display_name(self, value):
+        # Verifica se o display_name já existe no banco de dados
+        if User.objects.filter(display_name=value).exists():
+            raise serializers.ValidationError(_("O nome de exibição já está em uso."))
         return value
 
 

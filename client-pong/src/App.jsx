@@ -1,8 +1,7 @@
 import React from "react";
 import { Route, Routes, Navigate } from "react-router-dom";
 import "./assets/translate/i18n.js"; // Importa a configuração do i18n
-import { JoinChatRoomForm } from "./domain/chat/components/JoinChatRoomForm.jsx";
-import Chat from "./domain/chat/containers/Chat.jsx";
+import Chat from "./domain/chat/Chat.jsx"; // Substituído para chamar o Chat
 import LandingPage from "./domain/landing/LandingPage.jsx";
 import Home from "./domain/home/Home.jsx";
 import Tournaments from "./domain/tournaments/Tournaments.jsx";
@@ -20,8 +19,14 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
-      <Route path="/chat" element={<JoinChatRoomForm />} />
-      <Route path="/chat/:roomName" element={<Chat />} />
+      <Route
+        path="/chat"
+        element={
+          <PrivateRoute>
+            <Chat /> {/* Agora o componente Chat será renderizado */}
+          </PrivateRoute>
+        }
+      />
       <Route path="/local-match" element={<GameCanvas />} /> {/* Adiciona a rota para Local Match */}
       <Route
         path="/home"

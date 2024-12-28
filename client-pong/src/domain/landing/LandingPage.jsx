@@ -41,6 +41,7 @@ const LoginAndRegisterForm = () => {
     password: "",
     code: "",
     avatar: null,
+    display_name: "",
   });
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -177,7 +178,7 @@ const LoginAndRegisterForm = () => {
     setValidated(true);
     setErrorMessage("");
     setSuccessMessage("");
-
+  
     // Validação de e-mail
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
@@ -185,21 +186,27 @@ const LoginAndRegisterForm = () => {
       return;
     }
 
+    if (!formData.display_name.trim()) {
+      setErrorMessage(t("error_valid_display_name"));
+      return;
+    }
+  
     // Validação de senha forte
     if (!isPasswordValid()) {
       setErrorMessage(t("error_password_requirements"));
       return;
     }
-
+  
     handleShow();
-
+  
     const formDataToSend = new FormData();
     formDataToSend.append("email", formData.email);
     formDataToSend.append("password", formData.password);
+    formDataToSend.append("display_name", formData.display_name);
     if (formData.avatar) {
       formDataToSend.append("avatar", formData.avatar);
     }
-
+  
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/user-management/register/`,
@@ -208,14 +215,22 @@ const LoginAndRegisterForm = () => {
           body: formDataToSend,
         }
       );
-
+  
       const data = await response.json();
-
+  
+      console.log(data);
+  
       if (response.ok) {
         setSuccessMessage(t("success_user_registered"));
         setActiveTab("login");
       } else {
-        setErrorMessage(data.email ? data.email[0] : t("error_unknown"));
+        if (data.email) {
+          setErrorMessage(t("error_email_already_exists"));
+        } else if (data.display_name) {
+          setErrorMessage(t("error_display_name_already_exists"));
+        } else {
+          setErrorMessage(t("error_unknown"));
+        }
       }
     } catch (error) {
       setErrorMessage(t("error_connection"));
@@ -223,6 +238,7 @@ const LoginAndRegisterForm = () => {
       handleClose();
     }
   };
+  
 
   const handleValidate2FA = async (event) => {
     event.preventDefault();
@@ -472,56 +488,79 @@ const LoginAndRegisterForm = () => {
                 </Form.Control.Feedback>
               </Form.Group>
 
-              <Form.Group className="mb-3" controlId="formBasicPassword">
-                <Form.Label>{t("password_label")}</Form.Label>
+              <Form.Group className="mb-3" controlId="formDisplayName">
+                <Form.Label>{t("display_name_label")}</Form.Label>
                 <Form.Control
                   required
-                  type="password"
-                  placeholder={t("password_placeholder")}
-                  name="password"
-                  value={formData.password}
+                  type="text"
+                  placeholder={t("display_name_placeholder")}
+                  name="display_name"
+                  value={formData.display_name || ""}
                   onChange={handleChange}
                 />
                 <Form.Control.Feedback type="invalid">
                   {t("required_field")}
                 </Form.Control.Feedback>
-                {renderPasswordRequirements()}
+              </Form.Group>
+
+
+              <Form.Group className="mb-3" controlId="formBasicPassword">
+                <Form.Label>{t("password_label")}</Form.Label>
+                <div className="d-flex">
+                  <Form.Control
+                    required
+                    type={showPassword ? "text" : "password"}
+                    placeholder={t("password_placeholder")}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                  />
+                  <Button
+                    variant="outline-secondary"
+                    className="ms-2"
+                    onClick={handlePasswordToggle}
+                  >
+                    <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} />
+                  </Button>
+                </div>
+                <Form.Control.Feedback type="invalid">
+                  {t("required_field")}
+                </Form.Control.Feedback>
+                {renderPasswordRequirements()} {/* Adiciona novamente os requisitos de senha */}
               </Form.Group>
 
               <Form.Group className="mb-3" controlId="formAvatar">
-  <Form.Label>{t("avatar_label")}</Form.Label>
-  <div className="d-flex align-items-center">
-    <label
-      htmlFor="fileInput"
-      className="btn btn-outline-secondary w-100"
-      style={{ textAlign: "left" }}
-    >
-      <FontAwesomeIcon icon={formData.avatar ? faFile : faFileUpload} className="me-2" />
-      {formData.avatar ? formData.avatar.name : t("choose_file")}
-    </label>
-    <input
-      id="fileInput"
-      ref={fileInputRef} // Define a referência
-      type="file"
-      name="avatar"
-      accept=".jpg,.png"
-      onChange={handleFileChange} // Usa a nova função
-      style={{ display: "none" }} // Esconde o input padrão
-    />
-    {formData.avatar && (
-      <Button
-        variant="outline-danger"
-        className="ms-2"
-        onClick={handleFileRemove} // Usa a nova função
-      >
-        <FontAwesomeIcon icon={faTimes} />
-      </Button>
-    )}
-  </div>
-  <Form.Text className="text-muted">{t("avatar_info")}</Form.Text>
-</Form.Group>
-
-
+                <Form.Label>{t("avatar_label")}</Form.Label>
+                <div className="d-flex align-items-center">
+                  <label
+                    htmlFor="fileInput"
+                    className="btn btn-outline-secondary w-100"
+                    style={{ textAlign: "left" }}
+                  >
+                    <FontAwesomeIcon icon={formData.avatar ? faFile : faFileUpload} className="me-2" />
+                    {formData.avatar ? formData.avatar.name : t("choose_file")}
+                  </label>
+                  <input
+                    id="fileInput"
+                    ref={fileInputRef} // Define a referência
+                    type="file"
+                    name="avatar"
+                    accept=".jpg,.png"
+                    onChange={handleFileChange} // Usa a nova função
+                    style={{ display: "none" }} // Esconde o input padrão
+                  />
+                  {formData.avatar && (
+                    <Button
+                      variant="outline-danger"
+                      className="ms-2"
+                      onClick={handleFileRemove} // Usa a nova função
+                    >
+                      <FontAwesomeIcon icon={faTimes} />
+                    </Button>
+                  )}
+                </div>
+                <Form.Text className="text-muted">{t("avatar_info")}</Form.Text>
+              </Form.Group>
 
               {successMessage && (
                 <Alert variant="success">{successMessage}</Alert>
