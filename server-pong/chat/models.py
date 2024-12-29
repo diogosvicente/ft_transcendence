@@ -1,7 +1,6 @@
 from django.db import models
 from django.conf import settings
 
-
 class Friend(models.Model):
     """
     Representa uma relação de amizade entre dois usuários.

@@ -5,15 +5,16 @@ import "../../assets/styles/chat.css";
 import API_BASE_URL, { API_BASE_URL_NO_LANGUAGE } from "../../assets/config/config.js";
 
 const Chat = () => {
-  const [friends, setFriends] = useState([]); // Estado para amigos
-  const [nonFriends, setNonFriends] = useState([]); // Estado para não amigos
-  const [messages, setMessages] = useState([]); // Estado para as mensagens do chat
-  const [currentMessage, setCurrentMessage] = useState(""); // Estado para a mensagem atual
-  const [error, setError] = useState(null); // Estado para erros
+  const [friends, setFriends] = useState([]);
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [blockedUsers, setBlockedUsers] = useState([]);
+  const [nonFriends, setNonFriends] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [currentMessage, setCurrentMessage] = useState("");
+  const [error, setError] = useState(null);
 
-  const defaultAvatar = `${API_BASE_URL_NO_LANGUAGE}/media/avatars/default.png`; // Avatar padrão
+  const defaultAvatar = `${API_BASE_URL_NO_LANGUAGE}/media/avatars/default.png`;
 
-  // Função utilitária para obter o avatar
   const getAvatar = (avatarPath) => {
     if (!avatarPath) return defaultAvatar;
     if (!avatarPath.startsWith("/media/")) {
@@ -31,21 +32,35 @@ const Chat = () => {
       }
 
       try {
-        // Busca amigos
         const friendsResponse = await axios.get(`${API_BASE_URL}/api/chat/friends/`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
-
-        const updatedFriends = friendsResponse.data.friends.map((friend) => {
-          const avatar = getAvatar(friend.avatar);
-          return {
+        setFriends(
+          (friendsResponse.data.friends || []).map((friend) => ({
             ...friend,
-            avatar,
-          };
+            avatar: getAvatar(friend.avatar),
+          }))
+        );
+
+        const pendingResponse = await axios.get(`${API_BASE_URL}/api/chat/pending-requests/`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
-        setFriends(updatedFriends);
+        setPendingRequests(
+          (pendingResponse.data.pending_requests || []).map((request) => ({
+            ...request,
+            avatar: getAvatar(request.avatar),
+          }))
+        );
+
+        const blockedResponse = await axios.get(`${API_BASE_URL}/api/chat/blocked-users/`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        setBlockedUsers(
+          (blockedResponse.data.blocked_users || []).map((user) => ({
+            ...user,
+            avatar: getAvatar(user.avatar),
+          }))
+        );
 
         // Busca não amigos
         const nonFriendsResponse = await axios.get(
@@ -77,7 +92,70 @@ const Chat = () => {
   const sendMessage = () => {
     if (currentMessage.trim()) {
       setMessages([...messages, { text: currentMessage, sender: "Você" }]);
-      setCurrentMessage(""); // Limpa o campo de mensagem
+      setCurrentMessage("");
+    }
+  };
+
+  const addFriend = async (userId) => {
+    const accessToken = localStorage.getItem("access");
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/api/chat/add-friend/`,
+        { friend_id: userId },
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+      alert(response.data.message);
+    } catch (err) {
+      alert(err.response?.data?.error || "Erro ao adicionar amigo.");
+      console.error(err);
+    }
+  };
+
+  const blockUser = async (userId) => {
+    const accessToken = localStorage.getItem("access");
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/api/chat/block-user/`,
+        { user_id: userId },
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+      alert("Usuário bloqueado com sucesso.");
+    } catch (err) {
+      console.error("Erro ao bloquear usuário:", err);
+      alert(err.response?.data?.error || "Erro ao bloquear usuário.");
+    }
+  };
+
+  const acceptFriendRequest = async (requestId) => {
+    const accessToken = localStorage.getItem("access");
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/api/chat/accept-friend/`,
+        { request_id: requestId }, // Envia o ID da tabela `chat_friend`
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+      alert("Solicitação de amizade aceita com sucesso.");
+      setPendingRequests((prev) => prev.filter((req) => req.id !== requestId));
+      setFriends((prev) => [...prev, ...pendingRequests.filter((req) => req.id === requestId)]);
+    } catch (err) {
+      console.error("Erro ao aceitar solicitação:", err);
+      alert(err.response?.data?.error || "Erro ao aceitar solicitação.");
+    }
+  };
+
+  const rejectFriendRequest = async (requestId) => {
+    const accessToken = localStorage.getItem("access");
+    try {
+      await axios.post(
+        `${API_BASE_URL}/api/chat/reject-friend/`,
+        { request_id: requestId }, // Envia o ID da tabela `chat_friend`
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+      alert("Solicitação de amizade rejeitada com sucesso.");
+      setPendingRequests((prev) => prev.filter((req) => req.id !== requestId));
+    } catch (err) {
+      console.error("Erro ao rejeitar solicitação:", err);
+      alert(err.response?.data?.error || "Erro ao rejeitar solicitação.");
     }
   };
 
@@ -85,44 +163,83 @@ const Chat = () => {
     <>
       <Navbar />
       <div className="chat-container">
-        {/* Lista de Amigos e Não Amigos */}
         <div className="players-list">
           <h3>Lista de Jogadores</h3>
           {error && <p className="text-danger">{error}</p>}
-          {friends.length > 0 || nonFriends.length > 0 ? (
-            <div>
-              {/* Seção de Amigos */}
-              <div className="friends-section">
-                <h4>Amigos</h4>
-                {friends.length > 0 ? (
-                  <ul>
-                    {friends.map((friend) => (
-                      <li key={friend.id} className="player-item">
-                        <img
-                          src={friend.avatar} // Exibe o avatar do amigo
-                          alt={friend.display_name}
-                          className="player-avatar"
-                        />
-                        <div>
-                          <p className="player-name">{friend.display_name}</p>
-                          <p className="player-status">
-                            {friend.is_online ? "Online" : "Offline"}
-                          </p>
-                        </div>
-                        <div className="player-actions">
-                          <button title="Ver Perfil">👤</button>
-                          <button title="Desafiar">🎮</button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p>Você ainda não tem amigos adicionados.</p>
-                )}
-              </div>
 
-              {/* Seção de Não Amigos */}
-              <div className="non-friends-section">
+          {/* Amigos */}
+          <div className="friends-section">
+            <h4>Amigos</h4>
+            {friends.length > 0 ? (
+              <ul>
+                {friends.map((friend) => (
+                  <li key={friend.id} className="player-item">
+                    <img src={friend.avatar} alt={friend.display_name} className="player-avatar" />
+                    <div className="player-info">
+                      <p className="player-name">{friend.display_name}</p>
+                      <p className="player-status">{friend.is_online ? "Online" : "Offline"}</p>
+                    </div>
+                    <div className="player-actions">
+                      <button title="Ver Perfil">👤</button>
+                      <button title="Desafiar">🎮</button>
+                      <button title="Bloquear" onClick={() => blockUser(friend.id)}>🚫</button>
+                      <button title="Remover">❌</button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>Sem amigos adicionados.</p>
+            )}
+          </div>
+
+          {/* Solicitações Pendentes */}
+          <div className="pending-section">
+            <h4>Solicitações Pendentes</h4>
+            {pendingRequests.length > 0 ? (
+              <ul>
+                {pendingRequests.map((request) => (
+                  <li key={request.id} className="player-item">
+                    <img src={request.avatar} alt={request.display_name} className="player-avatar" />
+                    <div className="player-info">
+                      <p className="player-name">{request.display_name}</p>
+                      <p className="player-status">Pendente</p>
+                    </div>
+                    <div className="player-actions">
+                      <button title="Aceitar" onClick={() => acceptFriendRequest(request.id)}>✔</button>
+                      <button title="Rejeitar" onClick={() => rejectFriendRequest(request.id)}>❌</button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>Sem solicitações pendentes.</p>
+            )}
+          </div>
+
+          {/* Usuários Bloqueados */}
+          <div className="blocked-section">
+            <h4>Usuários Bloqueados</h4>
+            {blockedUsers.length > 0 ? (
+              <ul>
+                {blockedUsers.map((user) => (
+                  <li key={user.id} className="player-item">
+                    <img src={user.avatar} alt={user.display_name} className="player-avatar" />
+                    <div className="player-info">
+                      <p className="player-name">{user.display_name}</p>
+                      <p className="player-status">Bloqueado</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>Nenhum usuário bloqueado.</p>
+            )}
+          </div>
+
+          {/* Não Amigos */}
+          {/* Seção de Não Amigos */}
+          <div className="non-friends-section">
                 <h4>Não Amigos</h4>
                 {nonFriends.length > 0 ? (
                   <ul>
@@ -150,10 +267,6 @@ const Chat = () => {
                   <p>Não há usuários disponíveis para adicionar.</p>
                 )}
               </div>
-            </div>
-          ) : (
-            <p>Não há dados para exibir.</p>
-          )}
         </div>
 
         {/* Chat Global */}
@@ -168,7 +281,7 @@ const Chat = () => {
           </div>
           <div className="chat-input">
             <textarea
-              placeholder="Digite aqui sua mensagem"
+              placeholder="Digite sua mensagem"
               value={currentMessage}
               onChange={(e) => setCurrentMessage(e.target.value)}
             ></textarea>
