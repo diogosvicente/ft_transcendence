@@ -3,10 +3,12 @@ from django.db import models
 import os
 from datetime import datetime
 from django.utils.translation import gettext_lazy as _
-from django.conf import settings
 
 
 def avatar_upload_path(instance, filename):
+    """
+    Define o caminho de upload para avatares do usuário.
+    """
     name, extension = os.path.splitext(filename)
     name = name.replace(" ", "_")
     new_filename = f"{name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}{extension}"
@@ -35,15 +37,20 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser):
     """
-    Modelo de usuário personalizado.
+    Modelo de usuário unificado com informações de perfil.
     """
     email = models.EmailField(unique=True)
-    display_name = models.CharField(max_length=150, blank=False, null=False)
+    display_name = models.CharField(max_length=150, blank=False, null=True) #mude para False
     avatar = models.ImageField(upload_to=avatar_upload_path, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
     is_2fa_verified = models.BooleanField(default=False)
+    
+    # Campos de perfil
+    wins = models.IntegerField(default=0)  # Quantidade de vitórias
+    losses = models.IntegerField(default=0)  # Quantidade de derrotas
+    online_status = models.BooleanField(default=False)  # Status online
 
     objects = UserManager()
 
@@ -52,17 +59,3 @@ class User(AbstractBaseUser):
 
     def __str__(self):
         return self.display_name or self.email  # Prioriza display_name para exibição
-
-
-class UserProfile(models.Model):
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='user_management_profile'
-    )
-    wins = models.IntegerField(default=0)
-    losses = models.IntegerField(default=0)
-    online_status = models.BooleanField(default=False)
-
-    def __str__(self):
-        return f"{self.user.display_name or self.user.email} - Wins: {self.wins}, Losses: {self.losses}"

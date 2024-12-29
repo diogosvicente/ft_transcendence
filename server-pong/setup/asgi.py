@@ -24,7 +24,8 @@ from chat.routing import websocket_urlpatterns
 application = ProtocolTypeRouter(
     {
         "http": django_asgi_app,
-        # Remova temporariamente a validação de hosts e autenticação
-        "websocket": URLRouter(websocket_urlpatterns),
+        "websocket": AuthMiddlewareStack(
+            URLRouter(websocket_urlpatterns)
+        ),
     }
 )

@@ -17,6 +17,7 @@ from rest_framework import status
 from .models import User
 from .serializers import UserSerializer, LoginSerializer
 from .utils import generate_2fa_code, send_2fa_code
+from chat.models import Friend
 
 # Outros
 from django.core.cache import cache
@@ -131,44 +132,6 @@ class GetAvatarView(APIView):
         except User.DoesNotExist:
             return Response({"avatar": default_avatar_url}, status=status.HTTP_404_NOT_FOUND)
 
-
-class PasswordRequirementsView(APIView):
-    """
-    View para retornar os requisitos de senha do backend.
-    """
-    def get(self, request):
-        validators = get_password_validators(settings.AUTH_PASSWORD_VALIDATORS)
-        requirements = []
-
-        for validator in validators:
-            if hasattr(validator, 'get_help_text'):
-                requirements.append(validator.get_help_text())
-
-        return Response({"requirements": requirements}, status=status.HTTP_200_OK)
-
-
-class UserListView(APIView):
-    """
-    View para listar todos os usuários, exceto o autenticado.
-    """
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        current_user = request.user
-        users = User.objects.exclude(id=current_user.id).values('id', 'email', 'avatar')
-        return Response(users, status=status.HTTP_200_OK)
-
-class ExcludeSelfUserListView(APIView):
-    """
-    View para listar todos os usuários, exceto o usuário autenticado.
-    """
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        current_user = request.user
-        users = User.objects.exclude(id=current_user.id).values('id', 'email', 'display_name')
-        return Response({"users": list(users)}, status=200)
-
 class GetTokenView(APIView):
     """
     Retorna o access token atual do usuário logado.
@@ -183,5 +146,28 @@ class GetTokenView(APIView):
             if token:
                 return Response({"token": token.token}, status=200)
             return Response({"error": "Token não encontrado."}, status=404)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+class ExcludeSelfAndFriendsUserListView(APIView):
+    """
+    View para listar usuários, excluindo o usuário autenticado e seus amigos.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            # Usuário autenticado
+            current_user = request.user
+
+            # IDs dos amigos
+            friend_ids = Friend.objects.filter(user=current_user).values_list('friend_id', flat=True)
+
+            # Excluir o usuário atual e seus amigos
+            users = User.objects.exclude(id__in=friend_ids).exclude(id=current_user.id).values(
+                'id', 'email', 'display_name', 'avatar'
+            )
+
+            return Response({"users": list(users)}, status=200)
         except Exception as e:
             return Response({"error": str(e)}, status=500)
