@@ -212,7 +212,12 @@ const Chat = () => {
                       <p className="player-status">{friend.is_online ? "Online" : "Offline"}</p>
                     </div>
                     <div className="player-actions">
-                      <button title="Ver Perfil">👤</button>
+                      <button
+                        title="Ver Perfil"
+                        onClick={() => window.open(`/user-profile/${friend.id}`, "_blank")}
+                      >
+                        👤
+                      </button>
                       <button title="Desafiar">🎮</button>
                       <button title="Bloquear" onClick={() => blockUser(friend.user_id)}>🚫</button>
                       <button title="Excluir" onClick={() => removeFriend(friend.id)}>❌</button>
@@ -303,7 +308,12 @@ const Chat = () => {
                           </p>
                         </div>
                         <div className="player-actions">
-                          <button title="Ver Perfil">👤</button>
+                          <button
+                            title="Ver Perfil"
+                            onClick={() => window.open(`/user-profile/${user.id}`, "_blank")}
+                          >
+                            👤
+                          </button>
                           <button
                             title="Adicionar como amigo"
                             onClick={() => addFriend(user.id)} // Chama a função para adicionar amigo

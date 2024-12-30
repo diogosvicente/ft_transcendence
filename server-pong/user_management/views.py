@@ -21,6 +21,7 @@ from chat.models import Friend, BlockedUser
 
 # Outros
 from django.core.cache import cache
+from django.db.models import Q
 
 class UserRegistrationView(APIView):
     """
@@ -195,3 +196,33 @@ class ExcludeSelfAndFriendsUserListView(APIView):
             return Response({"users": list(users)}, status=200)
         except Exception as e:
             return Response({"error": str(e)}, status=500)
+
+class UserProfileView(APIView):
+    """
+    View para obter informações do perfil de um usuário.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, user_id):
+        try:
+            # Busca o usuário pelo ID
+            user = User.objects.get(id=user_id)
+
+            # Verifica se o usuário logado é amigo do usuário solicitado
+            is_friend = Friend.objects.filter(
+                Q(user=request.user, friend=user) | Q(user=user, friend=request.user),
+                status="accepted"
+            ).exists()
+
+            # Dados do perfil
+            data = {
+                "id": user.id,
+                "display_name": user.display_name,
+                "avatar": user.avatar.url if user.avatar else None,
+                "online_status": user.online_status,
+                "wins": user.wins,
+                "losses": user.losses
+            }
+            return Response(data, status=200)
+        except User.DoesNotExist:
+            return Response({"error": "Usuário não encontrado."}, status=404)

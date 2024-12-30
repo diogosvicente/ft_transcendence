@@ -9,6 +9,7 @@ import Profile from "./domain/profile/Profile.jsx";
 import History from "./domain/history/History.jsx";
 import Friends from "./domain/friends/Friends.jsx";
 import { GameCanvas } from "./domain/game/GameCanvas"; // Importa o componente do jogo
+import UserProfile from "./domain/userProfile/UserProfile.jsx"; // Importa o componente UserProfile
 
 function PrivateRoute({ children }) {
   const isAuthenticated = !!localStorage.getItem("access");
@@ -65,6 +66,14 @@ function App() {
         element={
           <PrivateRoute>
             <Friends />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/user-profile/:user_id"
+        element={
+          <PrivateRoute>
+            <UserProfile />
           </PrivateRoute>
         }
       />

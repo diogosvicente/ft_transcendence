@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (
-    UserRegistrationView, LoginView, LogoutView, GetAvatarView, Validate2FACodeView, ExcludeSelfAndFriendsUserListView, GetTokenView
+    UserRegistrationView, LoginView, LogoutView, GetAvatarView, Validate2FACodeView, ExcludeSelfAndFriendsUserListView, GetTokenView, UserProfileView
 )
 
 urlpatterns = [
@@ -11,6 +11,7 @@ urlpatterns = [
     path('2fa/validate/', Validate2FACodeView.as_view(), name='validate-2fa-code'),
     path('exclude-self/', ExcludeSelfAndFriendsUserListView.as_view(), name='exclude_self_and_friends'),
     path("get-token/", GetTokenView.as_view(), name="get-token"),
+    path("user-profile/<int:user_id>/", UserProfileView.as_view(), name="user-profile"),
 ]
 
 # URLs disponíveis:
@@ -19,4 +20,4 @@ urlpatterns = [
 # Logout: http://127.0.0.1:8000/api/user-management/logout/
 # Avatar: http://127.0.0.1:8000/api/user-management/avatar?email=usuario@example.com
 # Validação do 2FA: http://127.0.0.1:8000/api/user-management/2fa/validate/
-# Listar Não Amigos http://127.0.0.1:8000/api/user-management/users/exclude-self/
+# Listar Não Amigos: http://127.0.0.1:8000/api/user-management/users/exclude-self/
