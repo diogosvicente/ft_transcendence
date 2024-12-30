@@ -17,35 +17,42 @@ const CustomNavbar = () => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const [avatar, setAvatar] = useState("");
+  const [displayName, setDisplayName] = useState("");
 
   useEffect(() => {
-    const email = localStorage.getItem("email");
+    const userId = localStorage.getItem("id");
     const defaultAvatar = `${API_BASE_URL_NO_LANGUAGE}/media/avatars/default.png`;
-
-    if (email) {
-      fetch(`${API_BASE_URL}/api/user-management/avatar?email=${email}`)
+  
+    if (userId) {
+      fetch(`${API_BASE_URL}/api/user-management/user-info/?id=${userId}`)
         .then((response) => {
           if (!response.ok) {
-            throw new Error("Erro ao buscar o avatar");
+            throw new Error("Erro ao buscar o avatar e display_name");
           }
           return response.json();
         })
         .then((data) => {
           const fullAvatarUrl = `${API_BASE_URL_NO_LANGUAGE}${data.avatar}`;
           setAvatar(fullAvatarUrl || defaultAvatar);
+          setDisplayName(data.display_name || ""); // Armazena o display_name
         })
         .catch(() => {
           setAvatar(defaultAvatar);
+          setDisplayName(""); // Define como vazio em caso de erro
         });
     } else {
       setAvatar(defaultAvatar);
+      setDisplayName(""); // Define como vazio se o ID não for encontrado
     }
   }, []);
+  
+  
+  // console.log(displayName);
 
   const handleLogout = () => {
     localStorage.removeItem("access");
     localStorage.removeItem("refresh");
-    localStorage.removeItem("email");
+    localStorage.removeItem("id");
     navigate("/");
   };
 
@@ -56,21 +63,19 @@ const CustomNavbar = () => {
   return (
     <Navbar bg="light" expand="lg" className="navbar-custom">
       <Container>
-        {/* Lado esquerdo: Avatar e nome "Pong Game" com a raquete */}
-        <div className="d-flex align-items-center">
-          <Image
+        {/* Contêiner para avatar, saudação e título */}
+        <div className="user-info-container">
+          <img
             src={avatar}
             alt="Avatar"
-            roundedCircle
-            width="40"
-            height="40"
-            className="me-2"
+            className="user-avatar"
           />
-          <Navbar.Brand href="/home" className="navbar-brand d-flex align-items-center">
-            <FontAwesomeIcon icon={faTableTennis} className="me-2" />
-            {t("navbar.app_title")}
-          </Navbar.Brand>
+          <div className="user-text-container">
+            <span className="user-title">{t("navbar.app_title")} <FontAwesomeIcon icon={faTableTennis} className="me-2" /></span>
+            <span className="user-greeting">{t("navbar.greeting")}, {displayName || "Usuário"}</span>
+          </div>
         </div>
+
 
         {/* Botão de hambúrguer para telas pequenas */}
         <Navbar.Toggle

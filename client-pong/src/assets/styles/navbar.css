@@ -136,3 +136,40 @@
     display: none; /* Esconde o botão de hambúrguer em telas grandes */
   }
 }
+
+/* Contêiner principal para avatar e textos */
+.user-info-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem; /* Espaço entre avatar e texto */
+}
+
+/* Avatar */
+.user-avatar {
+  width: 60px;
+  height: 60px;
+  object-fit: cover; /* Garante que a imagem fique proporcional */
+  border-radius: 50%; /* Avatar redondo */
+  border: 2px solid #007bff; /* Borda azul */
+}
+
+/* Contêiner para texto */
+.user-text-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* Alinha textos à esquerda */
+  justify-content: center;
+}
+
+/* Título "Jogo Pong" */
+.user-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #343a40;
+}
+
+/* Saudação "Olá, Fulano" */
+.user-greeting {
+  font-size: 1rem;
+  color: #6c757d;
+}

@@ -26,7 +26,7 @@ const Chat = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       const accessToken = localStorage.getItem("access");
-      console.log(accessToken);
+      // console.log(accessToken);
       if (!accessToken) {
         setError("Access token não encontrado.");
         return;
@@ -60,8 +60,12 @@ const Chat = () => {
           (blockedResponse.data.blocked_users || []).map((user) => ({
             ...user,
             avatar: getAvatar(user.avatar),
+            blocked_record_id: user.blocked_record_id, // Inclui o blocked_record_id no estado
           }))
         );
+        
+
+        console.log(blockedResponse.data)
 
         // Busca não amigos
         const nonFriendsResponse = await axios.get(
@@ -127,16 +131,16 @@ const Chat = () => {
     }
   };
 
-  const unblockUser = async (userId) => {
+  const unblockUser = async (blockedRecordId) => {
     const accessToken = localStorage.getItem("access");
     try {
       const response = await axios.post(
         `${API_BASE_URL}/api/chat/unblock-user/`,
-        { user_id: userId },
+        { blockedRecordId }, // Envia o ID do registro de bloqueio
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
       alert("Usuário desbloqueado com sucesso.");
-      setBlockedUsers((prev) => prev.filter((user) => user.id !== userId));
+      setBlockedUsers((prev) => prev.filter((user) => user.blocked_record_id !== blockedRecordId));
     } catch (err) {
       console.error("Erro ao desbloquear usuário:", err);
       alert(err.response?.data?.error || "Erro ao desbloquear usuário.");
@@ -214,7 +218,7 @@ const Chat = () => {
                     <div className="player-actions">
                       <button
                         title="Ver Perfil"
-                        onClick={() => window.open(`/user-profile/${friend.id}`, "_blank")}
+                        onClick={() => window.open(`/user-profile/${friend.user_id}`, "_blank")}
                       >
                         👤
                       </button>
@@ -271,13 +275,18 @@ const Chat = () => {
             {blockedUsers.length > 0 ? (
               <ul>
                 {blockedUsers.map((user) => (
-                  <li key={user.id} className="player-item">
+                  <li key={user.blocked_record_id} className="player-item">
                     <img src={user.avatar} alt={user.display_name} className="player-avatar" />
                     <div className="player-info">
                       <p className="player-name">{user.display_name}</p>
                       <p className="player-status">Bloqueado</p>
                       <div className="player-actions">
-                        <button title="Desbloquear" onClick={() => unblockUser(user.id)}>🔓</button>
+                        <button
+                          title="Desbloquear"
+                          onClick={() => unblockUser(user.blocked_record_id)} // Passa o blocked_record_id
+                        >
+                          🔓
+                        </button>
                       </div>
                     </div>
                   </li>

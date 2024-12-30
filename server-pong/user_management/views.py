@@ -22,6 +22,8 @@ from chat.models import Friend, BlockedUser
 # Outros
 from django.core.cache import cache
 from django.db.models import Q
+from django.views import View
+from django.http import JsonResponse
 
 class UserRegistrationView(APIView):
     """
@@ -34,6 +36,11 @@ class UserRegistrationView(APIView):
             return Response({"message": _("Usuário cadastrado com sucesso!")}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.response import Response
+from rest_framework import status
+from django.utils.translation import gettext as _
+from django.core.cache import cache
 
 class LoginView(APIView):
     """
@@ -59,6 +66,7 @@ class LoginView(APIView):
             # Se o 2FA não está ativado, retorna os tokens JWT diretamente
             refresh = RefreshToken.for_user(user)
             return Response({
+                "id": user.id,  # Inclui o ID do usuário na resposta
                 "access": str(refresh.access_token),
                 "refresh": str(refresh),
                 "requires_2fa": False  # Indica que o 2FA não é necessário
@@ -111,27 +119,63 @@ class LogoutView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.conf import settings
+from .models import User
+from django.db import models
 
-class GetAvatarView(APIView):
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.conf import settings
+from .models import User
+
+class GetUserInfo(APIView):
     """
-    View para retornar o avatar do usuário.
+    View para retornar o avatar, display_name, losses, wins e online_status do usuário.
     """
     def get(self, request):
-        email = request.GET.get('email')
+        user_id = request.GET.get('id')  # Obtém o ID do usuário
         default_avatar_url = f"{settings.MEDIA_URL}avatars/default.png"
 
-        if not email:
-            return Response({"avatar": default_avatar_url}, status=status.HTTP_400_BAD_REQUEST)
+        if not user_id:
+            return Response(
+                {
+                    "avatar": default_avatar_url,
+                    "display_name": None,
+                    "losses": None,
+                    "wins": None,
+                    "online_status": None
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         try:
-            user = User.objects.get(email=email)
-            if user.avatar:
-                avatar_url = f"{settings.MEDIA_URL}{user.avatar}"
-            else:
-                avatar_url = default_avatar_url
-            return Response({"avatar": avatar_url}, status=status.HTTP_200_OK)
+            user = User.objects.get(id=user_id)  # Busca o usuário pelo ID
+            avatar_url = f"{settings.MEDIA_URL}{user.avatar}" if user.avatar else default_avatar_url
+            return Response(
+                {
+                    "avatar": avatar_url,
+                    "display_name": user.display_name,
+                    "losses": user.losses,
+                    "wins": user.wins,
+                    "online_status": user.online_status
+                },
+                status=status.HTTP_200_OK
+            )
         except User.DoesNotExist:
-            return Response({"avatar": default_avatar_url}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {
+                    "avatar": default_avatar_url,
+                    "display_name": None,
+                    "losses": None,
+                    "wins": None,
+                    "online_status": None
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 class GetTokenView(APIView):
     """
@@ -226,3 +270,47 @@ class UserProfileView(APIView):
             return Response(data, status=200)
         except User.DoesNotExist:
             return Response({"error": "Usuário não encontrado."}, status=404)
+
+class MatchHistoryView(View):
+    def get(self, request, user_id, *args, **kwargs):
+        # Lógica será implementada depois
+        return JsonResponse({"message": "Histórico de partidas ainda não implementado."}, status=200)
+
+class UserRelationshipView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, user_id):
+        try:
+            user = request.user
+
+            # Verifica o relacionamento de amizade
+            friend_relation = Friend.objects.filter(
+                models.Q(user=user, friend_id=user_id) | models.Q(user_id=user_id, friend=user)
+            ).first()
+
+            friendship_id = friend_relation.id if friend_relation else None
+            status_value = friend_relation.status if friend_relation else None
+            friend_user_id = friend_relation.user_id if friend_relation else None
+            friend_friend_id = friend_relation.friend_id if friend_relation else None
+
+            # Verifica se o usuário está bloqueado
+            blocked_relation = BlockedUser.objects.filter(
+                models.Q(blocker=user, blocked_id=user_id) | models.Q(blocker_id=user_id, blocked=user)
+            ).first()
+            is_blocked = blocked_relation is not None
+            blocked_record_id = blocked_relation.id if blocked_relation else None
+            blocked_id = blocked_relation.blocked_id if blocked_relation else None
+            blocker_id = blocked_relation.blocker_id if blocked_relation else None
+
+            return Response({
+                "friendship_id": friendship_id,  # ID do relacionamento de amizade, se existir
+                "status": status_value,  # Status do relacionamento (pending ou accepted)
+                "user_id": friend_user_id,  # user_id da tabela chat_friend
+                "friend_id": friend_friend_id,  # friend_id da tabela chat_friend
+                "is_blocked": is_blocked,  # Se o usuário está bloqueado
+                "blocked_id": blocked_id,  # ID do usuário bloqueado, se existir
+                "blocker_id": blocker_id,  # ID do usuário que bloqueou, se existir
+                "blocked_record_id": blocked_record_id,  # ID do registro de bloqueio na tabela BlockedUser
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

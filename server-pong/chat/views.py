@@ -51,13 +51,16 @@ class BlockedUsersListView(APIView):
         try:
             user = request.user
 
+            # Seleciona todos os usuários bloqueados
             blocked_users = BlockedUser.objects.filter(blocker=user).select_related("blocked")
 
+            # Cria uma lista de usuários bloqueados com os dados necessários
             blocked_list = [
                 {
-                    "id": blocked.blocked.id,
+                    "id": blocked.blocked.id,  # ID do usuário bloqueado
                     "display_name": blocked.blocked.display_name,
                     "avatar": blocked.blocked.avatar.url if blocked.blocked.avatar else None,
+                    "blocked_record_id": blocked.id,  # ID do registro na tabela chat_blockeduser
                 }
                 for blocked in blocked_users
             ]
@@ -236,25 +239,25 @@ class RejectFriendRequestView(APIView):
 
 class UnblockUserView(APIView):
     """
-    View para desbloquear um usuário.
+    View para desbloquear um usuário usando o ID do registro de bloqueio.
     """
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         try:
             user = request.user
-            user_to_unblock_id = request.data.get("user_id")
+            blocked_record_id = request.data.get("blockedRecordId")
 
-            if not user_to_unblock_id:
-                return Response({"error": "O ID do usuário é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
+            if not blocked_record_id:
+                return Response({"error": "O ID do registro de bloqueio é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
 
             try:
-                # Verifica se o usuário está na tabela de bloqueados
-                blocked_user = BlockedUser.objects.get(blocker=user, blocked_id=user_to_unblock_id)
+                # Verifica se o registro existe na tabela BlockedUser
+                blocked_user = BlockedUser.objects.get(id=blocked_record_id, blocker=user)
             except BlockedUser.DoesNotExist:
-                return Response({"error": "Usuário não está bloqueado."}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"error": "Registro de bloqueio não encontrado ou você não é o bloqueador."}, status=status.HTTP_404_NOT_FOUND)
 
-            # Remove o usuário da tabela de bloqueados
+            # Remove o registro de bloqueio
             blocked_user.delete()
 
             return Response({"message": "Usuário desbloqueado com sucesso."}, status=status.HTTP_200_OK)

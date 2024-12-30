@@ -45,11 +45,12 @@
   "error_email_already_exists": "A user with this email already exists.",
   "navbar": {
     "app_title": "Pong Game",
-    "chat": "Chat",
+    "chat": "Chat/Friends",
     "tournaments": "Tournaments",
     "profile": "Profile",
     "history": "History",
     "friends": "Friends",
-    "logout": "Logout"
+    "logout": "Logout",
+    "greeting": "Hello"
   }
 }

@@ -41,11 +41,12 @@
   "error_email_already_exists": "Já existe um usuário com este email.",
   "navbar": {
     "app_title": "Jogo Pong",
-    "chat": "Chat",
+    "chat": "Chat/Amigos",
     "tournaments": "Torneios",
     "profile": "Perfil",
     "history": "Histórico",
     "friends": "Amigos",
-    "logout": "Sair"
+    "logout": "Sair",
+    "greeting": "Olá"
   }
 }
