@@ -14,19 +14,24 @@ class FriendsListView(APIView):
         try:
             user = request.user
 
+            # Verificar amizades onde o usuário logado é o 'user'
             friends_as_user = Friend.objects.filter(user=user, status="accepted").select_related("friend")
+            # Verificar amizades onde o usuário logado é o 'friend'
             friends_as_friend = Friend.objects.filter(friend=user, status="accepted").select_related("user")
 
+            # Combinar ambas as listas
             friends_list = [
                 {
-                    "id": friend.friend.id,
+                    "id": friend.id,  # ID da linha da tabela
+                    "user_id": friend.friend.id,  # ID do amigo
                     "display_name": friend.friend.display_name,
                     "avatar": friend.friend.avatar.url if friend.friend.avatar else None,
                 }
                 for friend in friends_as_user
             ] + [
                 {
-                    "id": friend.user.id,
+                    "id": friend.id,  # ID da linha da tabela
+                    "user_id": friend.user.id,  # ID do amigo
                     "display_name": friend.user.display_name,
                     "avatar": friend.user.avatar.url if friend.user.avatar else None,
                 }
@@ -36,6 +41,7 @@ class FriendsListView(APIView):
             return Response({"friends": friends_list}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 # Lista de bloqueados
 class BlockedUsersListView(APIView):
@@ -132,28 +138,31 @@ class BlockUserView(APIView):
             if not user_to_block_id:
                 return Response({"error": "O ID do usuário é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
 
+            # Verifica se o usuário a ser bloqueado existe
             try:
                 user_to_block = User.objects.get(id=user_to_block_id)
             except User.DoesNotExist:
                 return Response({"error": "Usuário não encontrado."}, status=status.HTTP_404_NOT_FOUND)
 
+            # Verifica se o usuário já está bloqueado
             if BlockedUser.objects.filter(blocker=user, blocked=user_to_block).exists():
                 return Response({"error": "Usuário já está bloqueado."}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Bloqueio e remoção de amigos
-            try:
-                BlockedUser.objects.create(blocker=user, blocked=user_to_block)
-                Friend.objects.filter(
-                    models.Q(user=user, friend=user_to_block) | models.Q(user=user_to_block, friend=user)
-                ).delete()
-            except Exception as e:
-                print(f"Erro ao bloquear usuário: {e}")
-                return Response({"error": f"Erro ao bloquear usuário: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            # Remove a amizade, se existir
+            existing_friendship = Friend.objects.filter(
+                models.Q(user=user, friend=user_to_block) | models.Q(user=user_to_block, friend=user)
+            )
+            if existing_friendship.exists():
+                existing_friendship.delete()
+
+            # Adiciona à tabela de bloqueados
+            BlockedUser.objects.create(blocker=user, blocked=user_to_block)
 
             return Response({"message": "Usuário bloqueado com sucesso."}, status=status.HTTP_200_OK)
         except Exception as e:
             print(f"Erro geral: {e}")
             return Response({"error": f"Erro geral: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 # Excluir amigos
 class RemoveFriendView(APIView):
@@ -161,21 +170,22 @@ class RemoveFriendView(APIView):
 
     def delete(self, request):
         try:
-            user = request.user
-            friend_id = request.data.get("friend_id")
+            # Obtém o request_id enviado pelo cliente
+            request_id = request.data.get("id")  # ID da linha na tabela `chat_friend`
 
-            if not friend_id:
-                return Response({"error": "O ID do amigo é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
+            if not request_id:
+                return Response({"error": "O ID da solicitação é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
 
             try:
-                friend = Friend.objects.get(user=user, friend_id=friend_id, status="accepted")
+                # Busca e remove a linha correspondente ao request_id
+                friend_request = Friend.objects.get(id=request_id)
+                friend_request.delete()
+                return Response({"message": "Amizade removida com sucesso."}, status=status.HTTP_200_OK)
             except Friend.DoesNotExist:
                 return Response({"error": "Amizade não encontrada."}, status=status.HTTP_404_NOT_FOUND)
-
-            friend.delete()
-            return Response({"message": "Amizade removida com sucesso."}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 # Aceitar amigos
 class AcceptFriendRequestView(APIView):
@@ -222,4 +232,32 @@ class RejectFriendRequestView(APIView):
             return Response({"message": "Solicitação de amizade rejeitada com sucesso."}, status=status.HTTP_200_OK)
         except Exception as e:
             print(f"Erro ao rejeitar solicitação: {e}")  # Log para depuração
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class UnblockUserView(APIView):
+    """
+    View para desbloquear um usuário.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            user = request.user
+            user_to_unblock_id = request.data.get("user_id")
+
+            if not user_to_unblock_id:
+                return Response({"error": "O ID do usuário é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
+
+            try:
+                # Verifica se o usuário está na tabela de bloqueados
+                blocked_user = BlockedUser.objects.get(blocker=user, blocked_id=user_to_unblock_id)
+            except BlockedUser.DoesNotExist:
+                return Response({"error": "Usuário não está bloqueado."}, status=status.HTTP_404_NOT_FOUND)
+
+            # Remove o usuário da tabela de bloqueados
+            blocked_user.delete()
+
+            return Response({"message": "Usuário desbloqueado com sucesso."}, status=status.HTTP_200_OK)
+
+        except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

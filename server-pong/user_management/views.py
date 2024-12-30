@@ -17,7 +17,7 @@ from rest_framework import status
 from .models import User
 from .serializers import UserSerializer, LoginSerializer
 from .utils import generate_2fa_code, send_2fa_code
-from chat.models import Friend
+from chat.models import Friend, BlockedUser
 
 # Outros
 from django.core.cache import cache
@@ -151,7 +151,7 @@ class GetTokenView(APIView):
 
 class ExcludeSelfAndFriendsUserListView(APIView):
     """
-    View para listar usuários, excluindo o usuário autenticado e seus amigos.
+    View para listar usuários, excluindo o usuário autenticado, seus amigos, solicitações pendentes e usuários bloqueados.
     """
     permission_classes = [IsAuthenticated]
 
@@ -160,11 +160,35 @@ class ExcludeSelfAndFriendsUserListView(APIView):
             # Usuário autenticado
             current_user = request.user
 
-            # IDs dos amigos
-            friend_ids = Friend.objects.filter(user=current_user).values_list('friend_id', flat=True)
+            # IDs dos amigos onde o usuário atual é o 'user'
+            friends_as_user = Friend.objects.filter(user=current_user, status="accepted").values_list('friend_id', flat=True)
 
-            # Excluir o usuário atual e seus amigos
-            users = User.objects.exclude(id__in=friend_ids).exclude(id=current_user.id).values(
+            # IDs dos amigos onde o usuário atual é o 'friend'
+            friends_as_friend = Friend.objects.filter(friend=current_user, status="accepted").values_list('user_id', flat=True)
+
+            # IDs de solicitações pendentes enviadas pelo usuário atual
+            pending_sent = Friend.objects.filter(user=current_user, status="pending").values_list('friend_id', flat=True)
+
+            # IDs de solicitações pendentes recebidas pelo usuário atual
+            pending_received = Friend.objects.filter(friend=current_user, status="pending").values_list('user_id', flat=True)
+
+            # IDs de usuários bloqueados pelo usuário atual
+            blocked_users = BlockedUser.objects.filter(blocker=current_user).values_list('blocked_id', flat=True)
+
+            # IDs de usuários que bloquearam o usuário atual
+            blocked_by_users = BlockedUser.objects.filter(blocked=current_user).values_list('blocker_id', flat=True)
+
+            # Combinar todas as IDs a serem excluídas (amigos + solicitações pendentes + bloqueados)
+            excluded_ids = set(friends_as_user).union(
+                set(friends_as_friend),
+                set(pending_sent),
+                set(pending_received),
+                set(blocked_users),
+                set(blocked_by_users)
+            )
+
+            # Excluir o usuário atual e os IDs a serem excluídos
+            users = User.objects.exclude(id__in=excluded_ids).exclude(id=current_user.id).values(
                 'id', 'email', 'display_name', 'avatar'
             )
 

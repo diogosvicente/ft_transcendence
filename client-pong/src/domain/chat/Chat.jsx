@@ -26,6 +26,7 @@ const Chat = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       const accessToken = localStorage.getItem("access");
+      console.log(accessToken);
       if (!accessToken) {
         setError("Access token não encontrado.");
         return;
@@ -126,6 +127,22 @@ const Chat = () => {
     }
   };
 
+  const unblockUser = async (userId) => {
+    const accessToken = localStorage.getItem("access");
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/api/chat/unblock-user/`,
+        { user_id: userId },
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+      alert("Usuário desbloqueado com sucesso.");
+      setBlockedUsers((prev) => prev.filter((user) => user.id !== userId));
+    } catch (err) {
+      console.error("Erro ao desbloquear usuário:", err);
+      alert(err.response?.data?.error || "Erro ao desbloquear usuário.");
+    }
+  };
+
   const acceptFriendRequest = async (requestId) => {
     const accessToken = localStorage.getItem("access");
     try {
@@ -159,6 +176,21 @@ const Chat = () => {
     }
   };
 
+  const removeFriend = async (friendId) => {
+    const accessToken = localStorage.getItem("access");
+    try {
+      await axios.delete(`${API_BASE_URL}/api/chat/remove-friend/`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        data: { id: friendId },
+      });
+      alert("Amigo removido com sucesso.");
+      setFriends((prev) => prev.filter((friend) => friend.id !== friendId));
+    } catch (err) {
+      console.error("Erro ao remover amigo:", err);
+      alert(err.response?.data?.error || "Erro ao remover amigo.");
+    }
+  };
+
   return (
     <>
       <Navbar />
@@ -182,8 +214,8 @@ const Chat = () => {
                     <div className="player-actions">
                       <button title="Ver Perfil">👤</button>
                       <button title="Desafiar">🎮</button>
-                      <button title="Bloquear" onClick={() => blockUser(friend.id)}>🚫</button>
-                      <button title="Remover">❌</button>
+                      <button title="Bloquear" onClick={() => blockUser(friend.user_id)}>🚫</button>
+                      <button title="Excluir" onClick={() => removeFriend(friend.id)}>❌</button>
                     </div>
                   </li>
                 ))}
@@ -192,6 +224,7 @@ const Chat = () => {
               <p>Sem amigos adicionados.</p>
             )}
           </div>
+
 
           {/* Solicitações Pendentes */}
           <div className="pending-section">
@@ -203,11 +236,19 @@ const Chat = () => {
                     <img src={request.avatar} alt={request.display_name} className="player-avatar" />
                     <div className="player-info">
                       <p className="player-name">{request.display_name}</p>
-                      <p className="player-status">Pendente</p>
+                      <p className="player-status">
+                        {request.direction === "received" ? "Recebida" : "Enviada"}
+                      </p>
                     </div>
                     <div className="player-actions">
-                      <button title="Aceitar" onClick={() => acceptFriendRequest(request.id)}>✔</button>
-                      <button title="Rejeitar" onClick={() => rejectFriendRequest(request.id)}>❌</button>
+                      {request.direction === "received" ? (
+                        <>
+                          <button title="Aceitar" onClick={() => acceptFriendRequest(request.id)}>✔</button>
+                          <button title="Rejeitar" onClick={() => rejectFriendRequest(request.id)}>❌</button>
+                        </>
+                      ) : (
+                        <button title="Cancelar Solicitação" onClick={() => rejectFriendRequest(request.id)}>❌</button>
+                      )}
                     </div>
                   </li>
                 ))}
@@ -216,6 +257,8 @@ const Chat = () => {
               <p>Sem solicitações pendentes.</p>
             )}
           </div>
+
+          
 
           {/* Usuários Bloqueados */}
           <div className="blocked-section">
@@ -228,6 +271,9 @@ const Chat = () => {
                     <div className="player-info">
                       <p className="player-name">{user.display_name}</p>
                       <p className="player-status">Bloqueado</p>
+                      <div className="player-actions">
+                        <button title="Desbloquear" onClick={() => unblockUser(user.id)}>🔓</button>
+                      </div>
                     </div>
                   </li>
                 ))}
@@ -258,7 +304,13 @@ const Chat = () => {
                         </div>
                         <div className="player-actions">
                           <button title="Ver Perfil">👤</button>
-                          <button title="Adicionar como amigo">➕</button>
+                          <button
+                            title="Adicionar como amigo"
+                            onClick={() => addFriend(user.id)} // Chama a função para adicionar amigo
+                          >
+                            ➕
+                          </button>
+                          <button title="Bloquear" onClick={() => blockUser(user.id)}>🚫</button>
                         </div>
                       </li>
                     ))}
