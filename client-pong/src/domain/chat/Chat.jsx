@@ -12,6 +12,8 @@ const Chat = () => {
   const [messages, setMessages] = useState([]);
   const [currentMessage, setCurrentMessage] = useState("");
   const [error, setError] = useState(null);
+  const [activeChat, setActiveChat] = useState("global");
+  const [chatTabs, setChatTabs] = useState([]); // Para gerenciar abas de chat
 
   const defaultAvatar = `${API_BASE_URL_NO_LANGUAGE}/media/avatars/default.png`;
 
@@ -21,6 +23,12 @@ const Chat = () => {
       return `${API_BASE_URL_NO_LANGUAGE}/media/${avatarPath}`;
     }
     return `${API_BASE_URL_NO_LANGUAGE}${avatarPath}`;
+  };
+
+  const openChatWithUser = (friend) => {
+    if (!chatTabs.some((tab) => tab.id === friend.id)) {
+      setChatTabs((prev) => [...prev, { id: friend.id, name: friend.display_name }]);
+    }
   };
 
   useEffect(() => {
@@ -53,6 +61,10 @@ const Chat = () => {
           }))
         );
 
+        const closeChatTab = (tabId) => {
+          setChatTabs((prev) => prev.filter((tab) => tab.id !== tabId));
+        };
+
         const blockedResponse = await axios.get(`${API_BASE_URL}/api/chat/blocked-users/`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
@@ -64,9 +76,6 @@ const Chat = () => {
           }))
         );
         
-
-        console.log(blockedResponse.data)
-
         // Busca não amigos
         const nonFriendsResponse = await axios.get(
           `${API_BASE_URL}/api/user-management/exclude-self/`,
@@ -94,10 +103,20 @@ const Chat = () => {
     fetchUsers();
   }, []);
 
-  const sendMessage = () => {
+  const sendMessage = (chatId) => {
     if (currentMessage.trim()) {
-      setMessages([...messages, { text: currentMessage, sender: "Você" }]);
+      setMessages((prev) => ({
+        ...prev,
+        [chatId]: [...(prev[chatId] || []), { text: currentMessage, sender: "Você" }],
+      }));
       setCurrentMessage("");
+    }
+  };
+
+  const openChat = (friendId, displayName) => {
+    setActiveChat(friendId);
+    if (!messages[friendId]) {
+      setMessages((prev) => ({ ...prev, [friendId]: [] }));
     }
   };
 
@@ -210,23 +229,40 @@ const Chat = () => {
               <ul>
                 {friends.map((friend) => (
                   <li key={friend.id} className="player-item">
+                  <div className="player-header">
                     <img src={friend.avatar} alt={friend.display_name} className="player-avatar" />
-                    <div className="player-info">
+                    <div className="player-details">
                       <p className="player-name">{friend.display_name}</p>
-                      <p className="player-status">{friend.is_online ? "Online" : "Offline"}</p>
+                      <p className="player-status">
+                        {friend.online_status ? (
+                          <span className="status-indicator online">Online</span>
+                        ) : (
+                          <span className="status-indicator offline">Offline</span>
+                        )}
+                      </p>
                     </div>
-                    <div className="player-actions">
-                      <button
-                        title="Ver Perfil"
-                        onClick={() => window.open(`/user-profile/${friend.user_id}`, "_blank")}
-                      >
-                        👤
-                      </button>
-                      <button title="Desafiar">🎮</button>
-                      <button title="Bloquear" onClick={() => blockUser(friend.user_id)}>🚫</button>
-                      <button title="Excluir" onClick={() => removeFriend(friend.id)}>❌</button>
-                    </div>
-                  </li>
+                  </div>
+                  <div className="player-actions">
+                    <button title="Abrir Chat" onClick={() => openChatWithUser(friend)} style={{ margin: "5px" }}>
+                      💬
+                    </button>
+                    <button
+                      title="Ver Perfil"
+                      onClick={() => window.open(`/user-profile/${friend.user_id}`, "_blank")}
+                      style={{ margin: "5px" }}
+                    >
+                      👤
+                    </button>
+                    <button title="Desafiar" style={{ margin: "5px" }}>🎮</button>
+                    <button title="Bloquear" onClick={() => blockUser(friend.user_id)} style={{ margin: "5px" }}>
+                      🚫
+                    </button>
+                    <button title="Excluir" onClick={() => removeFriend(friend.id)} style={{ margin: "5px" }}>
+                      ❌
+                    </button>
+                  </div>
+                </li>
+                
                 ))}
               </ul>
             ) : (
@@ -267,8 +303,6 @@ const Chat = () => {
             )}
           </div>
 
-          
-
           {/* Usuários Bloqueados */}
           <div className="blocked-section">
             <h4>Usuários Bloqueados</h4>
@@ -280,14 +314,14 @@ const Chat = () => {
                     <div className="player-info">
                       <p className="player-name">{user.display_name}</p>
                       <p className="player-status">Bloqueado</p>
-                      <div className="player-actions">
-                        <button
-                          title="Desbloquear"
-                          onClick={() => unblockUser(user.blocked_record_id)} // Passa o blocked_record_id
-                        >
-                          🔓
-                        </button>
-                      </div>
+                    </div>
+                    <div className="player-actions">
+                      <button
+                        title="Desbloquear"
+                        onClick={() => unblockUser(user.blocked_record_id)}
+                      >
+                        🔓
+                      </button>
                     </div>
                   </li>
                 ))}
@@ -298,58 +332,85 @@ const Chat = () => {
           </div>
 
           {/* Não Amigos */}
-          {/* Seção de Não Amigos */}
           <div className="non-friends-section">
-                <h4>Não Amigos</h4>
-                {nonFriends.length > 0 ? (
-                  <ul>
-                    {nonFriends.map((user) => (
-                      <li key={user.id} className="player-item">
-                        <img
-                          src={user.avatar} // Exibe o avatar do não amigo
-                          alt={user.display_name}
-                          className="player-avatar"
-                        />
-                        <div>
-                          <p className="player-name">{user.display_name}</p>
-                          <p className="player-status">
-                            {user.is_online ? "Online" : "Offline"}
-                          </p>
-                        </div>
-                        <div className="player-actions">
-                          <button
-                            title="Ver Perfil"
-                            onClick={() => window.open(`/user-profile/${user.id}`, "_blank")}
-                          >
-                            👤
-                          </button>
-                          <button
-                            title="Adicionar como amigo"
-                            onClick={() => addFriend(user.id)} // Chama a função para adicionar amigo
-                          >
-                            ➕
-                          </button>
-                          <button title="Bloquear" onClick={() => blockUser(user.id)}>🚫</button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p>Não há usuários disponíveis para adicionar.</p>
-                )}
-              </div>
+            <h4>Não Amigos</h4>
+            {nonFriends.length > 0 ? (
+              <ul>
+                {nonFriends.map((user) => (
+                  <li key={user.id} className="player-item">
+                    <img
+                      src={user.avatar}
+                      alt={user.display_name}
+                      className="player-avatar"
+                    />
+                    <div className="player-info">
+                      <p className="player-name">{user.display_name}</p>
+                      <p className="player-status">
+                        <span
+                          className={user.is_online ? "status-dot online" : "status-dot offline"}
+                        ></span>
+                        {user.is_online ? "Online" : "Offline"}
+                      </p>
+                    </div>
+                    <div className="player-actions">
+                      <button
+                        title="Ver Perfil"
+                        onClick={() => window.open(`/user-profile/${user.id}`, "_blank")}
+                      >
+                        👤
+                      </button>
+                      <button
+                        title="Adicionar como amigo"
+                        onClick={() => addFriend(user.id)}
+                      >
+                        ➕
+                      </button>
+                      <button title="Bloquear" onClick={() => blockUser(user.id)}>🚫</button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>Não há usuários disponíveis para adicionar.</p>
+            )}
+          </div>
         </div>
 
-        {/* Chat Global */}
+        {/* Área de Chat */}
         <div className="chat-section">
-          <h3>Chat Global</h3>
-          <div className="chat-messages">
-            {messages.map((message, index) => (
-              <div key={index} className="chat-message">
-                <strong>{message.sender}:</strong> {message.text}
-              </div>
+          <div className="chat-tabs">
+            <button
+              className={`chat-tab ${!chatTabs.length ? "active" : ""}`}
+              onClick={() => setChatTabs([])}
+            >
+              Chat Global
+            </button>
+            {chatTabs.map((tab) => (
+              <button
+                key={tab.id}
+                className="chat-tab"
+                onClick={() => setActiveChat(tab.id)}
+              >
+                {tab.name} <span onClick={() => closeChatTab(tab.id)}>❌</span>
+              </button>
             ))}
           </div>
+
+          <div className="chat-messages">
+            {!chatTabs.length ? (
+              messages.map((message, index) => (
+                <div key={index} className="chat-message">
+                  <strong>{message.sender}:</strong> {message.text}
+                </div>
+              ))
+            ) : (
+              <div className="chat-private">
+                {/* Renderize aqui as mensagens privadas da aba ativa */}
+                <p>Chat privado com {chatTabs.find((tab) => tab.id === activeChat)?.name}</p>
+              </div>
+            )}
+          </div>
+
           <div className="chat-input">
             <textarea
               placeholder="Digite sua mensagem"
@@ -359,6 +420,7 @@ const Chat = () => {
             <button onClick={sendMessage}>Enviar</button>
           </div>
         </div>
+
       </div>
     </>
   );

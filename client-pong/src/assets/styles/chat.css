@@ -13,15 +13,15 @@
   flex: 1;
   border: 1px solid #ddd;
   border-radius: 8px;
-  padding: 20px;
+  padding: 15px;
   background-color: #fff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
 
-/* Limite de largura para a lista de jogadores */
+/* Aumentar a largura da lista de jogadores */
 .players-list {
-  max-width: 350px;
+  max-width: 450px; /* Aumentei a largura */
   height: 100%;
   overflow-y: auto;
 }
@@ -35,27 +35,24 @@
   text-align: center;
 }
 
-/* Estilo para cada jogador na lista */
+/* Estilo para cada jogador no card */
 .player-item {
   display: flex;
-  align-items: center;
+  align-items: center; /* Alinha conteúdo horizontalmente */
   gap: 15px;
-  margin-bottom: 15px;
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 8px;
   background-color: #f9f9f9;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  max-width: 400px; /* Reduzi a largura máxima */
+  margin-bottom: 10px;
 }
 
-.player-item + .player-item {
-  margin-top: 10px;
-}
-
-/* Avatar do jogador */
+/* Avatar do Jogador */
 .player-avatar {
-  width: 50px;
-  height: 50px;
+  width: 45px; /* Menor */
+  height: 45px;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid #ddd;
@@ -66,41 +63,40 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
 }
 
 .player-name {
   font-weight: bold;
-  font-size: 1rem;
+  font-size: 0.9rem; /* Reduzi o tamanho da fonte */
   margin: 0;
 }
 
 .player-status {
-  font-size: 0.9rem;
-  color: #555;
+  font-size: 0.8rem; /* Reduzi o tamanho da fonte */
   margin: 0;
 }
 
-/* Cores dos status do jogador */
 .player-status.online {
   color: green;
 }
 
 .player-status.offline {
-  color: gray;
+  color: red;
 }
 
 /* Ações disponíveis para cada jogador */
 .player-actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  gap: 8px; /* Ajuste entre os botões */
+  flex-wrap: wrap; /* Para não quebrar em telas menores */
 }
 
 .player-actions button {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 1.4rem;
+  font-size: 1.2rem; /* Reduzi o tamanho do ícone */
   color: #555;
   transition: color 0.2s ease;
 }
@@ -186,4 +182,38 @@
 .chat-input button:disabled {
   background-color: #cccccc;
   cursor: not-allowed;
+}
+
+/* Área de abas para chat privado e global */
+.chat-tabs {
+  display: flex;
+  justify-content: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+  overflow-x: auto;
+  border-bottom: 1px solid #ddd;
+}
+
+.chat-tab {
+  padding: 8px 12px;
+  border-radius: 8px 8px 0 0;
+  background-color: #f1f1f1;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.chat-tab.active {
+  background-color: #007bff;
+  color: #fff;
+}
+
+.chat-tab:hover:not(.active) {
+  background-color: #ddd;
+}
+
+/* Área de conteúdo para cada aba de chat */
+.chat-content {
+  height: calc(100% - 50px); /* Espaço para as abas */
+  overflow-y: auto;
 }

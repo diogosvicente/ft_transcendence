@@ -26,6 +26,7 @@ class FriendsListView(APIView):
                     "user_id": friend.friend.id,  # ID do amigo
                     "display_name": friend.friend.display_name,
                     "avatar": friend.friend.avatar.url if friend.friend.avatar else None,
+                    "online_status": friend.friend.online_status,  # Status online do amigo
                 }
                 for friend in friends_as_user
             ] + [
@@ -34,6 +35,7 @@ class FriendsListView(APIView):
                     "user_id": friend.user.id,  # ID do amigo
                     "display_name": friend.user.display_name,
                     "avatar": friend.user.avatar.url if friend.user.avatar else None,
+                    "online_status": friend.user.online_status,  # Status online do amigo
                 }
                 for friend in friends_as_friend
             ]
@@ -41,7 +43,6 @@ class FriendsListView(APIView):
             return Response({"friends": friends_list}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 # Lista de bloqueados
 class BlockedUsersListView(APIView):
