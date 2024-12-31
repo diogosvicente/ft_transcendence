@@ -15,7 +15,6 @@ const UserProfile = () => {
   const [friendshipStatus, setFriendshipStatus] = useState(null);
   const [isBlocked, setIsBlocked] = useState(false);
   const [blockerId, setBlockerId] = useState(null);
-  // const [blockedId, setBlockedId] = useState(null);
   const [loggedUserId, setLoggedUserId] = useState(null);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
   const [blockedRecordId, setBlockedRecordId] = useState(null);
@@ -57,13 +56,10 @@ const UserProfile = () => {
         setFriendshipId(relationshipResponse.data.friendship_id);
         setFriendshipStatus(relationshipResponse.data.status);
         setIsBlocked(relationshipResponse.data.is_blocked);
-        // setBlockedId(relationshipResponse.data.blocked_id);
         setBlockerId(relationshipResponse.data.blocker_id);
         setBlockedRecordId(relationshipResponse.data.blocked_record_id);
         setInviterFriendId(relationshipResponse.data.user_id);
         setReceiverFriendId(relationshipResponse.data.friend_id);
-
-        console.log(relationshipResponse.data);
       } catch (err) {
         setError("Erro ao carregar o perfil do usuário ou informações de relacionamento.");
         console.error(err);
@@ -197,9 +193,6 @@ const UserProfile = () => {
   const totalMatches = (user.wins || 0) + (user.losses || 0);
   const winRate = totalMatches > 0 ? ((user.wins / totalMatches) * 100).toFixed(2) : 0;
 
-  console.log("logado" + loggedUserId);
-  console.log("adiconado: " + String(inviterFriendId));
-    
   return (
     <>
       <Navbar />
@@ -211,7 +204,19 @@ const UserProfile = () => {
             className="profile-avatar"
           />
           <h1>{user.display_name}</h1>
-          <p>Status: {user.online_status ? "Online" : "Offline"}</p>
+          <p>
+            <span
+              style={{
+                display: "inline-block",
+                width: "10px",
+                height: "10px",
+                borderRadius: "50%",
+                backgroundColor: user.online_status ? "green" : "red",
+                marginRight: "8px",
+              }}
+            ></span>
+            {user.online_status ? "Online" : "Offline"}
+          </p>
         </div>
         <div className="profile-info">
           <h2>Estatísticas</h2>
@@ -222,13 +227,50 @@ const UserProfile = () => {
           <p>Ranking: {user.rank}</p>
         </div>
         <div className="profile-actions">
-          {!isOwnProfile && !isBlocked && (
-            friendshipId ? (
-              friendshipStatus === "pending" ? (
-                loggedUserId === String(inviterFriendId) ? (
+          {isOwnProfile ? (
+            <button
+              title="Editar Minhas Informações"
+              onClick={() => window.location.href = "/edit-profile"}
+              style={{ marginBottom: "10px" }}
+            >
+              ✏️ Editar Minhas Informações
+            </button>
+          ) : (
+            !isBlocked && (
+              friendshipId ? (
+                friendshipStatus === "pending" ? (
+                  loggedUserId === String(inviterFriendId) ? (
+                    <div>
+                      <button title="Cancelar Solicitação" onClick={handleCancelRequest} style={{ marginRight: "10px" }}>
+                        ❌ Cancelar Solicitação ⏳
+                      </button>
+                      <button title="Bloquear Usuário" onClick={handleBlockUser} style={{ marginRight: "10px" }}>
+                        🚫 Bloquear
+                      </button>
+                      <button title="Desafiar para Jogo" onClick={handleBlockUser}>
+                        🎮 Desafiar
+                      </button>
+                    </div>
+                  ) : loggedUserId === String(receiverFriendId) ? (
+                    <div>
+                      <button title="Aceitar Solicitação" onClick={handleAcceptFriendRequest} style={{ marginRight: "10px" }}>
+                        ✔ Aceitar
+                      </button>
+                      <button title="Rejeitar Solicitação" onClick={handleRejectFriendRequest} style={{ marginRight: "10px" }}>
+                        ❌ Rejeitar
+                      </button>
+                      <button title="Bloquear Usuário" onClick={handleBlockUser} style={{ marginRight: "10px" }}>
+                        🚫 Bloquear
+                      </button>
+                      <button title="Desafiar para Jogo" onClick={handleBlockUser}>
+                        🎮 Desafiar
+                      </button>
+                    </div>
+                  ) : null
+                ) : (
                   <div>
-                    <button title="Cancelar Solicitação" onClick={handleCancelRequest} style={{ marginRight: "10px" }}>
-                      ❌ Cancelar Solicitação ⏳
+                    <button title="Remover Amigo" onClick={handleRemoveFriend} style={{ marginRight: "10px" }}>
+                      ❌ Remover Amigo
                     </button>
                     <button title="Bloquear Usuário" onClick={handleBlockUser} style={{ marginRight: "10px" }}>
                       🚫 Bloquear
@@ -237,26 +279,11 @@ const UserProfile = () => {
                       🎮 Desafiar
                     </button>
                   </div>
-                ) : loggedUserId === String(receiverFriendId) ? (
-                  <div>
-                    <button title="Aceitar Solicitação" onClick={handleAcceptFriendRequest} style={{ marginRight: "10px" }}>
-                      ✔ Aceitar
-                    </button>
-                    <button title="Rejeitar Solicitação" onClick={handleRejectFriendRequest} style={{ marginRight: "10px" }}>
-                      ❌ Rejeitar
-                    </button>
-                    <button title="Bloquear Usuário" onClick={handleBlockUser} style={{ marginRight: "10px" }}>
-                      🚫 Bloquear
-                    </button>
-                    <button title="Desafiar para Jogo" onClick={handleBlockUser}>
-                      🎮 Desafiar
-                    </button>
-                  </div>
-                ) : null
+                )
               ) : (
-                <div>
-                  <button title="Remover Amigo" onClick={handleRemoveFriend} style={{ marginRight: "10px" }}>
-                    ❌ Remover Amigo
+                <>
+                  <button title="Adicionar Amigo" onClick={handleAddFriend} style={{ marginRight: "10px" }}>
+                    ➕ Adicionar Amigo
                   </button>
                   <button title="Bloquear Usuário" onClick={handleBlockUser} style={{ marginRight: "10px" }}>
                     🚫 Bloquear
@@ -264,20 +291,8 @@ const UserProfile = () => {
                   <button title="Desafiar para Jogo" onClick={handleBlockUser}>
                     🎮 Desafiar
                   </button>
-                </div>
+                </>
               )
-            ) : (
-              <>
-                <button title="Adicionar Amigo" onClick={handleAddFriend} style={{ marginRight: "10px" }}>
-                  ➕ Adicionar Amigo
-                </button>
-                <button title="Bloquear Usuário" onClick={handleBlockUser} style={{ marginRight: "10px" }}>
-                  🚫 Bloquear
-                </button>
-                <button title="Desafiar para Jogo" onClick={handleBlockUser}>
-                  🎮 Desafiar
-                </button>
-              </>
             )
           )}
           {isBlocked && loggedUserId === String(blockerId) && (

@@ -44,8 +44,7 @@
     "chat": "Chat/Amigos",
     "tournaments": "Torneos",
     "profile": "Perfil",
-    "history": "Historial",
-    "friends": "Amigos",
+    "ranking": "Rangotabelo",
     "logout": "Cerrar sesión",
     "greeting": "Hola"    
   }

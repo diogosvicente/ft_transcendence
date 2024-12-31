@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 import { Navbar, Nav, Button, Container, Image } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -64,18 +64,30 @@ const CustomNavbar = () => {
     <Navbar bg="light" expand="lg" className="navbar-custom">
       <Container>
         {/* Contêiner para avatar, saudação e título */}
-        <div className="user-info-container">
-          <img
-            src={avatar}
-            alt="Avatar"
-            className="user-avatar"
-          />
-          <div className="user-text-container">
-            <span className="user-title">{t("navbar.app_title")} <FontAwesomeIcon icon={faTableTennis} className="me-2" /></span>
-            <span className="user-greeting">{t("navbar.greeting")}, {displayName || "Usuário"}</span>
+        {/* Avatar e Texto ao lado */}
+        <Link to="/" className="user-info-link" style={{ textDecoration: "none", color: "inherit" }}>
+          <div className="d-flex align-items-center">
+            <img
+              src={avatar}
+              alt="Avatar"
+              className="user-avatar me-3"
+              style={{
+                width: "50px",
+                height: "50px",
+                borderRadius: "50%",
+                objectFit: "cover",
+              }}
+            />
+            <div>
+              <span className="user-title" style={{ fontSize: "1.2rem", fontWeight: "bold", display: "block" }}>
+                Jogo Pong <FontAwesomeIcon icon={faTableTennis} className="ms-2" />
+              </span>
+              <span className="user-greeting" style={{ fontSize: "0.9rem", color: "gray" }}>
+                {t("navbar.greeting")}, {displayName}
+              </span>
+            </div>
           </div>
-        </div>
-
+        </Link>
 
         {/* Botão de hambúrguer para telas pequenas */}
         <Navbar.Toggle
@@ -98,14 +110,11 @@ const CustomNavbar = () => {
             <NavLink to="/tournaments" className="nav-link">
               {t("navbar.tournaments")}
             </NavLink>
-            <NavLink to="/profile" className="nav-link">
+            <NavLink to={`/user-profile/${localStorage.getItem("id")}`} className="nav-link">
               {t("navbar.profile")}
             </NavLink>
-            <NavLink to="/history" className="nav-link">
-              {t("navbar.history")}
-            </NavLink>
-            <NavLink to="/friends" className="nav-link">
-              {t("navbar.friends")}
+            <NavLink to="/ranking" className="nav-link">
+              {t("navbar.ranking")}
             </NavLink>
           </Nav>
           <div className="d-flex align-items-center">

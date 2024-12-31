@@ -6,8 +6,7 @@ import LandingPage from "./domain/landing/LandingPage.jsx";
 import Home from "./domain/home/Home.jsx";
 import Tournaments from "./domain/tournaments/Tournaments.jsx";
 import Profile from "./domain/profile/Profile.jsx";
-import History from "./domain/history/History.jsx";
-import Friends from "./domain/friends/Friends.jsx";
+import Ranking from "./domain/ranking/Ranking.jsx";
 import { GameCanvas } from "./domain/game/GameCanvas"; // Importa o componente do jogo
 import UserProfile from "./domain/userProfile/UserProfile.jsx"; // Importa o componente UserProfile
 
@@ -54,18 +53,10 @@ function App() {
         }
       />
       <Route
-        path="/history"
+        path="/ranking"
         element={
           <PrivateRoute>
-            <History />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/friends"
-        element={
-          <PrivateRoute>
-            <Friends />
+            <Ranking />
           </PrivateRoute>
         }
       />

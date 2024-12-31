@@ -48,8 +48,7 @@
     "chat": "Chat/Friends",
     "tournaments": "Tournaments",
     "profile": "Profile",
-    "history": "History",
-    "friends": "Friends",
+    "ranking": "Ranking",
     "logout": "Logout",
     "greeting": "Hello"
   }
