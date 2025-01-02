@@ -3,8 +3,12 @@ import Navbar from "../template/Navbar";
 import axios from "axios";
 import "../../assets/styles/chat.css";
 import API_BASE_URL, { API_BASE_URL_NO_LANGUAGE } from "../../assets/config/config.js";
+import { useWebSocket } from "../webSocket/WebSocketProvider.jsx";
 
 const Chat = () => {
+
+  const { sendMessage } = useWebSocket();
+
   const [friends, setFriends] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [blockedUsers, setBlockedUsers] = useState([]);
@@ -103,7 +107,7 @@ const Chat = () => {
     fetchUsers();
   }, []);
 
-  const sendMessage = (chatId) => {
+  const sendMessage1 = (chatId) => {
     if (currentMessage.trim()) {
       setMessages((prev) => ({
         ...prev,
@@ -122,12 +126,23 @@ const Chat = () => {
 
   const addFriend = async (userId) => {
     const accessToken = localStorage.getItem("access");
+    const loggedID = localStorage.getItem("id");
     try {
       const response = await axios.post(
         `${API_BASE_URL}/api/chat/add-friend/`,
         { friend_id: userId },
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
+
+      // Enviar notificação via WebSocket
+      sendMessage({
+        type: "notification",
+        action: "addFriend",
+        sender_id: loggedID, // ID do remetente
+        receiver_id: userId, // ID do destinatário
+        message: `Você recebeu uma solicitação de amizade.`,
+      });
+
       alert(response.data.message);
     } catch (err) {
       alert(err.response?.data?.error || "Erro ao adicionar amigo.");
@@ -417,7 +432,7 @@ const Chat = () => {
               value={currentMessage}
               onChange={(e) => setCurrentMessage(e.target.value)}
             ></textarea>
-            <button onClick={sendMessage}>Enviar</button>
+            <button onClick={sendMessage1}>Enviar</button>
           </div>
         </div>
 

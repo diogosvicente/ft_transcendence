@@ -47,31 +47,33 @@ class LoginView(APIView):
     View para autenticação de usuários.
     """
     def post(self, request):
+        print(f"Dados recebidos no LoginView: {request.data}")
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['user']
+            print(f"Usuário autenticado no LoginView: {user}")
 
-            # Verifica se o 2FA está ativado
             if user.is_2fa_verified:
-                # Gera e envia o código 2FA
                 code = generate_2fa_code()
-                cache.set(f'2fa_{user.email}', code, timeout=300)  # Código válido por 5 minutos
+                cache.set(f'2fa_{user.email}', code, timeout=300)
                 send_2fa_code(user.email, code)
 
                 return Response({
                     "message": _("Código 2FA enviado para o e-mail."),
-                    "requires_2fa": True  # Indica que o 2FA é necessário
+                    "requires_2fa": True
                 }, status=status.HTTP_200_OK)
 
-            # Se o 2FA não está ativado, retorna os tokens JWT diretamente
             refresh = RefreshToken.for_user(user)
-            return Response({
-                "id": user.id,  # Inclui o ID do usuário na resposta
+            response_data = {
+                "id": user.id,
                 "access": str(refresh.access_token),
                 "refresh": str(refresh),
-                "requires_2fa": False  # Indica que o 2FA não é necessário
-            }, status=status.HTTP_200_OK)
+                "requires_2fa": False
+            }
+            print(f"Resposta de login: {response_data}")
+            return Response(response_data, status=status.HTTP_200_OK)
 
+        print(f"Erros no LoginView: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

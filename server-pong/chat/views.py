@@ -5,6 +5,8 @@ from rest_framework import status
 from chat.models import Friend, BlockedUser
 from user_management.models import User
 from django.db import models
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 # Lista de amigos
 class FriendsListView(APIView):
@@ -107,28 +109,36 @@ class PendingFriendRequestsView(APIView):
 
 # Adicionar amigos
 class AddFriendView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # Verifica se o usuário está autenticado
 
     def post(self, request):
         try:
-            user = request.user
-            friend_id = request.data.get("friend_id")
+            user = request.user  # Usuário autenticado
+            friend_id = request.data.get("friend_id")  # Obtém o ID do amigo a partir do corpo da requisição
 
             if not friend_id:
                 return Response({"error": "O ID do amigo é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
 
+            # Verifica se o amigo existe no banco de dados
             try:
                 friend = User.objects.get(id=friend_id)
             except User.DoesNotExist:
                 return Response({"error": "Amigo não encontrado."}, status=status.HTTP_404_NOT_FOUND)
 
+            # Verifica se já existe uma solicitação ou amizade ativa
             if Friend.objects.filter(user=user, friend=friend).exists() or Friend.objects.filter(user=friend, friend=user).exists():
                 return Response({"error": "Já existe uma solicitação ou amizade ativa."}, status=status.HTTP_400_BAD_REQUEST)
 
+            # Cria a solicitação de amizade
             Friend.objects.create(user=user, friend=friend, status="pending")
             return Response({"message": "Solicitação de amizade enviada com sucesso."}, status=status.HTTP_201_CREATED)
+
         except Exception as e:
+            # Registra o erro no log
+            import traceback
+            traceback.print_exc()
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 # Bloquear amigos ou não amigos
 class BlockUserView(APIView):

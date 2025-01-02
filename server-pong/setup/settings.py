@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'axes',
+    'channels'
 ]
 
 REST_FRAMEWORK = {
@@ -168,7 +169,7 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            'hosts': [('127.0.0.1', 6379)],
+            'hosts': [('127.0.0.1', 6380)],
         }
     }
 }
