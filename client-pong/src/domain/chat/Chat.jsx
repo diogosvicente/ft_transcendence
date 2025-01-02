@@ -5,9 +5,13 @@ import "../../assets/styles/chat.css";
 import API_BASE_URL, { API_BASE_URL_NO_LANGUAGE } from "../../assets/config/config.js";
 import { useWebSocket } from "../webSocket/WebSocketProvider.jsx";
 
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+
 const Chat = () => {
 
-  const { sendMessage } = useWebSocket();
+  const { notifications, sendMessage } = useWebSocket();
 
   const [friends, setFriends] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);

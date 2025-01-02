@@ -7,8 +7,6 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         self.user_id = self.scope["user"].id  # Certifique-se de que o usuário está autenticado
         self.room_group_name = f"user_{self.user_id}"  # Grupo único para cada usuário
 
-        # Depuração: imprime informações de conexão
-        print(f"CONNECT: User {self.user_id} connected. Room group: {self.room_group_name}")
 
         # Adiciona o WebSocket ao grupo específico do usuário
         await self.channel_layer.group_add(
@@ -27,6 +25,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         data = json.loads(text_data)
         receiver_id = data.get("receiver_id")  # ID do destinatário
+        message = data.get("message")  # Conteúdo da mensagem
 
         # Envia a mensagem apenas para o grupo do destinatário
         if receiver_id:
@@ -34,10 +33,16 @@ class NotificationConsumer(AsyncWebsocketConsumer):
                 f"user_{receiver_id}",  # Grupo do destinatário
                 {
                     "type": "notification_message",
-                    "message": data.get("message"),
+                    "message": message,
+                    "receiver_id": receiver_id,  # Inclui o receiver_id no evento
                 }
             )
 
+
     async def notification_message(self, event):
         # Envia a mensagem recebida para o WebSocket
-        await self.send(text_data=json.dumps(event))
+        await self.send(text_data=json.dumps({
+            "type": "notification",
+            "message": event["message"],
+            "receiver_id": event["receiver_id"],
+        }))

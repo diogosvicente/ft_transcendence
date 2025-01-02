@@ -36,21 +36,20 @@ export const WebSocketProvider = ({ children }) => {
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
         console.log("Mensagem recebida via WebSocket:", data);
-
+      
         // Processa mensagens do tipo 'notification' ou 'chat'
         if (data.type === "notification") {
           setNotifications((prev) => [...prev, data]);
-
-          // Exibe um toast se o receiver_id for igual ao ID do usuário atual
-          if (data.receiver_id === currentUserId) {
-            toast.info(`Nova notificação: ${data.message}`, {
-              position: toast.POSITION.TOP_RIGHT,
-            });
+      
+          // Converte ambos para string antes de comparar
+          if (String(data.receiver_id) === String(currentUserId)) {
+            toast.info(`Nova notificação: ${data.message}`);
           }
         } else if (data.type === "chat") {
           setMessages((prev) => [...prev, data]);
         }
       };
+      
 
       ws.onclose = () => {
         console.log("WebSocket desconectado, tentando reconectar...");

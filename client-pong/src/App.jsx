@@ -1,6 +1,8 @@
 import React from "react";
 import { Route, Routes, Navigate } from "react-router-dom";
 import "./assets/translate/i18n.js";
+import { ToastContainer } from "react-toastify"; // Importa o ToastContainer
+import "react-toastify/dist/ReactToastify.css"; // Importa o CSS do react-toastify
 import Chat from "./domain/chat/Chat.jsx";
 import LandingPage from "./domain/landing/LandingPage.jsx";
 import Home from "./domain/home/Home.jsx";
@@ -9,9 +11,6 @@ import Profile from "./domain/profile/Profile.jsx";
 import Ranking from "./domain/ranking/Ranking.jsx";
 import { GameCanvas } from "./domain/game/GameCanvas";
 import UserProfile from "./domain/userProfile/UserProfile.jsx";
-import { ToastContainer } from "react-toastify"; // Importa o ToastContainer
-import "react-toastify/dist/ReactToastify.css"; // Importa os estilos do react-toastify
-import { WebSocketProvider } from "./domain/webSocket/WebSocketProvider"; // Importa o WebSocketProvider
 
 function PrivateRoute({ children }) {
   const isAuthenticated = !!localStorage.getItem("access");
@@ -20,9 +19,8 @@ function PrivateRoute({ children }) {
 
 function App() {
   return (
-    <WebSocketProvider>
-      {/* Adiciona o ToastContainer para exibir notificações em qualquer parte do app */}
-      <ToastContainer />
+    <>
+      <ToastContainer /> {/* Adicionado para permitir notificações */}
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route
@@ -75,7 +73,7 @@ function App() {
           }
         />
       </Routes>
-    </WebSocketProvider>
+    </>
   );
 }
 

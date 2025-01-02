@@ -47,11 +47,9 @@ class LoginView(APIView):
     View para autenticação de usuários.
     """
     def post(self, request):
-        print(f"Dados recebidos no LoginView: {request.data}")
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['user']
-            print(f"Usuário autenticado no LoginView: {user}")
 
             if user.is_2fa_verified:
                 code = generate_2fa_code()
@@ -70,10 +68,8 @@ class LoginView(APIView):
                 "refresh": str(refresh),
                 "requires_2fa": False
             }
-            print(f"Resposta de login: {response_data}")
             return Response(response_data, status=status.HTTP_200_OK)
 
-        print(f"Erros no LoginView: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
