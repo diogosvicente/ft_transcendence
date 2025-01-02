@@ -10,13 +10,13 @@ export const useWebSocket = () => {
 
 export const WebSocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
-  const [wsMessages, wsSetMessages] = useState([]);
-  const [notifications, setNotifications] = useState([]);
+  const [wsMessages, setWsMessages] = useState([]); // Lista de mensagens
+  const [notifications, setNotifications] = useState([]); // Lista de notificações
   const socketRef = useRef(null);
 
   const WS_BASE_URL = "ws://localhost:8000/ws/chat/";
 
-  // Função para inicializar o WebSocket dinamicamente
+  // Função para inicializar o WebSocket
   const initializeWebSocket = (accessToken, currentUserId, isManual = false) => {
     if (!accessToken) {
       console.warn("Usuário deslogado. WebSocket não será inicializado.");
@@ -38,14 +38,20 @@ export const WebSocketProvider = ({ children }) => {
       const data = JSON.parse(event.data);
       console.log("Mensagem recebida via WebSocket:", data);
 
+      // Manipulação de notificações e mensagens
       if (data.type === "notification") {
         setNotifications((prev) => [...prev, data]);
 
-        if (String(data.receiver_id) === String(currentUserId)) {
+        // Exibe notificação tanto para o destinatário quanto para o remetente
+        if (
+          String(data.receiver_id) === String(currentUserId) ||
+          String(data.sender_id) === String(currentUserId)
+        ) {
           toast.info(`Nova notificação: ${data.message}`);
         }
       } else if (data.type === "chat") {
-        wsSetMessages((prev) => [...prev, data]);
+        // Atualiza mensagens tanto para o remetente quanto para o destinatário
+        setWsMessages((prev) => [...prev, data]);
       }
     };
 
@@ -64,7 +70,7 @@ export const WebSocketProvider = ({ children }) => {
     setSocket(ws);
   };
 
-  // Inicialização automática no primeiro render
+  // Inicialização automática ao carregar
   React.useEffect(() => {
     const accessToken = localStorage.getItem("access");
     const currentUserId = localStorage.getItem("id");
@@ -79,9 +85,29 @@ export const WebSocketProvider = ({ children }) => {
     }
   };
 
+  const wsReceiveMessage = (callback) => {
+    if (!socketRef.current) {
+      console.error("WebSocket não está conectado.");
+      return;
+    }
+
+    // Garante que o callback será executado ao receber mensagens
+    const handleMessage = (event) => {
+      const data = JSON.parse(event.data);
+      callback(data);
+    };
+
+    socketRef.current.addEventListener("message", handleMessage);
+
+    return () => {
+      socketRef.current.removeEventListener("message", handleMessage);
+    };
+  };
+
   const value = {
-    initializeWebSocket, // Disponibiliza a função para uso externo
+    initializeWebSocket,
     wsSendMessage,
+    wsReceiveMessage,
     wsMessages,
     notifications,
   };

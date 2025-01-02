@@ -139,7 +139,6 @@ class AddFriendView(APIView):
             traceback.print_exc()
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
 # Bloquear amigos ou não amigos
 class BlockUserView(APIView):
     permission_classes = [IsAuthenticated]
@@ -191,15 +190,26 @@ class RemoveFriendView(APIView):
                 return Response({"error": "O ID da solicitação é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
 
             try:
-                # Busca e remove a linha correspondente ao request_id
+                # Busca a linha correspondente ao request_id
                 friend_request = Friend.objects.get(id=request_id)
+                
+                # Obtém os valores user_id e friend_id antes de deletar
+                user_id = friend_request.user.id
+                friend_id = friend_request.friend.id
+                
+                # Remove a linha
                 friend_request.delete()
-                return Response({"message": "Amizade removida com sucesso."}, status=status.HTTP_200_OK)
+                
+                # Retorna a mensagem junto com os IDs
+                return Response({
+                    "message": "Amizade removida com sucesso.",
+                    "user_id": user_id,
+                    "friend_id": friend_id
+                }, status=status.HTTP_200_OK)
             except Friend.DoesNotExist:
                 return Response({"error": "Amizade não encontrada."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 # Aceitar amigos
 class AcceptFriendRequestView(APIView):
@@ -213,17 +223,28 @@ class AcceptFriendRequestView(APIView):
             if not request_id:
                 return Response({"error": "O ID da solicitação é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Atualiza diretamente o status na tabela chat_friend
-            updated_rows = Friend.objects.filter(id=request_id, status="pending").update(status="accepted")
+            # Busca a solicitação de amizade com base no request_id
+            friend_request = Friend.objects.filter(id=request_id, status="pending").first()
 
-            if updated_rows == 0:  # Nenhuma linha foi atualizada
-                return Response({"error": "Solicitação de amizade não encontrada ou já foi aceita."}, status=status.HTTP_404_NOT_FOUND)
+            if not friend_request:
+                return Response({"error": "Solicitação de amizade não encontrada ou já foi processada."}, status=status.HTTP_404_NOT_FOUND)
 
-            return Response({"message": "Solicitação de amizade aceita com sucesso."}, status=status.HTTP_200_OK)
+            # Atualiza o status para "accepted"
+            friend_request.status = "accepted"
+            friend_request.save()
+
+            # Retorna os dados da solicitação
+            return Response(
+                {
+                    "message": "Solicitação de amizade aceita com sucesso.",
+                    "user_id": friend_request.user_id,  # ID do usuário que enviou a solicitação
+                    "friend_id": friend_request.friend_id,  # ID do usuário que aceitou a solicitação
+                },
+                status=status.HTTP_200_OK,
+            )
         except Exception as e:
             print(f"Erro ao aceitar solicitação: {e}")  # Log para depuração
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 # Rejeitar amigos
 class RejectFriendRequestView(APIView):
@@ -231,19 +252,34 @@ class RejectFriendRequestView(APIView):
 
     def post(self, request):
         try:
-            # Obtem o ID diretamente do request
-            request_id = request.data.get("request_id")  # Certifique-se de que o ID está sendo enviado como "id"
+            # Obtém o ID diretamente do request
+            request_id = request.data.get("request_id")
 
             if not request_id:
                 return Response({"error": "O ID da solicitação é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Exclui a linha correspondente ao request_id
-            deleted_rows = Friend.objects.filter(id=request_id, status="pending").delete()
+            # Filtra o objeto da solicitação de amizade
+            friend_request = Friend.objects.filter(id=request_id, status="pending").first()
 
-            if deleted_rows[0] == 0:  # Nenhuma linha foi deletada
+            if not friend_request:
                 return Response({"error": "Solicitação de amizade não encontrada ou já foi processada."}, status=status.HTTP_404_NOT_FOUND)
 
-            return Response({"message": "Solicitação de amizade rejeitada com sucesso."}, status=status.HTTP_200_OK)
+            # Obtém os IDs do usuário e amigo envolvidos na solicitação
+            user_id = friend_request.user_id  # Usuário que recebeu a solicitação
+            friend_id = friend_request.friend_id  # Usuário que enviou a solicitação
+
+            # Exclui a solicitação de amizade
+            friend_request.delete()
+
+            # Retorna a mensagem de sucesso junto com os IDs envolvidos
+            return Response(
+                {
+                    "message": "Solicitação de amizade rejeitada com sucesso.",
+                    "user_id": user_id,
+                    "friend_id": friend_id,
+                },
+                status=status.HTTP_200_OK,
+            )
         except Exception as e:
             print(f"Erro ao rejeitar solicitação: {e}")  # Log para depuração
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -268,10 +304,18 @@ class UnblockUserView(APIView):
             except BlockedUser.DoesNotExist:
                 return Response({"error": "Registro de bloqueio não encontrado ou você não é o bloqueador."}, status=status.HTTP_404_NOT_FOUND)
 
+            # Salva os IDs antes de deletar
+            blocker_id = blocked_user.blocker.id
+            blocked_id = blocked_user.blocked.id
+
             # Remove o registro de bloqueio
             blocked_user.delete()
 
-            return Response({"message": "Usuário desbloqueado com sucesso."}, status=status.HTTP_200_OK)
+            return Response({
+                "message": "Usuário desbloqueado com sucesso.",
+                "blocker_id": blocker_id,
+                "blocked_id": blocked_id
+            }, status=status.HTTP_200_OK)
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

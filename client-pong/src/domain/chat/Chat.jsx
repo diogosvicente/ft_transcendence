@@ -3,15 +3,16 @@ import Navbar from "../template/Navbar";
 import axios from "axios";
 import "../../assets/styles/chat.css";
 import API_BASE_URL, { API_BASE_URL_NO_LANGUAGE } from "../../assets/config/config.js";
+
+import PlayerLists from "./components/PlayerLists";
+import ChatWindow from "./components/ChatWindow";
 import { useWebSocket } from "../webSocket/WebSocketProvider.jsx";
 
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-
 const Chat = () => {
-
-  const { wsSendMessage } = useWebSocket();
+  const { wsSendMessage, wsReceiveMessage } = useWebSocket();
 
   const [friends, setFriends] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
@@ -42,7 +43,6 @@ const Chat = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       const accessToken = localStorage.getItem("access");
-      // console.log(accessToken);
       if (!accessToken) {
         setError("Access token não encontrado.");
         return;
@@ -69,10 +69,6 @@ const Chat = () => {
           }))
         );
 
-        const closeChatTab = (tabId) => {
-          setChatTabs((prev) => prev.filter((tab) => tab.id !== tabId));
-        };
-
         const blockedResponse = await axios.get(`${API_BASE_URL}/api/chat/blocked-users/`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
@@ -80,11 +76,10 @@ const Chat = () => {
           (blockedResponse.data.blocked_users || []).map((user) => ({
             ...user,
             avatar: getAvatar(user.avatar),
-            blocked_record_id: user.blocked_record_id, // Inclui o blocked_record_id no estado
+            blocked_record_id: user.blocked_record_id,
           }))
         );
-        
-        // Busca não amigos
+
         const nonFriendsResponse = await axios.get(
           `${API_BASE_URL}/api/user-management/exclude-self/`,
           {
@@ -109,337 +104,345 @@ const Chat = () => {
     };
 
     fetchUsers();
-  }, []);
+
+    wsReceiveMessage((message) => {
+      const { type, action, payload } = message;
+
+      if (type === "notification") {
+        switch (action) {
+          case "addFriend":
+            setPendingRequests((prev) => [...prev, payload]);
+            break;
+          case "blockUser":
+            setBlockedUsers((prev) => [...prev, payload]);
+            break;
+          case "unblockUser":
+            setBlockedUsers((prev) => prev.filter((user) => user.blocked_record_id !== payload.blocked_record_id));
+            break;
+          case "acceptFriend":
+            setFriends((prev) => [...prev, payload]);
+            setPendingRequests((prev) => prev.filter((req) => req.id !== payload.requestId));
+            break;
+          case "rejectFriend":
+            setPendingRequests((prev) => prev.filter((req) => req.id !== payload.requestId));
+            break;
+          case "removeFriend":
+            setFriends((prev) => prev.filter((friend) => friend.id !== payload.friendId));
+            break;
+          default:
+            break;
+        }
+      }
+    });
+  }, [wsReceiveMessage]);
 
   const sendChatMessage = (chatId) => {
     if (currentMessage.trim()) {
+      const message = {
+        chatId,
+        text: currentMessage,
+        sender: "Você",
+      };
+
+      wsSendMessage({
+        type: "notification",
+        action: "message",
+        payload: message,
+      });
+
       setChatMessages((prev) => ({
         ...prev,
-        [chatId]: [...(prev[chatId] || []), { text: currentMessage, sender: "Você" }],
+        [chatId]: [...(prev[chatId] || []), message],
       }));
-      setCurrentMessage("");
-    }
-  };
 
-  const openChat = (friendId, displayName) => {
-    setActiveChat(friendId);
-    if (!chatMessages[friendId]) {
-      setChatMessages((prev) => ({ ...prev, [friendId]: [] }));
+      setCurrentMessage("");
     }
   };
 
   const addFriend = async (userId) => {
     const accessToken = localStorage.getItem("access");
     const loggedID = localStorage.getItem("id");
+  
     try {
       const response = await axios.post(
         `${API_BASE_URL}/api/chat/add-friend/`,
         { friend_id: userId },
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
-
-      // Enviar notificação via WebSocket
+  
+      // Enviar notificação para o destinatário (userId) e remetente (loggedID)
       wsSendMessage({
         type: "notification",
         action: "addFriend",
-        sender_id: loggedID, // ID do remetente
-        receiver_id: userId, // ID do destinatário
+        sender_id: loggedID,
+        receiver_id: userId, // Destinatário
         message: `Você recebeu uma solicitação de amizade.`,
+        payload: { sender_id: loggedID, receiver_id: userId },
       });
-
-      alert(response.data.message);
+  
+      wsSendMessage({
+        type: "notification",
+        action: "addFriend",
+        sender_id: userId,
+        receiver_id: loggedID, // Remetente
+        message: `Você enviou uma solicitação de amizade.`,
+        payload: { sender_id: userId, receiver_id: loggedID },
+      });
+  
+      // alert(response.data.message);
     } catch (err) {
+      console.error("Erro ao adicionar amigo:", err);
       alert(err.response?.data?.error || "Erro ao adicionar amigo.");
-      console.error(err);
     }
   };
 
   const blockUser = async (userId) => {
-    const accessToken = localStorage.getItem("access");
-    try {
-      const response = await axios.post(
-        `${API_BASE_URL}/api/chat/block-user/`,
-        { user_id: userId },
-        { headers: { Authorization: `Bearer ${accessToken}` } }
-      );
-      alert("Usuário bloqueado com sucesso.");
-    } catch (err) {
-      console.error("Erro ao bloquear usuário:", err);
-      alert(err.response?.data?.error || "Erro ao bloquear usuário.");
-    }
+      const accessToken = localStorage.getItem("access");
+      const loggedID = localStorage.getItem("id");
+
+      try {
+          const response = await axios.post(
+              `${API_BASE_URL}/api/chat/block-user/`,
+              { user_id: userId },
+              { headers: { Authorization: `Bearer ${accessToken}` } }
+          );
+
+          // Enviar notificação para o usuário bloqueado
+          wsSendMessage({
+              type: "notification",
+              action: "blockUser",
+              sender_id: loggedID,
+              receiver_id: userId, // O usuário bloqueado
+              message: `Você foi bloqueado.`,
+              payload: { sender_id: loggedID, receiver_id: userId },
+          });
+
+          // Enviar notificação para quem realizou o bloqueio
+          wsSendMessage({
+              type: "notification",
+              action: "blockUser",
+              sender_id: userId,
+              receiver_id: loggedID, // Quem realizou o bloqueio
+              message: `Você bloqueou o usuário.`,
+              payload: { sender_id: userId, receiver_id: loggedID },
+          });
+
+          // Remover o alerta
+          // alert("Usuário bloqueado com sucesso.");
+      } catch (err) {
+          console.error("Erro ao bloquear usuário:", err);
+          alert(err.response?.data?.error || "Erro ao bloquear usuário.");
+      }
   };
 
+
   const unblockUser = async (blockedRecordId) => {
-    const accessToken = localStorage.getItem("access");
-    try {
-      const response = await axios.post(
-        `${API_BASE_URL}/api/chat/unblock-user/`,
-        { blockedRecordId }, // Envia o ID do registro de bloqueio
-        { headers: { Authorization: `Bearer ${accessToken}` } }
-      );
-      alert("Usuário desbloqueado com sucesso.");
-      setBlockedUsers((prev) => prev.filter((user) => user.blocked_record_id !== blockedRecordId));
-    } catch (err) {
-      console.error("Erro ao desbloquear usuário:", err);
-      alert(err.response?.data?.error || "Erro ao desbloquear usuário.");
-    }
+      const accessToken = localStorage.getItem("access");
+      const loggedID = localStorage.getItem("id");
+
+      try {
+          const response = await axios.post(
+              `${API_BASE_URL}/api/chat/unblock-user/`,
+              { blockedRecordId },
+              { headers: { Authorization: `Bearer ${accessToken}` } }
+          );
+
+          const { blocker_id, blocked_id } = response.data;
+          console.log("ID: " + blocked_id);
+
+          // Enviar notificação para o usuário desbloqueado
+          wsSendMessage({
+              type: "notification",
+              action: "unblockUser",
+              sender_id: loggedID,
+              receiver_id: blocked_id, // O usuário que foi desbloqueado
+              message: `Você foi desbloqueado.`,
+              payload: { sender_id: loggedID, receiver_id: blocked_id },
+          });
+
+          // Enviar notificação para quem realizou o desbloqueio
+          wsSendMessage({
+              type: "notification",
+              action: "unblockUser",
+              sender_id: blocked_id,
+              receiver_id: loggedID, // Quem realizou o desbloqueio
+              message: `Você desbloqueou o usuário.`,
+              payload: { sender_id: blocked_id, receiver_id: loggedID },
+          });
+
+          // Remover o alerta
+          // alert("Usuário desbloqueado com sucesso.");
+      } catch (err) {
+          console.error("Erro ao desbloquear usuário:", err);
+          alert(err.response?.data?.error || "Erro ao desbloquear usuário.");
+      }
   };
 
   const acceptFriendRequest = async (requestId) => {
-    const accessToken = localStorage.getItem("access");
-    try {
-      const response = await axios.post(
-        `${API_BASE_URL}/api/chat/accept-friend/`,
-        { request_id: requestId }, // Envia o ID da tabela `chat_friend`
-        { headers: { Authorization: `Bearer ${accessToken}` } }
-      );
-      alert("Solicitação de amizade aceita com sucesso.");
-      setPendingRequests((prev) => prev.filter((req) => req.id !== requestId));
-      setFriends((prev) => [...prev, ...pendingRequests.filter((req) => req.id === requestId)]);
-    } catch (err) {
-      console.error("Erro ao aceitar solicitação:", err);
-      alert(err.response?.data?.error || "Erro ao aceitar solicitação.");
-    }
+      const accessToken = localStorage.getItem("access");
+      const loggedID = localStorage.getItem("id");
+      try {
+          const response = await axios.post(
+              `${API_BASE_URL}/api/chat/accept-friend/`,
+              { request_id: requestId },
+              { headers: { Authorization: `Bearer ${accessToken}` } }
+          );
+
+          // Extraindo friend_id e user_id do retorno da API
+          const { friend_id, user_id } = response.data;
+
+          // Envia notificação para quem enviou a solicitação
+          wsSendMessage({
+              type: "notification",
+              action: "acceptFriend",
+              sender_id: loggedID, // Quem aceitou a solicitação
+              receiver_id: user_id, // Quem enviou a solicitação
+              message: `Sua solicitação de amizade foi aceita.`,
+              payload: { sender_id: loggedID, receiver_id: user_id },
+          });
+
+          // Envia notificação para quem aceitou a solicitação
+          wsSendMessage({
+              type: "notification",
+              action: "acceptFriend",
+              sender_id: user_id, // Quem enviou a solicitação
+              receiver_id: loggedID, // Quem aceitou a solicitação
+              message: `Você aceitou a solicitação de amizade.`,
+              payload: { sender_id: user_id, receiver_id: loggedID },
+          });
+
+          // Removendo o alerta
+          // alert("Solicitação de amizade aceita com sucesso.");
+      } catch (err) {
+          console.error("Erro ao aceitar solicitação:", err);
+          alert(err.response?.data?.error || "Erro ao aceitar solicitação.");
+      }
   };
 
   const rejectFriendRequest = async (requestId) => {
-    const accessToken = localStorage.getItem("access");
-    try {
-      await axios.post(
-        `${API_BASE_URL}/api/chat/reject-friend/`,
-        { request_id: requestId }, // Envia o ID da tabela `chat_friend`
-        { headers: { Authorization: `Bearer ${accessToken}` } }
-      );
-      alert("Solicitação de amizade rejeitada com sucesso.");
-      setPendingRequests((prev) => prev.filter((req) => req.id !== requestId));
-    } catch (err) {
-      console.error("Erro ao rejeitar solicitação:", err);
-      alert(err.response?.data?.error || "Erro ao rejeitar solicitação.");
-    }
+      const accessToken = localStorage.getItem("access");
+      const loggedID = localStorage.getItem("id");
+
+      try {
+          const response = await axios.post(
+              `${API_BASE_URL}/api/chat/reject-friend/`,
+              { request_id: requestId },
+              { headers: { Authorization: `Bearer ${accessToken}` } }
+          );
+
+          const { user_id, friend_id } = response.data;
+
+          // Determina os valores de sender_id e receiver_id
+          const receiver_id = user_id === loggedID ? friend_id : user_id;
+
+          // Envia notificação para quem enviou a solicitação
+          wsSendMessage({
+              type: "notification",
+              action: "rejectFriend",
+              sender_id: user_id, // Quem rejeitou a solicitação
+              receiver_id: friend_id, // Quem enviou a solicitação
+              message: `Sua solicitação de amizade foi rejeitada.`,
+              payload: { sender_id: loggedID, receiver_id: receiver_id },
+          });
+
+          // Envia notificação para quem rejeitou a solicitação
+          wsSendMessage({
+              type: "notification",
+              action: "rejectFriend",
+              sender_id: friend_id, // Quem enviou a solicitação
+              receiver_id: user_id, // Quem rejeitou a solicitação
+              message: `Você rejeitou a solicitação de amizade.`,
+              payload: { sender_id: receiver_id, receiver_id: loggedID },
+          });
+
+          // Removendo o alerta
+          // alert("Solicitação de amizade rejeitada com sucesso.");
+      } catch (err) {
+          console.error("Erro ao rejeitar solicitação:", err);
+          alert(err.response?.data?.error || "Erro ao rejeitar solicitação.");
+      }
   };
 
-  const removeFriend = async (friendId) => {
-    const accessToken = localStorage.getItem("access");
-    try {
-      await axios.delete(`${API_BASE_URL}/api/chat/remove-friend/`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-        data: { id: friendId },
-      });
-      alert("Amigo removido com sucesso.");
-      setFriends((prev) => prev.filter((friend) => friend.id !== friendId));
-    } catch (err) {
-      console.error("Erro ao remover amigo:", err);
-      alert(err.response?.data?.error || "Erro ao remover amigo.");
-    }
+  const removeFriend = async (requestId) => {
+      const accessToken = localStorage.getItem("access");
+      const loggedID = localStorage.getItem("id");
+      try {
+          const response = await axios.delete(`${API_BASE_URL}/api/chat/remove-friend/`, {
+              headers: { Authorization: `Bearer ${accessToken}` },
+              data: { id: requestId },
+          });
+
+          const { user_id, friend_id } = response.data;
+
+          // Determina os valores de sender_id e receiver_id
+          const receiverId = user_id === loggedID ? friend_id : user_id;
+
+          /*console.log("loggedID" + loggedID);
+          console.log("user_id" + user_id);
+          console.log("friend_id" + friend_id);*/
+
+          // Envia notificação para quem foi removido
+          wsSendMessage({
+              type: "notification",
+              action: "removeFriend",
+              sender_id: friend_id, // Quem removeu a amizade
+              receiver_id: user_id, // Quem foi removido
+              message: `Você foi removido da lista de amigos.`,
+              payload: { sender_id: loggedID, receiver_id: receiverId },
+          });
+
+          // Envia notificação para quem removeu
+          wsSendMessage({
+              type: "notification",
+              action: "removeFriend",
+              sender_id: user_id, // Quem foi removido
+              receiver_id: friend_id, // Quem removeu a amizade
+              message: `Você removeu um amigo da sua lista.`,
+              payload: { sender_id: receiverId, receiver_id: loggedID },
+          });
+
+          // Removendo o alerta
+          // alert("Amigo removido com sucesso.");
+      } catch (err) {
+          console.error("Erro ao remover amigo:", err);
+          alert(err.response?.data?.error || "Erro ao remover amigo.");
+      }
   };
 
+  
+  
   return (
     <>
       <Navbar />
       <div className="chat-container">
-        <div className="players-list">
-          <h3>Lista de Jogadores</h3>
-          {error && <p className="text-danger">{error}</p>}
-
-          {/* Amigos */}
-          <div className="friends-section">
-            <h4>Amigos</h4>
-            {friends.length > 0 ? (
-              <ul>
-                {friends.map((friend) => (
-                  <li key={friend.id} className="player-item">
-                  <div className="player-header">
-                    <img src={friend.avatar} alt={friend.display_name} className="player-avatar" />
-                    <div className="player-details">
-                      <p className="player-name">{friend.display_name}</p>
-                      <p className="player-status">
-                        {friend.online_status ? (
-                          <span className="status-indicator online">Online</span>
-                        ) : (
-                          <span className="status-indicator offline">Offline</span>
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="player-actions">
-                    <button title="Abrir Chat" onClick={() => openChatWithUser(friend)} style={{ margin: "5px" }}>
-                      💬
-                    </button>
-                    <button
-                      title="Ver Perfil"
-                      onClick={() => window.open(`/user-profile/${friend.user_id}`, "_blank")}
-                      style={{ margin: "5px" }}
-                    >
-                      👤
-                    </button>
-                    <button title="Desafiar" style={{ margin: "5px" }}>🎮</button>
-                    <button title="Bloquear" onClick={() => blockUser(friend.user_id)} style={{ margin: "5px" }}>
-                      🚫
-                    </button>
-                    <button title="Excluir" onClick={() => removeFriend(friend.id)} style={{ margin: "5px" }}>
-                      ❌
-                    </button>
-                  </div>
-                </li>
-                
-                ))}
-              </ul>
-            ) : (
-              <p>Sem amigos adicionados.</p>
-            )}
-          </div>
-
-
-          {/* Solicitações Pendentes */}
-          <div className="pending-section">
-            <h4>Solicitações Pendentes</h4>
-            {pendingRequests.length > 0 ? (
-              <ul>
-                {pendingRequests.map((request) => (
-                  <li key={request.id} className="player-item">
-                    <img src={request.avatar} alt={request.display_name} className="player-avatar" />
-                    <div className="player-info">
-                      <p className="player-name">{request.display_name}</p>
-                      <p className="player-status">
-                        {request.direction === "received" ? "Recebida" : "Enviada"}
-                      </p>
-                    </div>
-                    <div className="player-actions">
-                      {request.direction === "received" ? (
-                        <>
-                          <button title="Aceitar" onClick={() => acceptFriendRequest(request.id)}>✔</button>
-                          <button title="Rejeitar" onClick={() => rejectFriendRequest(request.id)}>❌</button>
-                        </>
-                      ) : (
-                        <button title="Cancelar Solicitação" onClick={() => rejectFriendRequest(request.id)}>❌</button>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>Sem solicitações pendentes.</p>
-            )}
-          </div>
-
-          {/* Usuários Bloqueados */}
-          <div className="blocked-section">
-            <h4>Usuários Bloqueados</h4>
-            {blockedUsers.length > 0 ? (
-              <ul>
-                {blockedUsers.map((user) => (
-                  <li key={user.blocked_record_id} className="player-item">
-                    <img src={user.avatar} alt={user.display_name} className="player-avatar" />
-                    <div className="player-info">
-                      <p className="player-name">{user.display_name}</p>
-                      <p className="player-status">Bloqueado</p>
-                    </div>
-                    <div className="player-actions">
-                      <button
-                        title="Desbloquear"
-                        onClick={() => unblockUser(user.blocked_record_id)}
-                      >
-                        🔓
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>Nenhum usuário bloqueado.</p>
-            )}
-          </div>
-
-          {/* Não Amigos */}
-          <div className="non-friends-section">
-            <h4>Não Amigos</h4>
-            {nonFriends.length > 0 ? (
-              <ul>
-                {nonFriends.map((user) => (
-                  <li key={user.id} className="player-item">
-                    <img
-                      src={user.avatar}
-                      alt={user.display_name}
-                      className="player-avatar"
-                    />
-                    <div className="player-info">
-                      <p className="player-name">{user.display_name}</p>
-                      <p className="player-status">
-                        <span
-                          className={user.is_online ? "status-dot online" : "status-dot offline"}
-                        ></span>
-                        {user.is_online ? "Online" : "Offline"}
-                      </p>
-                    </div>
-                    <div className="player-actions">
-                      <button
-                        title="Ver Perfil"
-                        onClick={() => window.open(`/user-profile/${user.id}`, "_blank")}
-                      >
-                        👤
-                      </button>
-                      <button
-                        title="Adicionar como amigo"
-                        onClick={() => addFriend(user.id)}
-                      >
-                        ➕
-                      </button>
-                      <button title="Bloquear" onClick={() => blockUser(user.id)}>🚫</button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>Não há usuários disponíveis para adicionar.</p>
-            )}
-          </div>
-        </div>
-
-        {/* Área de Chat */}
-        <div className="chat-section">
-          <div className="chat-tabs">
-            <button
-              className={`chat-tab ${!chatTabs.length ? "active" : ""}`}
-              onClick={() => setChatTabs([])}
-            >
-              Chat Global
-            </button>
-            {chatTabs.map((tab) => (
-              <button
-                key={tab.id}
-                className="chat-tab"
-                onClick={() => setActiveChat(tab.id)}
-              >
-                {tab.name} <span onClick={() => closeChatTab(tab.id)}>❌</span>
-              </button>
-            ))}
-          </div>
-
-          <div className="chat-messages">
-            {!chatTabs.length ? (
-              chatMessages.map((message, index) => (
-                <div key={index} className="chat-message">
-                  <strong>{message.sender}:</strong> {message.text}
-                </div>
-              ))
-            ) : (
-              <div className="chat-private">
-                {/* Renderize aqui as mensagens privadas da aba ativa */}
-                <p>Chat privado com {chatTabs.find((tab) => tab.id === activeChat)?.name}</p>
-              </div>
-            )}
-          </div>
-
-          <div className="chat-input">
-            <textarea
-              placeholder="Digite sua mensagem"
-              value={currentMessage}
-              onChange={(e) => setCurrentMessage(e.target.value)}
-            ></textarea>
-            <button onClick={sendChatMessage}>Enviar</button>
-          </div>
-        </div>
-
+        <PlayerLists
+          friends={friends}
+          pendingRequests={pendingRequests}
+          blockedUsers={blockedUsers}
+          nonFriends={nonFriends}
+          setFriends={setFriends}
+          setPendingRequests={setPendingRequests}
+          setBlockedUsers={setBlockedUsers}
+          setNonFriends={setNonFriends}
+          openChat={openChatWithUser}
+          addFriend={addFriend}
+          blockUser={blockUser}
+          unblockUser={unblockUser}
+          acceptFriendRequest={acceptFriendRequest}
+          rejectFriendRequest={rejectFriendRequest}
+          removeFriend={removeFriend}
+          error={error}
+        />
+        <ChatWindow
+          chatMessages={chatMessages}
+          activeChat={activeChat}
+          chatTabs={chatTabs}
+          setChatTabs={setChatTabs}
+          setActiveChat={setActiveChat}
+          sendChatMessage={sendChatMessage}
+          currentMessage={currentMessage}
+          setCurrentMessage={setCurrentMessage}
+        />
       </div>
     </>
   );
