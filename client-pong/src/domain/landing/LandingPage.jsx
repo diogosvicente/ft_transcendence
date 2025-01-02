@@ -3,6 +3,9 @@ import { Button, Stack, Form, Container, Alert, Tabs, Tab } from "react-bootstra
 import LoadingModal from "./LoadingModal";
 import { useNavigate } from "react-router-dom";
 
+//WebSocket
+import { useWebSocket } from "../webSocket/WebSocketProvider.jsx";
+
 // Translate
 import { useTranslation } from "react-i18next";
 
@@ -33,6 +36,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 const LoginAndRegisterForm = () => {
+  const { initializeWebSocket } = useWebSocket();
   const { t, i18n } = useTranslation();
   const [validated, setValidated] = useState(false);
   const [showLoading, setShowLoading] = useState(false);
@@ -166,6 +170,10 @@ const LoginAndRegisterForm = () => {
           localStorage.setItem("refresh", data.refresh);
           // localStorage.setItem("email", formData.email);
           localStorage.setItem("id", data.id);
+          
+          // Inicializa o WebSocket manualmente
+          initializeWebSocket(data.access, data.id, true);
+
           navigate("/home");
         }
       } else {

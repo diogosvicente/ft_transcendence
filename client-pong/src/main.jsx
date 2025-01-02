@@ -5,25 +5,9 @@ import { WebSocketProvider } from "./domain/webSocket/WebSocketProvider"; // Imp
 import App from "./App";
 
 createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <WebSocketProvider>
-        <App />
-      </WebSocketProvider>
-    </BrowserRouter>
-  </React.StrictMode>
+  <BrowserRouter>
+    <WebSocketProvider>
+      <App />
+    </WebSocketProvider>
+  </BrowserRouter>
 );
-
-// import { StrictMode } from 'react'
-// import { createRoot } from 'react-dom/client'
-// import App from './App.jsx'
-
-// import { BrowserRouter } from 'react-router-dom'
-
-// createRoot(document.getElementById('root')).render(
-//   <StrictMode>
-//     <BrowserRouter>
-//       <App />
-//     </BrowserRouter>
-//   </StrictMode>
-// );
