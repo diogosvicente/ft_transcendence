@@ -10,7 +10,7 @@ export const useWebSocket = () => {
 
 export const WebSocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
-  const [messages, setMessages] = useState([]);
+  const [wsMessages, wsSetMessages] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const socketRef = useRef(null);
 
@@ -45,7 +45,7 @@ export const WebSocketProvider = ({ children }) => {
           toast.info(`Nova notificação: ${data.message}`);
         }
       } else if (data.type === "chat") {
-        setMessages((prev) => [...prev, data]);
+        wsSetMessages((prev) => [...prev, data]);
       }
     };
 
@@ -71,7 +71,7 @@ export const WebSocketProvider = ({ children }) => {
     initializeWebSocket(accessToken, currentUserId);
   }, []); // Sem dependências para rodar apenas no primeiro render
 
-  const sendMessage = (message) => {
+  const wsSendMessage = (message) => {
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
       socketRef.current.send(JSON.stringify(message));
     } else {
@@ -81,8 +81,8 @@ export const WebSocketProvider = ({ children }) => {
 
   const value = {
     initializeWebSocket, // Disponibiliza a função para uso externo
-    sendMessage,
-    messages,
+    wsSendMessage,
+    wsMessages,
     notifications,
   };
 

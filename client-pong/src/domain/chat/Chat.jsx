@@ -11,13 +11,13 @@ import "react-toastify/dist/ReactToastify.css";
 
 const Chat = () => {
 
-  const { notifications, sendMessage } = useWebSocket();
+  const { wsSendMessage } = useWebSocket();
 
   const [friends, setFriends] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [blockedUsers, setBlockedUsers] = useState([]);
   const [nonFriends, setNonFriends] = useState([]);
-  const [messages, setMessages] = useState([]);
+  const [chatMessages, setChatMessages] = useState([]);
   const [currentMessage, setCurrentMessage] = useState("");
   const [error, setError] = useState(null);
   const [activeChat, setActiveChat] = useState("global");
@@ -111,9 +111,9 @@ const Chat = () => {
     fetchUsers();
   }, []);
 
-  const sendMessage1 = (chatId) => {
+  const sendChatMessage = (chatId) => {
     if (currentMessage.trim()) {
-      setMessages((prev) => ({
+      setChatMessages((prev) => ({
         ...prev,
         [chatId]: [...(prev[chatId] || []), { text: currentMessage, sender: "Você" }],
       }));
@@ -123,8 +123,8 @@ const Chat = () => {
 
   const openChat = (friendId, displayName) => {
     setActiveChat(friendId);
-    if (!messages[friendId]) {
-      setMessages((prev) => ({ ...prev, [friendId]: [] }));
+    if (!chatMessages[friendId]) {
+      setChatMessages((prev) => ({ ...prev, [friendId]: [] }));
     }
   };
 
@@ -139,7 +139,7 @@ const Chat = () => {
       );
 
       // Enviar notificação via WebSocket
-      sendMessage({
+      wsSendMessage({
         type: "notification",
         action: "addFriend",
         sender_id: loggedID, // ID do remetente
@@ -417,7 +417,7 @@ const Chat = () => {
 
           <div className="chat-messages">
             {!chatTabs.length ? (
-              messages.map((message, index) => (
+              chatMessages.map((message, index) => (
                 <div key={index} className="chat-message">
                   <strong>{message.sender}:</strong> {message.text}
                 </div>
@@ -436,7 +436,7 @@ const Chat = () => {
               value={currentMessage}
               onChange={(e) => setCurrentMessage(e.target.value)}
             ></textarea>
-            <button onClick={sendMessage1}>Enviar</button>
+            <button onClick={sendChatMessage}>Enviar</button>
           </div>
         </div>
 
