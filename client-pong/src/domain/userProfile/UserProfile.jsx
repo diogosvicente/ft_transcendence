@@ -13,7 +13,14 @@ import MatchHistory from "./components/MatchHistory";
 import { useWebSocket } from "../webSocket/WebSocketProvider.jsx";
 
 const UserProfile = () => {
-  const { wsSendMessage, wsReceiveMessage } = useWebSocket(); // WebSocket hooks
+  const {
+    wsSendNotificationMessage,
+    wsSendChatMessage,
+    notifications,
+    wsMessages,
+  } = useWebSocket();
+
+  // const { wsSendMessage, wsReceiveMessage } = useWebSocket(); // WebSocket hooks
   const { user_id } = useParams();
   const [user, setUser] = useState(null);
   const [matchHistory, setMatchHistory] = useState([]);
@@ -77,7 +84,7 @@ const UserProfile = () => {
     fetchUserProfile();
 
     // Recebendo notificações via WebSocket
-    wsReceiveMessage((message) => {
+    wsSendNotificationMessage((message) => {
       const { type, action, payload } = message;
 
       if (type === "notification") {
@@ -113,7 +120,7 @@ const UserProfile = () => {
         }
       }
     });
-  }, [wsReceiveMessage, user_id, loggedUserId]);
+  }, [wsSendNotificationMessage, user_id, loggedUserId]);
 
   const handleAddFriend = async () => {
     const accessToken = localStorage.getItem("access");
@@ -127,7 +134,7 @@ const UserProfile = () => {
       );
   
       // Enviar notificação para o destinatário (user_id)
-      wsSendMessage({
+      wsSendNotificationMessage({
         type: "notification",
         action: "addFriend",
         sender_id: loggedUserId,
@@ -137,7 +144,7 @@ const UserProfile = () => {
       });
   
       // Enviar notificação para o remetente (loggedUserId)
-      wsSendMessage({
+      wsSendNotificationMessage({
         type: "notification",
         action: "addFriend",
         sender_id: user_id,
@@ -172,7 +179,7 @@ const UserProfile = () => {
       // const receiver_id = user_id === loggedUserId ? friend_id : user_id;
   
       // Enviar notificação para quem enviou a solicitação
-      wsSendMessage({
+      wsSendNotificationMessage({
         type: "notification",
         action: "removeFriend",
         sender_id: user_id, // Quem cancelou a solicitação
@@ -182,7 +189,7 @@ const UserProfile = () => {
       });
   
       // Enviar notificação para quem recebeu o cancelamento
-      wsSendMessage({
+      wsSendNotificationMessage({
         type: "notification",
         action: "removeFriend",
         sender_id: friend_id, // Quem recebeu o cancelamento
@@ -213,7 +220,7 @@ const UserProfile = () => {
       );
   
       // Enviar notificação para o usuário bloqueado
-      wsSendMessage({
+      wsSendNotificationMessage({
         type: "notification",
         action: "blockUser",
         sender_id: loggedUserId, // Quem realizou o bloqueio
@@ -223,7 +230,7 @@ const UserProfile = () => {
       });
   
       // Enviar notificação para quem realizou o bloqueio
-      wsSendMessage({
+      wsSendNotificationMessage({
         type: "notification",
         action: "blockUser",
         sender_id: user_id, // O usuário bloqueado
@@ -255,7 +262,7 @@ const UserProfile = () => {
       const { blocker_id, blocked_id } = response.data;
   
       // Enviar notificação para o usuário desbloqueado
-      wsSendMessage({
+      wsSendNotificationMessage({
         type: "notification",
         action: "unblockUser",
         sender_id: loggedUserId, // Quem realizou o desbloqueio
@@ -265,7 +272,7 @@ const UserProfile = () => {
       });
   
       // Enviar notificação para quem realizou o desbloqueio
-      wsSendMessage({
+      wsSendNotificationMessage({
         type: "notification",
         action: "unblockUser",
         sender_id: blocked_id, // O usuário que foi desbloqueado
@@ -297,7 +304,7 @@ const UserProfile = () => {
       // const receiverId = user_id === loggedUserId ? friend_id : user_id;
   
       // Envia notificação para quem foi removido
-      wsSendMessage({
+      wsSendNotificationMessage({
         type: "notification",
         action: "removeFriend",
         sender_id: user_id, // Quem removeu a amizade
@@ -307,7 +314,7 @@ const UserProfile = () => {
       });
   
       // Envia notificação para quem removeu
-      wsSendMessage({
+      wsSendNotificationMessage({
         type: "notification",
         action: "removeFriend",
         sender_id: friend_id, // Quem foi removido
@@ -336,7 +343,7 @@ const UserProfile = () => {
       const { user_id, friend_id } = response.data;
   
       // Envia notificação para quem enviou a solicitação
-      wsSendMessage({
+      wsSendNotificationMessage({
         type: "notification",
         action: "acceptFriend",
         sender_id: loggedUserId, // Quem aceitou a solicitação
@@ -346,7 +353,7 @@ const UserProfile = () => {
       });
   
       // Envia notificação para quem aceitou a solicitação
-      wsSendMessage({
+      wsSendNotificationMessage({
         type: "notification",
         action: "acceptFriend",
         sender_id: user_id, // Quem enviou a solicitação
@@ -375,7 +382,7 @@ const UserProfile = () => {
       const { user_id, friend_id } = response.data;
   
       // Envia notificação para quem enviou a solicitação
-      wsSendMessage({
+      wsSendNotificationMessage({
         type: "notification",
         action: "rejectFriend",
         sender_id: loggedUserId, // Quem rejeitou a solicitação
@@ -385,7 +392,7 @@ const UserProfile = () => {
       });
   
       // Envia notificação para quem rejeitou a solicitação
-      wsSendMessage({
+      wsSendNotificationMessage({
         type: "notification",
         action: "rejectFriend",
         sender_id: user_id, // Quem enviou a solicitação

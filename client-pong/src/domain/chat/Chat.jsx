@@ -12,7 +12,12 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const Chat = () => {
-  const { wsSendMessage, wsReceiveMessage } = useWebSocket();
+  const {
+    wsSendNotificationMessage,
+    wsSendChatMessage,
+    notifications,
+    wsMessages,
+  } = useWebSocket();
 
   const [friends, setFriends] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
@@ -35,9 +40,24 @@ const Chat = () => {
   };
 
   const openChatWithUser = (friend) => {
-    if (!chatTabs.some((tab) => tab.id === friend.id)) {
-      setChatTabs((prev) => [...prev, { id: friend.id, name: friend.display_name }]);
+    console.log(friend); // Verifica os dados do amigo
+    if (!chatTabs.some((tab) => tab.id === friend.user_id)) {
+      setChatTabs((prev) => [
+        ...prev,
+        { id: friend.user_id, name: friend.display_name }, // Usando `user_id` como identificador
+      ]);
     }
+    setActiveChat(friend.user_id); // Define o ID como ativo
+  };
+
+  const closeChatTab = (chatId) => {
+    setChatTabs((prev) => prev.filter((tab) => tab.id !== chatId));
+    setChatMessages((prev) => {
+      const updatedMessages = { ...prev };
+      delete updatedMessages[chatId];
+      return updatedMessages;
+    });
+    if (activeChat === chatId) setActiveChat("global");
   };
 
   useEffect(() => {
@@ -56,6 +76,7 @@ const Chat = () => {
           (friendsResponse.data.friends || []).map((friend) => ({
             ...friend,
             avatar: getAvatar(friend.avatar),
+            user_id: friend.user_id, // Certifique-se de que este campo está incluído
           }))
         );
 
@@ -105,57 +126,103 @@ const Chat = () => {
 
     fetchUsers();
 
-    wsReceiveMessage((message) => {
-      const { type, action, payload } = message;
+    // Processar notificações
+  notifications?.forEach((notification) => {
+    const { action, payload } = notification;
 
-      if (type === "notification") {
-        switch (action) {
-          case "addFriend":
-            setPendingRequests((prev) => [...prev, payload]);
-            break;
-          case "blockUser":
-            setBlockedUsers((prev) => [...prev, payload]);
-            break;
-          case "unblockUser":
-            setBlockedUsers((prev) => prev.filter((user) => user.blocked_record_id !== payload.blocked_record_id));
-            break;
-          case "acceptFriend":
-            setFriends((prev) => [...prev, payload]);
-            setPendingRequests((prev) => prev.filter((req) => req.id !== payload.requestId));
-            break;
-          case "rejectFriend":
-            setPendingRequests((prev) => prev.filter((req) => req.id !== payload.requestId));
-            break;
-          case "removeFriend":
-            setFriends((prev) => prev.filter((friend) => friend.id !== payload.friendId));
-            break;
-          default:
-            break;
+    switch (action) {
+      case "addFriend":
+        setPendingRequests((prev) => [...prev, payload]);
+        break;
+      case "blockUser":
+        setBlockedUsers((prev) => [...prev, payload]);
+        break;
+      case "unblockUser":
+        setBlockedUsers((prev) =>
+          prev.filter((user) => user.blocked_record_id !== payload.blocked_record_id)
+        );
+        break;
+      case "acceptFriend":
+        setFriends((prev) => [...prev, payload]);
+        setPendingRequests((prev) =>
+          prev.filter((req) => req.id !== payload.requestId)
+        );
+        break;
+      case "rejectFriend":
+        setPendingRequests((prev) =>
+          prev.filter((req) => req.id !== payload.requestId)
+        );
+        break;
+      case "removeFriend":
+        setFriends((prev) =>
+          prev.filter((friend) => friend.id !== payload.friendId)
+        );
+        break;
+      default:
+        break;
+    }
+  });
+
+  // Processar mensagens do chat
+  wsMessages?.forEach((message) => {
+    const { sender_id, receiver_id, text, timestamp } = message;
+
+    setChatMessages((prev) => ({
+      ...prev,
+      [receiver_id]: [
+        ...(prev[receiver_id] || []),
+        {
+          sender: sender_id === localStorage.getItem("id") ? "Você" : "Amigo",
+          text,
+          timestamp,
+        },
+      ],
+    }));
+  });
+}, [notifications, wsMessages]);
+
+  const sendChatMessage = () => {
+    if (currentMessage.trim() && activeChat) {
+      const userId = localStorage.getItem("id"); // ID do usuário logado
+  
+      let receiver_id = null;
+  
+      // Determinar o `receiver_id` com base na aba ativa
+      if (activeChat === "global") {
+        receiver_id = "global"; // Para chat global
+      } else {
+        const activeFriend = chatTabs.find((tab) => tab.id === activeChat);
+        if (activeFriend) {
+          receiver_id = activeFriend.id; // ID do destinatário (usado como `receiver_id`)
         }
       }
-    });
-  }, [wsReceiveMessage]);
-
-  const sendChatMessage = (chatId) => {
-    if (currentMessage.trim()) {
+  
       const message = {
-        chatId,
+        chatId: activeChat === "global" ? "global" : activeChat, // ID do chat para o estado local
         text: currentMessage,
         sender: "Você",
+        receiver_id, // ID do destinatário
+        timestamp: new Date().toISOString(), // Timestamp opcional
       };
-
-      wsSendMessage({
-        type: "notification",
-        action: "message",
-        payload: message,
+  
+      wsSendChatMessage({
+        type: "message",
+        action: "sendMessage",
+        payload: {
+          receiver_id, // Enviar `receiver_id` para o backend
+          sender_id: userId, // ID do remetente
+          text: currentMessage,
+          timestamp: message.timestamp,
+        },
       });
-
+  
+      // Atualizar mensagens no estado local
       setChatMessages((prev) => ({
         ...prev,
-        [chatId]: [...(prev[chatId] || []), message],
+        [message.chatId]: [...(prev[message.chatId] || []), message],
       }));
-
-      setCurrentMessage("");
+  
+      setCurrentMessage(""); // Limpar o campo de entrada
     }
   };
 
@@ -171,7 +238,7 @@ const Chat = () => {
       );
   
       // Enviar notificação para o destinatário (userId) e remetente (loggedID)
-      wsSendMessage({
+      wsSendNotificationMessage({
         type: "notification",
         action: "addFriend",
         sender_id: loggedID,
@@ -180,7 +247,7 @@ const Chat = () => {
         payload: { sender_id: loggedID, receiver_id: userId },
       });
   
-      wsSendMessage({
+      wsSendNotificationMessage({
         type: "notification",
         action: "addFriend",
         sender_id: userId,
@@ -208,7 +275,7 @@ const Chat = () => {
           );
 
           // Enviar notificação para o usuário bloqueado
-          wsSendMessage({
+          wsSendNotificationMessage({
               type: "notification",
               action: "blockUser",
               sender_id: loggedID,
@@ -218,7 +285,7 @@ const Chat = () => {
           });
 
           // Enviar notificação para quem realizou o bloqueio
-          wsSendMessage({
+          wsSendNotificationMessage({
               type: "notification",
               action: "blockUser",
               sender_id: userId,
@@ -235,7 +302,6 @@ const Chat = () => {
       }
   };
 
-
   const unblockUser = async (blockedRecordId) => {
       const accessToken = localStorage.getItem("access");
       const loggedID = localStorage.getItem("id");
@@ -251,7 +317,7 @@ const Chat = () => {
           console.log("ID: " + blocked_id);
 
           // Enviar notificação para o usuário desbloqueado
-          wsSendMessage({
+          wsSendNotificationMessage({
               type: "notification",
               action: "unblockUser",
               sender_id: loggedID,
@@ -261,7 +327,7 @@ const Chat = () => {
           });
 
           // Enviar notificação para quem realizou o desbloqueio
-          wsSendMessage({
+          wsSendNotificationMessage({
               type: "notification",
               action: "unblockUser",
               sender_id: blocked_id,
@@ -292,7 +358,7 @@ const Chat = () => {
           const { friend_id, user_id } = response.data;
 
           // Envia notificação para quem enviou a solicitação
-          wsSendMessage({
+          wsSendNotificationMessage({
               type: "notification",
               action: "acceptFriend",
               sender_id: loggedID, // Quem aceitou a solicitação
@@ -302,7 +368,7 @@ const Chat = () => {
           });
 
           // Envia notificação para quem aceitou a solicitação
-          wsSendMessage({
+          wsSendNotificationMessage({
               type: "notification",
               action: "acceptFriend",
               sender_id: user_id, // Quem enviou a solicitação
@@ -336,7 +402,7 @@ const Chat = () => {
           const receiver_id = user_id === loggedID ? friend_id : user_id;
 
           // Envia notificação para quem enviou a solicitação
-          wsSendMessage({
+          wsSendNotificationMessage({
               type: "notification",
               action: "rejectFriend",
               sender_id: user_id, // Quem rejeitou a solicitação
@@ -346,7 +412,7 @@ const Chat = () => {
           });
 
           // Envia notificação para quem rejeitou a solicitação
-          wsSendMessage({
+          wsSendNotificationMessage({
               type: "notification",
               action: "rejectFriend",
               sender_id: friend_id, // Quem enviou a solicitação
@@ -382,7 +448,7 @@ const Chat = () => {
           console.log("friend_id" + friend_id);*/
 
           // Envia notificação para quem foi removido
-          wsSendMessage({
+          wsSendNotificationMessage({
               type: "notification",
               action: "removeFriend",
               sender_id: friend_id, // Quem removeu a amizade
@@ -392,7 +458,7 @@ const Chat = () => {
           });
 
           // Envia notificação para quem removeu
-          wsSendMessage({
+          wsSendNotificationMessage({
               type: "notification",
               action: "removeFriend",
               sender_id: user_id, // Quem foi removido
@@ -422,7 +488,7 @@ const Chat = () => {
           setPendingRequests={setPendingRequests}
           setBlockedUsers={setBlockedUsers}
           setNonFriends={setNonFriends}
-          openChat={openChatWithUser}
+          openChatWithUser={openChatWithUser}
           addFriend={addFriend}
           blockUser={blockUser}
           unblockUser={unblockUser}
@@ -440,6 +506,7 @@ const Chat = () => {
           sendChatMessage={sendChatMessage}
           currentMessage={currentMessage}
           setCurrentMessage={setCurrentMessage}
+          closeChatTab={closeChatTab}
         />
       </div>
     </>

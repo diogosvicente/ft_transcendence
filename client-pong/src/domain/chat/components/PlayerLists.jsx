@@ -6,6 +6,7 @@ const PlayerLists = ({
   blockedUsers,
   nonFriends,
   openChatWithUser,
+  closeChatTab,
   addFriend,
   blockUser,
   unblockUser,

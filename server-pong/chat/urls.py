@@ -8,7 +8,7 @@ from .views import (
     BlockUserView,
     BlockedUsersListView,
     PendingFriendRequestsView,
-    UnblockUserView,  # Importando a nova view para desbloquear usuários
+    UnblockUserView
 )
 
 urlpatterns = [

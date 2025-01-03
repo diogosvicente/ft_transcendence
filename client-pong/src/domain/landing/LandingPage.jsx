@@ -36,7 +36,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 const LoginAndRegisterForm = () => {
-  const { initializeWebSocket } = useWebSocket();
+  const { initializeNotificationWebSocket, initializeChatWebSocket } = useWebSocket(); // Funções para inicializar os dois WebSockets
   const { t, i18n } = useTranslation();
   const [validated, setValidated] = useState(false);
   const [showLoading, setShowLoading] = useState(false);
@@ -171,8 +171,9 @@ const LoginAndRegisterForm = () => {
           // localStorage.setItem("email", formData.email);
           localStorage.setItem("id", data.id);
           
-          // Inicializa o WebSocket manualmente
-          initializeWebSocket(data.access, data.id, true);
+          // Inicializa os dois WebSockets
+          initializeNotificationWebSocket(data.access, data.id, "handleLogin");
+          initializeChatWebSocket(data.access, data.id, "handleLogin");
 
           navigate("/home");
         }
