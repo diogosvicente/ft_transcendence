@@ -409,8 +409,6 @@ const Chat = () => {
       }
   };
 
-  
-  
   return (
     <>
       <Navbar />
