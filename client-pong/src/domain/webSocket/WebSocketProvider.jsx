@@ -38,13 +38,24 @@ export const WebSocketProvider = ({ children }) => {
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      console.log(
-        `%cMensagem recebida (${type} websocket):`,
-        "color: blue; font-weight: bold;",
-        data
-      );
-      onMessageCallback(data);
+    
+      if (data.type === "chat") {
+        const { sender_id, receiver_id, text, timestamp } = data;
+    
+        const userId = localStorage.getItem("id"); // ID do usuário logado
+        const chatId = receiver_id === "global" ? "global" : sender_id === userId ? receiver_id : sender_id;
+    
+        // Atualiza o estado para re-renderizar os componentes do chat
+        setChatMessages((prev) => ({
+          ...prev,
+          [chatId]: [
+            ...(prev[chatId] || []), // Mensagens anteriores no chat
+            { sender: sender_id === userId ? "Você" : `Usuário ${sender_id}`, text, timestamp },
+          ],
+        }));
+      };onMessageCallback(data);
     };
+    
 
     ws.onclose = () => {
       console.warn(
@@ -52,7 +63,7 @@ export const WebSocketProvider = ({ children }) => {
         "color: orange; font-weight: bold;",
         `Tentando reconexão...`
       );
-      setTimeout(() => initializeWebSocket(url, socketRef, setSocket, onMessageCallback, type, context), 5000);
+      setTimeout(() => initializeWebSocket(url, socketRef, setSocket, onMessageCallback, type, context), 500);
     };
 
     ws.onerror = (error) => {
@@ -103,14 +114,6 @@ export const WebSocketProvider = ({ children }) => {
     }, "chat", context);
   };
 
-  // Inicialização automática ao carregar
-  React.useEffect(() => {
-    const accessToken = localStorage.getItem("access");
-    const currentUserId = localStorage.getItem("id");
-    initializeNotificationWebSocket(accessToken, currentUserId, "re-render");
-    initializeChatWebSocket(accessToken, currentUserId, "re-render");
-  }, []); // Sem dependências para rodar apenas no primeiro render
-
   // Funções para enviar mensagens
   const wsSendNotificationMessage = (message) => {
     if (notificationSocketRef.current && notificationSocketRef.current.readyState === WebSocket.OPEN) {
@@ -137,6 +140,14 @@ export const WebSocketProvider = ({ children }) => {
       console.error("WebSocket de chat não está conectado.");
     }
   };
+
+  // Inicialização automática ao carregar
+  React.useEffect(() => {
+    const accessToken = localStorage.getItem("access");
+    const currentUserId = localStorage.getItem("id");
+    initializeNotificationWebSocket(accessToken, currentUserId, "re-render");
+    initializeChatWebSocket(accessToken, currentUserId, "re-render");
+  }, []); // Sem dependências para rodar apenas no primeiro render
 
   const value = {
     notifications,

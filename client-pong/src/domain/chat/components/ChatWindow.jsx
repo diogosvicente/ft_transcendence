@@ -1,5 +1,3 @@
-import React from "react";
-
 const ChatWindow = ({
   chatTabs,
   chatMessages,
@@ -37,7 +35,7 @@ const ChatWindow = ({
 
       {/* Mensagens do Chat */}
       <div className="chat-messages">
-        {Array.isArray(chatMessages[activeChat]) ? (
+        {Array.isArray(chatMessages[activeChat]) && chatMessages[activeChat].length > 0 ? (
           chatMessages[activeChat].map((message, index) => (
             <div key={index} className="chat-message">
               <strong>{message.sender}:</strong> {message.text}
@@ -54,12 +52,7 @@ const ChatWindow = ({
           value={currentMessage}
           onChange={(e) => setCurrentMessage(e.target.value)}
         ></textarea>
-        <button
-          onClick={() => {
-            const activeTab = chatTabs.find((tab) => tab.id === activeChat);
-            sendChatMessage(activeChat, activeTab?.id || "global"); // Envia a mensagem com base no chat ativo
-          }}
-        >
+        <button onClick={() => sendChatMessage()}>
           Enviar
         </button>
       </div>
