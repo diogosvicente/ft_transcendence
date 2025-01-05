@@ -2,11 +2,11 @@ import { useState, useRef, useCallback, useEffect } from "react";
 
 const useWebSocketManager = (roomName = "global") => {
   const [messages, setMessages] = useState([]); // Mensagens recebidas
-  const chatSocketRef = useRef(null); // Referência do WebSocket
-  const WS_CHAT_URL = "ws://localhost:8000/ws/chat/"; // Base URL do WebSocket
+  const chatSocketRef = useRef(null);
+  const WS_CHAT_URL = "ws://localhost:8000/ws/chat/";
 
-  const userId = localStorage.getItem("id"); // ID do usuário atual
-  const accessToken = localStorage.getItem("access"); // Token de acesso
+  const userId = localStorage.getItem("id");
+  const accessToken = localStorage.getItem("access");
 
   const connectWebSocket = useCallback(() => {
     if (!accessToken) {
@@ -17,20 +17,20 @@ const useWebSocketManager = (roomName = "global") => {
     const ws = new WebSocket(`${WS_CHAT_URL}${roomName}/?access_token=${accessToken}`);
     chatSocketRef.current = ws;
 
-    ws.onopen = () => {
-      console.log(`Conectado ao room: ${roomName}`);
-    };
-
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
 
-      // Adiciona a mensagem ao estado
-      setMessages((prev) => [...prev, data]);
+      // Verifica se os dados recebidos estão completos
+      if (data.message && data.sender) {
+        setMessages((prev) => [...prev, data]);
+      } else {
+        console.warn("Dados da mensagem incompletos:", data);
+      }
     };
 
     ws.onclose = () => {
       console.warn(`Desconectado do room: ${roomName}. Tentando reconectar...`);
-      setTimeout(connectWebSocket, 3000); // Reconexão automática
+      setTimeout(connectWebSocket, 3000);
     };
 
     ws.onerror = (error) => {
@@ -54,12 +54,10 @@ const useWebSocketManager = (roomName = "global") => {
         type: "chat_message",
         room: roomName,
         sender: userId,
-        text: message.trim(),
+        message: message.trim(),
         timestamp: new Date().toISOString(),
       };
       chatSocketRef.current.send(JSON.stringify(payload));
-    } else {
-      console.warn("WebSocket não está conectado. Não é possível enviar a mensagem.");
     }
   };
 

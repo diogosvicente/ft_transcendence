@@ -3,10 +3,10 @@ import { useState, useEffect, useRef } from "react";
 const useWebSocketManagerPrivateChat = (roomId) => {
   const [messages, setMessages] = useState([]);
   const chatSocketRef = useRef(null);
+  const WS_CHAT_URL = "ws://localhost:8000/ws/chat/";
 
   const userId = localStorage.getItem("id");
   const accessToken = localStorage.getItem("access");
-  const WS_CHAT_URL = "ws://localhost:8000/ws/chat/";
 
   useEffect(() => {
     if (!roomId || !accessToken) return;
@@ -20,8 +20,12 @@ const useWebSocketManagerPrivateChat = (roomId) => {
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      if (data.type === "chat_message") {
+    
+      // Verifica se os dados recebidos estão completos
+      if (data.message && data.sender) {
         setMessages((prev) => [...prev, data]);
+      } else {
+        console.warn("Dados da mensagem privada estão incompletos:", data);
       }
     };
 
@@ -36,7 +40,6 @@ const useWebSocketManagerPrivateChat = (roomId) => {
     return () => {
       if (chatSocketRef.current) {
         chatSocketRef.current.close();
-        chatSocketRef.current = null;
       }
     };
   }, [roomId, accessToken]);
@@ -47,7 +50,7 @@ const useWebSocketManagerPrivateChat = (roomId) => {
         type: "chat_message",
         room: roomId,
         sender: userId,
-        text: message.trim(),
+        message: message.trim(),
         timestamp: new Date().toISOString(),
       };
       chatSocketRef.current.send(JSON.stringify(payload));

@@ -1,58 +1,103 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "../../../assets/styles/chatWindow.css";
 import useWebSocketManager from "../assets/WebSocketManager";
-import useWebSocketManagerPrivateChat from "../assets/WebSocketManagerPrivateChat";
-import { API_BASE_URL_NO_LANGUAGE } from "../../../assets/config/config.js"; // Importe aqui
+import { API_BASE_URL_NO_LANGUAGE } from "../../../assets/config/config.js";
 
 const ChatWindow = ({ chatTabs, activeTab, setActiveTab, closeChatTab }) => {
-  const [message, setMessage] = useState(""); // Mensagem digitada
+  const [message, setMessage] = useState("");
+  const privateWebSockets = useRef({});
 
-  // Escolhe o WebSocket correto com base na aba ativa
-  const { messages: globalMessages, sendMessage: sendGlobalMessage } = useWebSocketManager();
-  const { messages: privateMessages, sendMessage: sendPrivateMessage } =
-    activeTab !== "global"
-      ? useWebSocketManagerPrivateChat(activeTab)
-      : { messages: [], sendMessage: () => {} };
+  const { messages: globalMessages, sendMessage: sendGlobalMessage } = useWebSocketManager("global");
 
-  // Filtra mensagens da aba ativa
-  const currentMessages = activeTab === "global" ? globalMessages : privateMessages;
+  const [privateMessages, setPrivateMessages] = useState({});
+
+  const initializePrivateWebSocket = (tabId) => {
+    if (privateWebSockets.current[tabId]) return;
+
+    const ws = new WebSocket(`ws://localhost:8000/ws/chat/${tabId}/?access_token=${localStorage.getItem("access")}`);
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      setPrivateMessages((prev) => ({
+        ...prev,
+        [tabId]: [...(prev[tabId] || []), data],
+      }));
+    };
+
+    ws.onclose = () => {
+      console.warn(`Desconectado do room privado: ${tabId}`);
+    };
+
+    ws.onerror = (error) => {
+      console.error(`Erro no WebSocket do room privado: ${tabId}`, error);
+    };
+
+    privateWebSockets.current[tabId] = ws;
+  };
+
+  const sendPrivateMessage = (tabId, message) => {
+    const ws = privateWebSockets.current[tabId];
+    if (ws && message.trim()) {
+      ws.send(
+        JSON.stringify({
+          type: "chat_message",
+          room: tabId,
+          sender: localStorage.getItem("id"),
+          message: message.trim(),
+          timestamp: new Date().toISOString(),
+        })
+      );
+    }
+  };
+
+  useEffect(() => {
+    chatTabs.forEach((tab) => {
+      if (tab.id !== "global") {
+        initializePrivateWebSocket(tab.id);
+      }
+    });
+
+    return () => {
+      Object.values(privateWebSockets.current).forEach((ws) => ws.close());
+    };
+  }, [chatTabs]);
 
   const handleSendMessage = () => {
     if (activeTab === "global") {
       sendGlobalMessage(message);
     } else {
-      sendPrivateMessage(message);
+      sendPrivateMessage(activeTab, message);
     }
-    setMessage(""); // Limpa o campo de entrada após envio
+    setMessage("");
   };
+
+  const currentMessages =
+    activeTab === "global"
+      ? globalMessages
+      : privateMessages[activeTab] || [];
 
   return (
     <div className="chat-section">
-      {/* Abas do Chat */}
       <div className="chat-tabs">
         {chatTabs.map((tab) => (
           <div key={tab.id} className="chat-tab-container">
             <button
               className={`chat-tab ${activeTab === tab.id ? "active" : ""}`}
-              onClick={() => setActiveTab(tab.id)} // Troca a aba ativa
+              onClick={() => setActiveTab(tab.id)}
             >
               {tab.name}
             </button>
             {tab.id !== "global" && (
-              <button
-                className="close-tab"
-                onClick={() => closeChatTab(tab.id)} // Fecha a aba
-              >
+              <button className="close-tab" onClick={() => closeChatTab(tab.id)}>
                 ❌
               </button>
             )}
           </div>
         ))}
       </div>
-  
-      {/* Mensagens do Chat */}
+
       <div className="chat-messages">
-        {currentMessages && currentMessages.length > 0 ? (
+        {currentMessages.length > 0 ? (
           currentMessages.map((msg, index) => {
             const isOwnMessage = msg.sender === localStorage.getItem("id");
             return (
@@ -79,7 +124,6 @@ const ChatWindow = ({ chatTabs, activeTab, setActiveTab, closeChatTab }) => {
                   <strong>{isOwnMessage ? "Eu" : msg.display_name || "Usuário Desconhecido"}</strong>
                 </div>
                 <p className="chat-text">{msg.message || "Mensagem não disponível"}</p>
-
                 <div className="chat-timestamp">
                   {new Date(msg.timestamp).toLocaleString()}
                 </div>
@@ -90,8 +134,7 @@ const ChatWindow = ({ chatTabs, activeTab, setActiveTab, closeChatTab }) => {
           <p>Sem mensagens neste chat.</p>
         )}
       </div>
-  
-      {/* Campo de Entrada de Mensagem */}
+
       <div className="chat-input">
         <textarea
           placeholder="Digite sua mensagem"
