@@ -135,24 +135,13 @@ class GetUserInfo(APIView):
     """
     View para retornar o avatar, display_name, losses, wins e online_status do usuário.
     """
-    def get(self, request):
-        user_id = request.GET.get('id')  # Obtém o ID do usuário
+    permission_classes = [IsAuthenticated]  # Garante que o usuário está autenticado
+
+    def get(self, request, id):  # `id` agora é obtido diretamente da URL
         default_avatar_url = f"{settings.MEDIA_URL}avatars/default.png"
 
-        if not user_id:
-            return Response(
-                {
-                    "avatar": default_avatar_url,
-                    "display_name": None,
-                    "losses": None,
-                    "wins": None,
-                    "online_status": None
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
         try:
-            user = User.objects.get(id=user_id)  # Busca o usuário pelo ID
+            user = User.objects.get(id=id)  # Busca o usuário pelo ID
             avatar_url = f"{settings.MEDIA_URL}{user.avatar}" if user.avatar else default_avatar_url
             return Response(
                 {
@@ -167,6 +156,7 @@ class GetUserInfo(APIView):
         except User.DoesNotExist:
             return Response(
                 {
+                    "error": "Usuário não encontrado.",
                     "avatar": default_avatar_url,
                     "display_name": None,
                     "losses": None,
@@ -174,6 +164,18 @@ class GetUserInfo(APIView):
                     "online_status": None
                 },
                 status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {
+                    "error": f"Erro interno: {str(e)}",
+                    "avatar": default_avatar_url,
+                    "display_name": None,
+                    "losses": None,
+                    "wins": None,
+                    "online_status": None
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
 class GetTokenView(APIView):

@@ -6,7 +6,6 @@ const PlayerLists = ({
   blockedUsers,
   nonFriends,
   openChatWithUser,
-  closeChatTab,
   addFriend,
   blockUser,
   unblockUser,
@@ -39,7 +38,11 @@ const PlayerLists = ({
                   </div>
                 </div>
                 <div className="player-actions">
-                  <button title="Abrir Chat" onClick={() => openChatWithUser(friend)} style={{ margin: "5px" }}>
+                  <button
+                    title="Abrir Chat Privado"
+                    onClick={() => openChatWithUser(friend)} // Chama o método passando o amigo
+                    style={{ margin: "5px" }}
+                  >
                     💬
                   </button>
                   <button

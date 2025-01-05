@@ -22,6 +22,36 @@ const Chat = () => {
   const [nonFriends, setNonFriends] = useState([]);
   const [error, setError] = useState(null);
 
+  // Estado para armazenar o display_name e avatar
+  const [userInfo, setUserInfo] = useState({
+    display_name: "",
+    avatar: "",
+  });
+
+  // Gerenciamento das abas de chat
+  const [chatTabs, setChatTabs] = useState([{ id: "global", name: "Chat Global" }]);
+  const [activeTab, setActiveTab] = useState("global"); // Aba ativa
+
+  // Função para abrir um chat privado
+  const openChatWithUser = (friend) => {
+    const chatId = `private_${friend.id}`; // ID único para cada chat
+    if (!chatTabs.some((tab) => tab.id === chatId)) {
+      setChatTabs((prevTabs) => [
+        ...prevTabs,
+        { id: chatId, name: friend.display_name, friend },
+      ]);
+    }
+    setActiveTab(chatId); // Define a aba recém-aberta como ativa
+  };
+
+  // Função para fechar uma aba de chat
+  const closeChatTab = (chatId) => {
+    setChatTabs((prevTabs) => prevTabs.filter((tab) => tab.id !== chatId));
+    if (activeTab === chatId) {
+      setActiveTab("global"); // Volta para o global ao fechar a aba ativa
+    }
+  };
+
   useFetchUsers({
     setFriends,
     setPendingRequests,
@@ -42,7 +72,7 @@ const Chat = () => {
 
   return (
     <>
-      <Navbar />
+      <Navbar onUserInfoLoaded={(userInfo) => setUserInfo(userInfo)} />
       <div className="chat-container">
         <PlayerLists
           friends={friends}
@@ -59,9 +89,16 @@ const Chat = () => {
           acceptFriendRequest={acceptFriendRequest}
           rejectFriendRequest={rejectFriendRequest}
           removeFriend={removeFriend}
+          openChatWithUser={openChatWithUser} // Passa a função para abrir o chat privado
           error={error}
         />
-        <ChatWindow />
+        <ChatWindow
+          chatTabs={chatTabs} // Passa as abas
+          activeTab={activeTab} // Aba ativa
+          setActiveTab={setActiveTab} // Função para definir a aba ativa
+          closeChatTab={closeChatTab} // Passa a função para fechar as abas
+          userInfo={userInfo} // Passa os dados do usuário para o ChatWindow
+        />
       </div>
     </>
   );

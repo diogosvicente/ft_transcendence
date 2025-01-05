@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { NavLink, Link } from "react-router-dom";
 import { Navbar, Nav, Button, Container, Image } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
@@ -21,28 +22,36 @@ const CustomNavbar = () => {
 
   useEffect(() => {
     const userId = localStorage.getItem("id");
+    const accessToken = localStorage.getItem("access");
     const defaultAvatar = `${API_BASE_URL_NO_LANGUAGE}/media/avatars/default.png`;
   
-    if (userId) {
-      fetch(`${API_BASE_URL}/api/user-management/user-info/?id=${userId}`)
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error("Erro ao buscar o avatar e display_name");
-          }
-          return response.json();
+    if (userId && accessToken) {
+      axios
+        .get(`${API_BASE_URL}/api/user-management/user-info/${userId}/`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`, // Adiciona o token ao cabeçalho
+          },
         })
-        .then((data) => {
+        .then((response) => {
+          const data = response.data;
           const fullAvatarUrl = `${API_BASE_URL_NO_LANGUAGE}${data.avatar}`;
           setAvatar(fullAvatarUrl || defaultAvatar);
           setDisplayName(data.display_name || ""); // Armazena o display_name
         })
-        .catch(() => {
+        .catch((error) => {
+          if (error.response?.status === 401) {
+            console.warn("Token inválido ou expirado. Faça login novamente.");
+          } else if (error.response?.status === 404) {
+            console.warn("Usuário não encontrado.");
+          } else {
+            console.error("Erro ao buscar o avatar e display_name:", error);
+          }
           setAvatar(defaultAvatar);
           setDisplayName(""); // Define como vazio em caso de erro
         });
     } else {
       setAvatar(defaultAvatar);
-      setDisplayName(""); // Define como vazio se o ID não for encontrado
+      setDisplayName(""); // Define como vazio se o ID ou token não forem encontrados
     }
   }, []);
   
