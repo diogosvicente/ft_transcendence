@@ -36,7 +36,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 const LoginAndRegisterForm = () => {
-  const { initializeNotificationWebSocket, initializeChatWebSocket } = useWebSocket(); // Funções para inicializar os dois WebSockets
+  const { initializeNotificationWebSocket } = useWebSocket(); // Funções para inicializar os dois WebSockets
   const { t, i18n } = useTranslation();
   const [validated, setValidated] = useState(false);
   const [showLoading, setShowLoading] = useState(false);
@@ -170,10 +170,9 @@ const LoginAndRegisterForm = () => {
           localStorage.setItem("refresh", data.refresh);
           // localStorage.setItem("email", formData.email);
           localStorage.setItem("id", data.id);
-          
+
           // Inicializa os dois WebSockets
           initializeNotificationWebSocket(data.access, data.id, "handleLogin");
-          initializeChatWebSocket(data.access, data.id, "handleLogin");
 
           navigate("/home");
         }
@@ -279,7 +278,7 @@ const LoginAndRegisterForm = () => {
         setSuccessMessage(t("success_2fa"));
         localStorage.setItem("access", data.access);
         localStorage.setItem("refresh", data.refresh);
-        localStorage.setItem("email", formData.email);
+        localStorage.setItem("id", data.id);
         navigate("/home");
       } else {
         setErrorMessage(data.error || t("error_invalid_2fa"));

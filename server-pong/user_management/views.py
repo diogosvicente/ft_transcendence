@@ -92,6 +92,7 @@ class Validate2FACodeView(APIView):
                 refresh = RefreshToken.for_user(user)
                 return Response({
                     "message": _("2FA verificado com sucesso."),
+                    "id": user.id,  # Inclui o ID do usuário
                     "refresh": str(refresh),
                     "access": str(refresh.access_token)
                 }, status=status.HTTP_200_OK)
