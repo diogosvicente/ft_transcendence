@@ -42,7 +42,7 @@ export const WebSocketProvider = ({ children }) => {
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      // console.log(`%cMensagem recebida (notificação):`, "color: blue;", data);
+      console.log(`%cMensagem recebida (notificação):`, "color: blue;", data);
 
       if (data.type === "notification") {
         setNotifications((prev) => [...prev, data]);

@@ -25,15 +25,14 @@ from django.conf.urls.static import static
 urlpatterns = [
     # Não use i18n_patterns para o admin (isso é opcional, dependendo do seu projeto)
     path('admin/', admin.site.urls),
-    path('api/user-management/', include('user_management.urls')),
+    path('api/user-management/', include('user_management.urls')),  # URLs do app
     path('api/chat/', include('chat.urls')),  # Corrigido para incluir as URLs do app "chat"
 ]
 
 # Usar i18n_patterns para URLs com prefixo de idioma
 urlpatterns += i18n_patterns(
-    path('api/user-management/', include('user_management.urls')),  # URLs do app
-    path('api/chat/', include('chat.urls')),  # Corrigido para incluir as URLs do app "chat"
-    prefix_default_language=False  # Não usa prefixo para o idioma padrão
+    
+    # prefix_default_language=True  # Não usa prefixo para o idioma padrão
 )
 
 # Adicionar suporte para arquivos de mídia em DEBUG mode

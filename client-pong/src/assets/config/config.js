@@ -6,7 +6,8 @@ export const setApiLanguage = (language) => {
   localStorage.setItem("language", language); // Salva o idioma no localStorage
 };
 
-const API_BASE_URL = `http://127.0.0.1:8000/${API_LANGUAGE}`;
+// const API_BASE_URL = `http://127.0.0.1:8000/${API_LANGUAGE}`;
+const API_BASE_URL = `http://127.0.0.1:8000`;
 const API_BASE_URL_NO_LANGUAGE = `http://127.0.0.1:8000`; // URL base sem idioma
 
 // Avatar default

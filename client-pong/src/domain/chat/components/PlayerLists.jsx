@@ -10,6 +10,7 @@ const PlayerLists = ({
   blockUser,
   unblockUser,
   removeFriend,
+  challengeUser,
   acceptFriendRequest,
   rejectFriendRequest,
 }) => {
@@ -52,7 +53,13 @@ const PlayerLists = ({
                   >
                     👤
                   </button>
-                  <button title="Desafiar" style={{ margin: "5px" }}>🎮</button>
+                  <button
+                    title="Desafiar"
+                    style={{ margin: "5px" }}
+                    onClick={() => alert("Desafiar usuário ainda não implementado.")}
+                  >
+                    🎮
+                  </button>
                   <button title="Bloquear" onClick={() => blockUser(friend.user_id)} style={{ margin: "5px" }}>
                     🚫
                   </button>
