@@ -168,7 +168,6 @@ const LoginAndRegisterForm = () => {
           setSuccessMessage(t("success_login"));
           localStorage.setItem("access", data.access);
           localStorage.setItem("refresh", data.refresh);
-          // localStorage.setItem("email", formData.email);
           localStorage.setItem("id", data.id);
 
           // Inicializa os dois WebSockets

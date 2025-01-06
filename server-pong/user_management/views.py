@@ -1,11 +1,11 @@
 # Imports padrão do Django
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
-
-# Imports de modelos e validações
-from django.contrib.auth.password_validation import get_password_validators
-from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
-from rest_framework_simplejwt.tokens import RefreshToken
+from django.core.cache import cache
+from django.db.models import Q
+from django.views import View
+from django.http import JsonResponse
+from django.utils.timezone import now
 
 # Imports do Django REST Framework
 from rest_framework.views import APIView
@@ -13,17 +13,20 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 
-# Imports do app local
+# Imports relacionados ao JWT
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
+from rest_framework_simplejwt.tokens import RefreshToken
+
+# Imports de validações
+from django.contrib.auth.password_validation import get_password_validators
+
+# Imports de modelos
 from .models import User
-from .serializers import UserSerializer, LoginSerializer
-from .utils import generate_2fa_code, send_2fa_code
 from chat.models import Friend, BlockedUser
 
-# Outros
-from django.core.cache import cache
-from django.db.models import Q
-from django.views import View
-from django.http import JsonResponse
+# Imports do app local
+from .serializers import UserSerializer, LoginSerializer
+from .utils import generate_2fa_code, send_2fa_code
 
 class UserRegistrationView(APIView):
     """
@@ -36,12 +39,6 @@ class UserRegistrationView(APIView):
             return Response({"message": _("Usuário cadastrado com sucesso!")}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.response import Response
-from rest_framework import status
-from django.utils.translation import gettext as _
-from django.core.cache import cache
-
 class LoginView(APIView):
     """
     View para autenticação de usuários.
@@ -50,6 +47,11 @@ class LoginView(APIView):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['user']
+
+            # Atualiza o online_status para True e salva o momento do login
+            user.online_status = True
+            user.last_login = now()  # Atualiza a última data/hora de login
+            user.save()
 
             if user.is_2fa_verified:
                 code = generate_2fa_code()
@@ -61,6 +63,7 @@ class LoginView(APIView):
                     "requires_2fa": True
                 }, status=status.HTTP_200_OK)
 
+            # Gera os tokens de acesso e refresh
             refresh = RefreshToken.for_user(user)
             response_data = {
                 "id": user.id,
@@ -70,8 +73,8 @@ class LoginView(APIView):
             }
             return Response(response_data, status=status.HTTP_200_OK)
 
+        # Retorna erro caso a validação falhe
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class Validate2FACodeView(APIView):
     """
@@ -101,47 +104,48 @@ class Validate2FACodeView(APIView):
 
         return Response({"error": _("Código inválido ou expirado.")}, status=status.HTTP_400_BAD_REQUEST)
 
-
 class LogoutView(APIView):
     """
-    View para logout, invalida o refresh token.
+    View para logout, invalida o refresh token e atualiza o online_status para False.
     """
+    permission_classes = [IsAuthenticated]  # Garante que o usuário esteja autenticado
+
     def post(self, request):
         try:
             refresh_token = request.data.get("refresh")
             if not refresh_token:
                 return Response({"error": _("Refresh token é obrigatório.")}, status=status.HTTP_400_BAD_REQUEST)
 
+            # Invalida o token de refresh
             token = RefreshToken(refresh_token)
             token.blacklist()
-            return Response({"message": _("Logout realizado com sucesso.")}, status=status.HTTP_200_OK)
+
+            # Atualiza o online_status do usuário para False
+            user = request.user
+            if user.online_status:
+                user.online_status = False
+                user.save()
+                message = _("Logout realizado com sucesso e status alterado para offline.")
+            else:
+                message = _("Logout realizado com sucesso. O status já estava offline.")
+
+            return Response({"message": message}, status=status.HTTP_200_OK)
         except Exception as e:
+            # Log do erro para depuração
+            print(f"Erro no logout: {str(e)}")
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from django.conf import settings
-from .models import User
-from django.db import models
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from django.conf import settings
-from .models import User
 
 class GetUserInfo(APIView):
     """
-    View para retornar o avatar, display_name, losses, wins e online_status do usuário.
+    View para retornar ou atualizar informações do usuário.
     """
     permission_classes = [IsAuthenticated]  # Garante que o usuário está autenticado
 
-    def get(self, request, id):  # `id` agora é obtido diretamente da URL
+    def get(self, request, user_id):  # Use `user_id` para combinar com a URL
         default_avatar_url = f"{settings.MEDIA_URL}avatars/default.png"
 
         try:
-            user = User.objects.get(id=id)  # Busca o usuário pelo ID
+            user = User.objects.get(id=user_id)  # Busca o usuário pelo ID
             avatar_url = f"{settings.MEDIA_URL}{user.avatar}" if user.avatar else default_avatar_url
             return Response(
                 {
@@ -167,14 +171,35 @@ class GetUserInfo(APIView):
             )
         except Exception as e:
             return Response(
-                {
-                    "error": f"Erro interno: {str(e)}",
-                    "avatar": default_avatar_url,
-                    "display_name": None,
-                    "losses": None,
-                    "wins": None,
-                    "online_status": None
-                },
+                {"error": f"Erro interno: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def patch(self, request, user_id):  # Use `user_id` para combinar com a URL
+        try:
+            user = User.objects.get(id=user_id)  # Busca o usuário pelo ID
+            
+            # Atualiza o campo `online_status` se fornecido
+            if "online_status" in request.data:
+                user.online_status = request.data["online_status"]
+                user.save()
+                return Response(
+                    {"message": "Online status atualizado com sucesso."},
+                    status=status.HTTP_200_OK
+                )
+            else:
+                return Response(
+                    {"error": "Campo `online_status` não fornecido."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        except User.DoesNotExist:
+            return Response(
+                {"error": "Usuário não encontrado."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Erro interno: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
@@ -235,7 +260,7 @@ class ExcludeSelfAndFriendsUserListView(APIView):
 
             # Excluir o usuário atual e os IDs a serem excluídos
             users = User.objects.exclude(id__in=excluded_ids).exclude(id=current_user.id).values(
-                'id', 'email', 'display_name', 'avatar'
+                'id', 'email', 'display_name', 'avatar', 'online_status'  # Inclui o campo `online_status`
             )
 
             return Response({"users": list(users)}, status=200)

@@ -1,4 +1,5 @@
 import React from "react";
+import "../../../assets/styles/friendList.css";
 
 const PlayerLists = ({
   friends,
@@ -30,11 +31,8 @@ const PlayerLists = ({
                   <div className="player-details">
                     <p className="player-name">{friend.display_name}</p>
                     <p className="player-status">
-                      {friend.online_status ? (
-                        <span className="status-indicator online">Online</span>
-                      ) : (
-                        <span className="status-indicator offline">Offline</span>
-                      )}
+                      <span className={`status-dot ${friend.online_status ? "online" : "offline"}`}></span>
+                      {friend.online_status ? "Online" : "Offline"}
                     </p>
                   </div>
                 </div>
@@ -141,11 +139,20 @@ const PlayerLists = ({
                 <div className="player-info">
                   <p className="player-name">{user.display_name}</p>
                   <p className="player-status">
-                    <span
-                      className={user.is_online ? "status-dot online" : "status-dot offline"}
-                    ></span>
-                    {user.is_online ? "Online" : "Offline"}
-                  </p>
+                  <span
+                    className={`status-dot ${user.online_status ? "online" : "offline"}`}
+                    style={{
+                      display: "inline-block",
+                      width: "10px",
+                      height: "10px",
+                      borderRadius: "50%",
+                      marginRight: "5px",
+                      backgroundColor: user.online_status ? "green" : "red",
+                    }}
+                  ></span>
+                  {user.online_status ? "Online" : "Offline"}
+                </p>
+
                 </div>
                 <div className="player-actions">
                   <button title="Ver Perfil" onClick={() => window.open(`/user-profile/${user.id}`, "_blank")}>

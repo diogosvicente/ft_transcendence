@@ -58,12 +58,41 @@ const CustomNavbar = () => {
   
   // console.log(displayName);
 
-  const handleLogout = () => {
-    localStorage.removeItem("access");
-    localStorage.removeItem("refresh");
-    localStorage.removeItem("id");
-    navigate("/");
+  const handleLogout = async () => {
+      const accessToken = localStorage.getItem("access");
+      const refreshToken = localStorage.getItem("refresh");
+
+      try {
+          if (refreshToken) {
+              // Faz a chamada para a URL de logout no backend
+              const response = await fetch(`${API_BASE_URL}/api/user-management/logout/`, {
+                  method: "POST",
+                  headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${accessToken}`, // Passa o token de acesso
+                  },
+                  body: JSON.stringify({
+                      refresh: refreshToken, // Envia o refresh token
+                  }),
+              });
+
+              if (response.ok) {
+                  console.log("Logout realizado com sucesso.");
+              } else {
+                  console.error("Erro ao realizar logout:", await response.json());
+              }
+          }
+      } catch (error) {
+          console.error("Erro na requisição de logout:", error);
+      } finally {
+          // Limpa o localStorage e redireciona
+          localStorage.removeItem("access");
+          localStorage.removeItem("refresh");
+          localStorage.removeItem("id");
+          navigate("/");
+      }
   };
+
 
   const handleLanguageChange = (language) => {
     i18n.changeLanguage(language);
