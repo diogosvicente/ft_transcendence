@@ -9,7 +9,8 @@ from .views import (
     GetTokenView,
     UserProfileView,
     MatchHistoryView,
-    UserRelationshipView
+    UserRelationshipView,
+    VictoryRankingAPIView
 )
 
 urlpatterns = [
@@ -23,6 +24,7 @@ urlpatterns = [
     path("user-profile/<int:user_id>/", UserProfileView.as_view(), name="user-profile"),
     path("match-history/<int:user_id>/", MatchHistoryView.as_view(), name="match-history"),
     path("relationship/<int:user_id>/", UserRelationshipView.as_view(), name="user-relationship"),
+    path("ranking/victories/", VictoryRankingAPIView.as_view(), name="victory-ranking"),
 ]
 
 # URLs disponíveis:

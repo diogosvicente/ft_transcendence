@@ -340,3 +340,22 @@ class UserRelationshipView(APIView):
             }, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class VictoryRankingAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Ordena os usuários pelo número de vitórias (wins)
+        ranking = User.objects.order_by('-wins')[:10]  # Top 10 usuários
+
+        data = [
+            {
+                "id": user.id,
+                "display_name": user.display_name,
+                "avatar": user.avatar.url if user.avatar else None,
+                "wins": user.wins,
+                "losses": user.losses,
+            }
+            for user in ranking
+        ]
+        return Response(data, status=200)

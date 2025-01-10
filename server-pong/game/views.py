@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Match, Tournament
 
-class RankingAPIView(APIView):
+class PositionAtRankingToUserProfile(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -61,3 +61,43 @@ class MatchHistoryAPIView(APIView):
             })
 
         return Response(match_history)
+
+from django.db.models import Count
+from django.contrib.auth import get_user_model
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from .models import Tournament
+
+
+class TournamentRankingAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        User = get_user_model()
+
+        # Agrupa por winner_id e conta o número de torneios vencidos por cada usuário
+        winners = (
+            Tournament.objects.values('winner_id')
+            .annotate(tournaments_won=Count('id'))  # Conta o número de torneios vencidos
+            .filter(winner_id__isnull=False)  # Ignora torneios sem vencedor
+            .order_by('-tournaments_won')  # Ordena pelo número de vitórias
+        )
+
+        # Busca os detalhes do usuário baseado no winner_id
+        user_data = []
+        for index, winner in enumerate(winners):
+            try:
+                user = User.objects.get(id=winner['winner_id'])
+                user_data.append({
+                    "id": user.id,
+                    "display_name": user.display_name or user.email,  # Mostra o display_name ou email como fallback
+                    "avatar": user.avatar.url if user.avatar else None,
+                    "tournaments_won": winner['tournaments_won'],  # Total de torneios vencidos
+                    "position": index + 1  # Posição no ranking
+                })
+            except User.DoesNotExist:
+                # Caso o usuário associado ao winner_id não exista, pule
+                continue
+
+        return Response(user_data)
