@@ -146,3 +146,34 @@ body {
 .match-history-table tr:hover {
   background-color: #f1f1f1;
 }
+
+.rank-highlight {
+  font-weight: bold;
+  padding: 5px 10px;
+  border-radius: 5px;
+  display: inline-block;
+  margin-left: 10px;
+}
+
+.rank-highlight.gold {
+  background-color: #ffd700; /* Ouro */
+  color: #000;
+  border: 2px solid #daa520;
+}
+
+.rank-highlight.silver {
+  background-color: #c0c0c0; /* Prata */
+  color: #000;
+  border: 2px solid #a9a9a9;
+}
+
+.rank-highlight.bronze {
+  background-color: #cd7f32; /* Bronze */
+  color: #000;
+  border: 2px solid #8b4513;
+}
+
+.text-danger {
+  color: red;
+}
+

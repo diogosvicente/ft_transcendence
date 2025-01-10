@@ -16,7 +16,7 @@ const Profile = () => {
       <div className="container mt-5">
         <h1>Perfil</h1>
         {email && <p>Email do usuário: <strong>{email}</strong></p>}
-        <p>Detalhes do perfil do usuário aparecerão aqui.</p>
+        <p>Página destinada a edição das informações do perfil do usuário logado.</p>
       </div>
     </>
   );

@@ -9,43 +9,58 @@ class Tournament(models.Model):
     status = models.CharField(
         max_length=50,
         choices=[
-            ('planned', 'Planned'),
-            ('ongoing', 'Ongoing'),
-            ('completed', 'Completed'),
+            ('planned', 'Planned'),  # Torneio planejado
+            ('ongoing', 'Ongoing'),  # Torneio em andamento
+            ('completed', 'Completed')  # Torneio finalizado
         ],
         default='planned'
     )  # Status do torneio
     winner = models.ForeignKey(
-        'PlayerAlias',
+        'TournamentParticipant',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="tournaments_won"
     )  # Jogador vencedor (opcional)
-
-    def __str__(self):
-        return self.name
-
-
-class PlayerAlias(models.Model):
-    user = models.ForeignKey(
+    created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="player_aliases"
-    )  # Usuário associado
+        related_name="tournaments_created"
+    )  # Usuário que criou o torneio
+
+    def __str__(self):
+        return f"{self.name} (Created by: {self.created_by.username})"
+
+
+class TournamentParticipant(models.Model):
     tournament = models.ForeignKey(
         Tournament,
         on_delete=models.CASCADE,
-        related_name="player_aliases"
+        related_name="participants"
     )  # Torneio associado
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="tournament_participations"
+    )  # Jogador associado
     alias = models.CharField(max_length=255)  # Apelido do jogador no torneio
     points = models.IntegerField(default=0)  # Pontos acumulados no torneio
+    registered_at = models.DateTimeField(auto_now_add=True)  # Data de inscrição
+    status = models.CharField(
+        max_length=50,
+        choices=[
+            ('pending', 'Pending'),  # Inscrição pendente
+            ('confirmed', 'Confirmed')  # Jogador confirmado no torneio
+        ],
+        default='pending'
+    )  # Status da inscrição
+    abandoned = models.BooleanField(default=False)  # Indica se o jogador abandonou o torneio
 
     class Meta:
-        unique_together = ('user', 'tournament')  # Evita duplicidade de alias
+        unique_together = ('tournament', 'user')  # Garante uma única inscrição por torneio
 
     def __str__(self):
-        return f"{self.alias} ({self.user.email}) - {self.points} pts"
+        return f"{self.alias} ({self.user.username}) in {self.tournament.name} - {self.points} pts"
 
 
 class Match(models.Model):
@@ -55,7 +70,7 @@ class Match(models.Model):
         null=True,
         blank=True,
         related_name="matches"
-    )  # Torneio ao qual a partida pertence (null = partida casual 1x1)
+    )  # Torneio associado (pode ser nulo para partidas casuais)
     player1 = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -71,21 +86,22 @@ class Match(models.Model):
     status = models.CharField(
         max_length=50,
         choices=[
-            ('pending', 'Pending'),
-            ('ongoing', 'Ongoing'),
-            ('paused', 'Paused'),
-            ('completed', 'Completed'),
-            ('disconnected', 'Disconnected'),
+            ('pending', 'Pending'),  # Partida pendente
+            ('ongoing', 'Ongoing'),  # Partida em andamento
+            ('paused', 'Paused'),  # Partida pausada
+            ('completed', 'Completed'),  # Partida concluída
+            ('disconnected', 'Disconnected')  # Jogador desconectado
         ],
         default='pending'
     )  # Status da partida
+    is_winner_by_wo = models.BooleanField(default=False)  # Indica se a vitória foi por W.O.
     played_at = models.DateTimeField(blank=True, null=True)  # Data e hora da partida
     last_updated = models.DateTimeField(auto_now=True)  # Última atualização
 
     def __str__(self):
         if self.tournament:
-            return f"Tournament Match {self.id}: {self.player1.email} vs {self.player2.email}"
-        return f"Casual Match {self.id}: {self.player1.email} vs {self.player2.email}"
+            return f"Tournament Match {self.id}: {self.player1.username} vs {self.player2.username}"
+        return f"Casual Match {self.id}: {self.player1.username} vs {self.player2.username}"
 
 
 class MatchStatus(models.Model):
@@ -97,9 +113,10 @@ class MatchStatus(models.Model):
     event_type = models.CharField(
         max_length=50,
         choices=[
-            ('disconnect', 'Disconnect'),
-            ('reconnect', 'Reconnect'),
-            ('lag', 'Lag'),
+            ('ready', 'Ready'),  # Jogador está pronto
+            ('disconnect', 'Disconnect'),  # Jogador desconectou
+            ('reconnect', 'Reconnect'),  # Jogador reconectou
+            ('lag', 'Lag'),  # Problemas de latência
         ]
     )  # Tipo de evento
     player = models.ForeignKey(
@@ -108,9 +125,28 @@ class MatchStatus(models.Model):
         null=True,
         blank=True,
         related_name="match_statuses"
-    )  # Jogador afetado pelo evento (opcional)
-    description = models.TextField(blank=True, null=True)  # Detalhes do evento
+    )  # Jogador associado ao evento
+    description = models.TextField(blank=True, null=True)  # Detalhes do evento (opcional)
     timestamp = models.DateTimeField(auto_now_add=True)  # Data e hora do evento
 
     def __str__(self):
-        return f"{self.event_type} in Match {self.match.id}"
+        return f"{self.event_type} in Match {self.match.id} by {self.player.username if self.player else 'Unknown'}"
+
+
+class Notification(models.Model):
+    match = models.ForeignKey(
+        Match,
+        on_delete=models.CASCADE,
+        related_name="notifications"
+    )  # Partida associada
+    player = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="notifications"
+    )  # Jogador associado
+    message = models.CharField(max_length=255)  # Mensagem da notificação
+    sent_at = models.DateTimeField(auto_now_add=True)  # Data e hora do envio da notificação
+    is_read = models.BooleanField(default=False)  # Indica se a notificação foi lida
+
+    def __str__(self):
+        return f"Notification for {self.player.username} in Match {self.match.id}"

@@ -7,10 +7,11 @@ import Chat from "./domain/chat/Chat.jsx";
 import LandingPage from "./domain/landing/LandingPage.jsx";
 import Home from "./domain/home/Home.jsx";
 import Tournaments from "./domain/tournaments/Tournaments.jsx";
-import Profile from "./domain/profile/Profile.jsx";
+import Profile from "./domain/userProfile/UpdateProfile.jsx";
 import Ranking from "./domain/ranking/Ranking.jsx";
 import { GameCanvas } from "./domain/game/GameCanvas";
 import UserProfile from "./domain/userProfile/UserProfile.jsx";
+import EditProfile from "./domain/userProfile/UpdateProfile.jsx";
 
 function PrivateRoute({ children }) {
   const isAuthenticated = !!localStorage.getItem("access");
@@ -20,7 +21,7 @@ function PrivateRoute({ children }) {
 function App() {
   return (
     <>
-      <ToastContainer /> {/* Adicionado para permitir notificações */}
+      <ToastContainer />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route
@@ -69,6 +70,15 @@ function App() {
           element={
             <PrivateRoute>
               <UserProfile />
+            </PrivateRoute>
+          }
+        />
+        {/* Nova rota para editar perfil */}
+        <Route
+          path="/edit-profile"
+          element={
+            <PrivateRoute>
+              <EditProfile />
             </PrivateRoute>
           }
         />
