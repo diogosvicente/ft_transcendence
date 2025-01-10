@@ -83,7 +83,7 @@ python -c 'from django.core.management.utils import get_random_secret_key; print
 
    Altere a senha do usuário 'postgres'
   ```bash
-   ALTER USER postgres WITH PASSWORD 'nova_senha';
+  ALTER USER postgres WITH PASSWORD 'nova_senha';
   ```
 
    *Você pode verificar se o db foi criado com o comando `\l`*
