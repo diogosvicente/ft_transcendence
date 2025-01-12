@@ -2,11 +2,22 @@ from django.urls import path
 from .views import (
     PositionAtRankingToUserProfile,
     MatchHistoryAPIView,
-    TournamentRankingAPIView,  # Importe a nova view
+    TournamentRankingAPIView,
+    TournamentListAPIView,  # Lista de torneios
+    TournamentDetailAPIView,  # Detalhes com partidas e participantes
+    TournamentCreateAPIView,  # Criação de torneio
+    TournamentRegisterAPIView,  # Registro no torneio
 )
 
 urlpatterns = [
-    path('ranking/', PositionAtRankingToUserProfile.as_view(), name='ranking'),    
+    # Rankings e histórico de partidas
+    path('ranking/', PositionAtRankingToUserProfile.as_view(), name='ranking'),
     path('match-history/<int:user_id>/', MatchHistoryAPIView.as_view(), name='match-history'),
     path('ranking/tournaments/', TournamentRankingAPIView.as_view(), name='tournament-ranking'),
+
+    # Endpoints relacionados a torneios
+     path('tournaments/', TournamentListAPIView.as_view(), name='tournament-list'),
+    path('tournaments/<int:pk>/', TournamentDetailAPIView.as_view(), name='tournament-detail-with-matches'),
+    path('tournaments/create/', TournamentCreateAPIView.as_view(), name='tournament-create'),
+    path('tournaments/<int:pk>/register/', TournamentRegisterAPIView.as_view(), name='tournament-register'),
 ]

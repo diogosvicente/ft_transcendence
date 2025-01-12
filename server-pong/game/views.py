@@ -1,10 +1,13 @@
-from django.db import models  # Adicione esta linha
-from django.db.models import Count, Q, F  # Adicione Count, Q, e F
+from django.db import models, IntegrityError
+from django.db.models import Count, Q, F
 from django.contrib.auth import get_user_model
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from .models import Match, Tournament
+from rest_framework import status
+from .models import Match, Tournament, TournamentParticipant
+from .serializers import TournamentSerializer, MatchSerializer, TournamentParticipantSerializer
+
 
 class PositionAtRankingToUserProfile(APIView):
     permission_classes = [IsAuthenticated]
@@ -62,14 +65,6 @@ class MatchHistoryAPIView(APIView):
 
         return Response(match_history)
 
-from django.db.models import Count
-from django.contrib.auth import get_user_model
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from .models import Tournament
-
-
 class TournamentRankingAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -101,3 +96,174 @@ class TournamentRankingAPIView(APIView):
                 continue
 
         return Response(user_data)
+
+
+
+
+
+
+
+class TournamentListAPIView(APIView):
+    """
+    Lista todos os torneios disponíveis, verifica se o usuário está inscrito e retorna o alias do usuário logado e a quantidade de inscritos.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        User = get_user_model()
+        user = request.user  # Usuário logado
+
+        tournaments = Tournament.objects.all().order_by("-created_at")
+        tournament_list = []
+
+        for tournament in tournaments:
+            # Verifica se o usuário está registrado no torneio
+            participant = TournamentParticipant.objects.filter(
+                tournament=tournament, user=user
+            ).first()
+            user_registered = participant is not None
+            user_alias = participant.alias if participant else None
+
+            # Obter alias do criador
+            creator = User.objects.get(id=tournament.created_by_id)
+            creator_participant = TournamentParticipant.objects.filter(
+                tournament=tournament, user=creator
+            ).first()
+            creator_alias = creator_participant.alias if creator_participant else "Sem Alias"
+
+            # Quantidade de inscritos no torneio
+            total_participants = TournamentParticipant.objects.filter(
+                tournament=tournament
+            ).count()
+
+            tournament_list.append({
+                "id": tournament.id,
+                "name": tournament.name,
+                "created_at": tournament.created_at.strftime("%d/%m/%Y"),
+                "status": tournament.status,
+                "creator_display_name": creator.display_name,
+                "creator_alias": creator_alias,
+                "creator_id": tournament.created_by_id,
+                "user_registered": user_registered,
+                "user_alias": user_alias,  # Alias do usuário logado
+                "total_participants": total_participants,  # Quantidade de inscritos
+            })
+
+        return Response(tournament_list)
+
+class TournamentDetailAPIView(APIView):
+    """
+    Exibe detalhes de um torneio específico, incluindo participantes e partidas.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            tournament = Tournament.objects.get(pk=pk)
+        except Tournament.DoesNotExist:
+            return Response({"error": "Torneio não encontrado."}, status=404)
+
+        # Serializa os detalhes do torneio
+        tournament_serializer = TournamentSerializer(tournament)
+
+        # Busca os participantes do torneio
+        participants = TournamentParticipant.objects.filter(tournament=tournament)
+        participant_serializer = TournamentParticipantSerializer(participants, many=True)
+
+        # Busca as partidas do torneio
+        matches = Match.objects.filter(tournament=tournament).select_related("player1", "player2")
+        match_serializer = MatchSerializer(matches, many=True)
+
+        # Combina os dados em uma única resposta
+        data = {
+            "tournament": tournament_serializer.data,
+            "participants": participant_serializer.data,
+            "matches": match_serializer.data,
+        }
+        return Response(data)
+
+class TournamentCreateAPIView(APIView):
+    """
+    Permite que um usuário crie um novo torneio.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        name = request.data.get("name")
+        alias = request.data.get("alias")
+
+        # Verificação de campos obrigatórios
+        if not name or not alias:
+            return Response({"error": "Nome do torneio e alias são obrigatórios."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Verificação de nome único do torneio
+        if Tournament.objects.filter(name=name).exists():
+            return Response({"error": "Já existe um torneio com este nome."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Criar o torneio
+            tournament = Tournament.objects.create(name=name, created_by=user)
+
+            # Adicionar o criador como participante
+            TournamentParticipant.objects.create(
+                alias=alias,
+                tournament=tournament,
+                user=user,
+                points=0,
+                status="confirmed",
+                abandoned=False
+            )
+
+            return Response(
+                {"message": "Torneio criado com sucesso.", "tournament": {"id": tournament.id, "name": tournament.name}},
+                status=status.HTTP_201_CREATED
+            )
+
+        except IntegrityError as e:
+            # Logar erros de integridade no banco de dados
+            print(f"Erro de integridade ao criar torneio: {e}")
+            return Response({"error": "Erro ao salvar os dados no banco de dados."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        except Exception as e:
+            # Logar outros erros
+            print(f"Erro inesperado ao criar torneio: {e}")
+            return Response({"error": "Erro interno no servidor."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class TournamentRegisterAPIView(APIView):
+    """
+    Permite que um usuário se registre em um torneio.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            tournament = Tournament.objects.get(pk=pk)
+        except Tournament.DoesNotExist:
+            return Response({"error": "Torneio não encontrado."}, status=404)
+
+        if tournament.status != "planned":
+            return Response({"error": "As inscrições estão fechadas para este torneio."}, status=400)
+
+        # Verifica se o usuário já está inscrito
+        if TournamentParticipant.objects.filter(tournament=tournament, user=request.user).exists():
+            return Response({"error": "Você já está inscrito neste torneio."}, status=400)
+
+        alias = request.data.get("alias")
+        if not alias:
+            return Response({"error": "O campo 'alias' é obrigatório para se inscrever."}, status=400)
+
+        # Verifica se o alias já está em uso no torneio
+        if TournamentParticipant.objects.filter(tournament=tournament, alias=alias).exists():
+            return Response({"error": "Este alias já está em uso neste torneio."}, status=400)
+
+        data = {
+            "tournament": tournament.id,
+            "user": request.user.id,
+            "alias": alias,
+        }
+        serializer = TournamentParticipantSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -39,22 +39,29 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 # Application definition
 
 INSTALLED_APPS = [
+    # Apps de terceiros
     'daphne',
-    'chat',
-    'rest_framework',
-    'user_management',
-    'game',
+
+    # Apps integrados do Django
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # Outros apps de terceiros
+    'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'axes',
-    'channels'
+    'channels',
+
+    # Seus apps personalizados
+    'chat',
+    'user_management',
+    'game',
 ]
 
 REST_FRAMEWORK = {

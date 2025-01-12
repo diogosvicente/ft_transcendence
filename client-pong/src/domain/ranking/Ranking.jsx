@@ -41,7 +41,7 @@ const Ranking = () => {
                   <div className="ranking-stats">
                     {type === "tournament" ? (
                       <>
-                        <span>{user.tournaments_won} torneio {user.tournaments_won > 1 ? "s" : ""}</span>
+                        <span>{user.tournaments_won} torneio{user.tournaments_won > 1 ? "s " : " "}</span>
                         <span>vencido{user.tournaments_won > 1 ? "s" : ""}</span>
                       </>
                     ) : (
