@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from .models import Tournament, TournamentParticipant, Match
 
-
 class TournamentSerializer(serializers.ModelSerializer):
     created_by_display = serializers.SerializerMethodField()
 
@@ -16,12 +15,10 @@ class TournamentSerializer(serializers.ModelSerializer):
             return f"{obj.created_by.display_name} as {alias}"
         return "Desconhecido"
 
-
 class TournamentParticipantSerializer(serializers.ModelSerializer):
     class Meta:
         model = TournamentParticipant
         fields = '__all__'
-
 
 class MatchSerializer(serializers.ModelSerializer):
     player1_display = serializers.SerializerMethodField()

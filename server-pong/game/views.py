@@ -7,7 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from .models import Match, Tournament, TournamentParticipant
 from .serializers import TournamentSerializer, MatchSerializer, TournamentParticipantSerializer
-
+from django.utils.timezone import now
 
 class PositionAtRankingToUserProfile(APIView):
     permission_classes = [IsAuthenticated]
@@ -97,12 +97,6 @@ class TournamentRankingAPIView(APIView):
 
         return Response(user_data)
 
-
-
-
-
-
-
 class TournamentListAPIView(APIView):
     """
     Lista todos os torneios disponíveis, verifica se o usuário está inscrito e retorna o alias do usuário logado e a quantidade de inscritos.
@@ -166,19 +160,51 @@ class TournamentDetailAPIView(APIView):
         # Serializa os detalhes do torneio
         tournament_serializer = TournamentSerializer(tournament)
 
-        # Busca os participantes do torneio
-        participants = TournamentParticipant.objects.filter(tournament=tournament)
-        participant_serializer = TournamentParticipantSerializer(participants, many=True)
+        # Busca os participantes do torneio e inclui o display_name do usuário
+        participants = TournamentParticipant.objects.filter(tournament=tournament).select_related("user")
+        participant_data = []
+        for participant in participants:
+            participant_data.append({
+                "id": participant.id,
+                "alias": participant.alias,
+                "points": participant.points,
+                "registered_at": participant.registered_at,
+                "status": participant.status,
+                "user": {
+                    "id": participant.user.id,
+                    "display_name": participant.user.display_name  # Certifique-se de que o campo existe no modelo User
+                }
+            })
 
         # Busca as partidas do torneio
         matches = Match.objects.filter(tournament=tournament).select_related("player1", "player2")
-        match_serializer = MatchSerializer(matches, many=True)
+        match_data = []
+        for match in matches:
+            match_data.append({
+                "id": match.id,
+                "played_at": match.played_at,
+                "score_player1": match.score_player1,
+                "score_player2": match.score_player2,
+                "status": match.status,
+                "player1_display": match.player1.display_name,
+                "player1_alias": TournamentParticipant.objects.filter(
+                    tournament=tournament, user=match.player1
+                ).first().alias if TournamentParticipant.objects.filter(
+                    tournament=tournament, user=match.player1
+                ).exists() else "Desconhecido",
+                "player2_display": match.player2.display_name,
+                "player2_alias": TournamentParticipant.objects.filter(
+                    tournament=tournament, user=match.player2
+                ).first().alias if TournamentParticipant.objects.filter(
+                    tournament=tournament, user=match.player2
+                ).exists() else "Desconhecido",
+            })
 
         # Combina os dados em uma única resposta
         data = {
             "tournament": tournament_serializer.data,
-            "participants": participant_serializer.data,
-            "matches": match_serializer.data,
+            "participants": participant_data,
+            "matches": match_data,
         }
         return Response(data)
 
@@ -267,3 +293,79 @@ class TournamentRegisterAPIView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class TournamentStartAPIView(APIView):
+    """
+    Permite que o criador do torneio inicie o torneio, mudando o status para "ongoing".
+    Também registra todas as partidas no esquema de pontos corridos.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            tournament = Tournament.objects.get(pk=pk)
+        except Tournament.DoesNotExist:
+            return Response({"error": "Torneio não encontrado."}, status=404)
+
+        # Verifica se o usuário é o criador do torneio
+        if tournament.created_by != request.user:
+            return Response(
+                {"error": "Apenas o criador do torneio pode iniciá-lo."},
+                status=403,
+            )
+
+        # Verifica se o status atual é "planned"
+        if tournament.status != "planned":
+            return Response(
+                {"error": "O torneio já foi iniciado ou está concluído."},
+                status=400,
+            )
+
+        # Verifica se há pelo menos 3 participantes
+        participants = TournamentParticipant.objects.filter(tournament=tournament)
+        participant_count = participants.count()
+        if participant_count < 3:
+            return Response(
+                {"error": "O torneio precisa de pelo menos 3 participantes para ser iniciado."},
+                status=400,
+            )
+
+        # Atualiza o status do torneio para "ongoing"
+        tournament.status = "ongoing"
+        tournament.save()
+
+        # Atualiza o status dos participantes para "confirmed"
+        participants.update(status="confirmed")
+
+        # Registra as partidas no esquema de pontos corridos
+        matches = []
+        participant_list = list(participants)  # Converte o queryset em uma lista para iteração
+        for i in range(participant_count):
+            for j in range(i + 1, participant_count):
+                player1 = participant_list[i]
+                player2 = participant_list[j]
+                matches.append(
+                    Match(
+                        score_player1=None,
+                        score_player2=None,
+                        played_at=None,
+                        status="pending",
+                        last_updated=now(),
+                        player1_id=player1.user.id,
+                        player2_id=player2.user.id,
+                        tournament_id=tournament.id,
+                        is_winner_by_wo=False,
+                    )
+                )
+
+        # Salva todas as partidas em um único batch
+        Match.objects.bulk_create(matches)
+
+        return Response(
+            {
+                "message": "Torneio iniciado com sucesso.",
+                "status": tournament.status,
+                "matches_created": len(matches),
+            },
+            status=200,
+        )

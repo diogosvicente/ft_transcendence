@@ -81,8 +81,8 @@ class Match(models.Model):
         on_delete=models.CASCADE,
         related_name="matches_as_player2"
     )
-    score_player1 = models.IntegerField(default=0)
-    score_player2 = models.IntegerField(default=0)
+    score_player1 = models.IntegerField(null=True, blank=True)  # Aceita valores nulos
+    score_player2 = models.IntegerField(null=True, blank=True)  # Aceita valores nulos
     status = models.CharField(
         max_length=50,
         choices=[
@@ -95,7 +95,7 @@ class Match(models.Model):
         default='pending'
     )
     is_winner_by_wo = models.BooleanField(default=False)
-    played_at = models.DateTimeField(blank=True, null=True)
+    played_at = models.DateTimeField(null=True, blank=True)  # Aceita valores nulos
     last_updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):

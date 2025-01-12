@@ -7,6 +7,7 @@ from .views import (
     TournamentDetailAPIView,  # Detalhes com partidas e participantes
     TournamentCreateAPIView,  # Criação de torneio
     TournamentRegisterAPIView,  # Registro no torneio
+    TournamentStartAPIView
 )
 
 urlpatterns = [
@@ -20,4 +21,6 @@ urlpatterns = [
     path('tournaments/<int:pk>/', TournamentDetailAPIView.as_view(), name='tournament-detail-with-matches'),
     path('tournaments/create/', TournamentCreateAPIView.as_view(), name='tournament-create'),
     path('tournaments/<int:pk>/register/', TournamentRegisterAPIView.as_view(), name='tournament-register'),
+    path("tournaments/<int:pk>/start/", TournamentStartAPIView.as_view(), name="tournament-start"),
+
 ]
