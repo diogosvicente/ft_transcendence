@@ -39,20 +39,29 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 # Application definition
 
 INSTALLED_APPS = [
+    # Apps de terceiros
     'daphne',
-    'chat',
-    'rest_framework',
-    'user_management',
+
+    # Apps integrados do Django
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # Outros apps de terceiros
+    'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'axes',
+    'channels',
+
+    # Seus apps personalizados
+    'chat',
+    'user_management',
+    'game',
 ]
 
 REST_FRAMEWORK = {
@@ -63,7 +72,7 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),  # Expiração do token de acesso
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=180),  # Expiração do token de acesso
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),    # Expiração do refresh token
     'ROTATE_REFRESH_TOKENS': True,                 # Gera um novo refresh token ao atualizar o access token
     'BLACKLIST_AFTER_ROTATION': True,              # Invalida o refresh token antigo após rotação
@@ -167,7 +176,7 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            'hosts': [('127.0.0.1', 6379)],
+            'hosts': [('127.0.0.1', 6380)],
         }
     }
 }

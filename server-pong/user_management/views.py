@@ -1,14 +1,32 @@
+# Imports padrão do Django
 from django.conf import settings
+from django.utils.translation import gettext_lazy as _
+from django.core.cache import cache
+from django.db.models import Q
+from django.views import View
+from django.http import JsonResponse
+from django.utils.timezone import now
+
+# Imports do Django REST Framework
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
+
+# Imports relacionados ao JWT
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.core.cache import cache
-from .serializers import UserSerializer, LoginSerializer
-from .models import User
-from .utils import generate_2fa_code, send_2fa_code
+
+# Imports de validações
 from django.contrib.auth.password_validation import get_password_validators
-from django.utils.translation import gettext_lazy as _  # Importando gettext_lazy para tradução
+
+# Imports de modelos
+from .models import User
+from chat.models import Friend, BlockedUser
+
+# Imports do app local
+from .serializers import UserSerializer, LoginSerializer
+from .utils import generate_2fa_code, send_2fa_code
 
 class UserRegistrationView(APIView):
     """
@@ -21,7 +39,6 @@ class UserRegistrationView(APIView):
             return Response({"message": _("Usuário cadastrado com sucesso!")}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 class LoginView(APIView):
     """
     View para autenticação de usuários.
@@ -31,28 +48,33 @@ class LoginView(APIView):
         if serializer.is_valid():
             user = serializer.validated_data['user']
 
-            # Verifica se o 2FA está ativado
+            # Atualiza o online_status para True e salva o momento do login
+            user.online_status = True
+            user.last_login = now()  # Atualiza a última data/hora de login
+            user.save()
+
             if user.is_2fa_verified:
-                # Gera e envia o código 2FA
                 code = generate_2fa_code()
-                cache.set(f'2fa_{user.email}', code, timeout=300)  # Código válido por 5 minutos
+                cache.set(f'2fa_{user.email}', code, timeout=300)
                 send_2fa_code(user.email, code)
 
                 return Response({
                     "message": _("Código 2FA enviado para o e-mail."),
-                    "requires_2fa": True  # Indica que o 2FA é necessário
+                    "requires_2fa": True
                 }, status=status.HTTP_200_OK)
 
-            # Se o 2FA não está ativado, retorna os tokens JWT diretamente
+            # Gera os tokens de acesso e refresh
             refresh = RefreshToken.for_user(user)
-            return Response({
+            response_data = {
+                "id": user.id,
                 "access": str(refresh.access_token),
                 "refresh": str(refresh),
-                "requires_2fa": False  # Indica que o 2FA não é necessário
-            }, status=status.HTTP_200_OK)
+                "requires_2fa": False
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
 
+        # Retorna erro caso a validação falhe
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class Validate2FACodeView(APIView):
     """
@@ -73,6 +95,7 @@ class Validate2FACodeView(APIView):
                 refresh = RefreshToken.for_user(user)
                 return Response({
                     "message": _("2FA verificado com sucesso."),
+                    "id": user.id,  # Inclui o ID do usuário
                     "refresh": str(refresh),
                     "access": str(refresh.access_token)
                 }, status=status.HTTP_200_OK)
@@ -81,56 +104,258 @@ class Validate2FACodeView(APIView):
 
         return Response({"error": _("Código inválido ou expirado.")}, status=status.HTTP_400_BAD_REQUEST)
 
-
 class LogoutView(APIView):
     """
-    View para logout, invalida o refresh token.
+    View para logout, invalida o refresh token e atualiza o online_status para False.
     """
+    permission_classes = [IsAuthenticated]  # Garante que o usuário esteja autenticado
+
     def post(self, request):
         try:
             refresh_token = request.data.get("refresh")
             if not refresh_token:
                 return Response({"error": _("Refresh token é obrigatório.")}, status=status.HTTP_400_BAD_REQUEST)
 
+            # Invalida o token de refresh
             token = RefreshToken(refresh_token)
             token.blacklist()
-            return Response({"message": _("Logout realizado com sucesso.")}, status=status.HTTP_200_OK)
+
+            # Atualiza o online_status do usuário para False
+            user = request.user
+            if user.online_status:
+                user.online_status = False
+                user.save()
+                message = _("Logout realizado com sucesso e status alterado para offline.")
+            else:
+                message = _("Logout realizado com sucesso. O status já estava offline.")
+
+            return Response({"message": message}, status=status.HTTP_200_OK)
         except Exception as e:
+            # Log do erro para depuração
+            print(f"Erro no logout: {str(e)}")
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+class GetUserInfo(APIView):
+    """
+    View para retornar ou atualizar informações do usuário.
+    """
+    permission_classes = [IsAuthenticated]  # Garante que o usuário está autenticado
 
-class GetAvatarView(APIView):
-    """
-    View para retornar o avatar do usuário.
-    """
-    def get(self, request):
-        email = request.GET.get('email')
+    def get(self, request, user_id):  # Use `user_id` para combinar com a URL
         default_avatar_url = f"{settings.MEDIA_URL}avatars/default.png"
 
-        if not email:
-            return Response({"avatar": default_avatar_url}, status=status.HTTP_400_BAD_REQUEST)
-
         try:
-            user = User.objects.get(email=email)
-            if user.avatar:
-                avatar_url = f"{settings.MEDIA_URL}{user.avatar}"
-            else:
-                avatar_url = default_avatar_url
-            return Response({"avatar": avatar_url}, status=status.HTTP_200_OK)
+            user = User.objects.get(id=user_id)  # Busca o usuário pelo ID
+            avatar_url = f"{settings.MEDIA_URL}{user.avatar}" if user.avatar else default_avatar_url
+            return Response(
+                {
+                    "avatar": avatar_url,
+                    "display_name": user.display_name,
+                    "losses": user.losses,
+                    "wins": user.wins,
+                    "online_status": user.online_status
+                },
+                status=status.HTTP_200_OK
+            )
         except User.DoesNotExist:
-            return Response({"avatar": default_avatar_url}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {
+                    "error": "Usuário não encontrado.",
+                    "avatar": default_avatar_url,
+                    "display_name": None,
+                    "losses": None,
+                    "wins": None,
+                    "online_status": None
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Erro interno: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
+    def patch(self, request, user_id):  # Use `user_id` para combinar com a URL
+        try:
+            user = User.objects.get(id=user_id)  # Busca o usuário pelo ID
+            
+            # Atualiza o campo `online_status` se fornecido
+            if "online_status" in request.data:
+                user.online_status = request.data["online_status"]
+                user.save()
+                return Response(
+                    {"message": "Online status atualizado com sucesso."},
+                    status=status.HTTP_200_OK
+                )
+            else:
+                return Response(
+                    {"error": "Campo `online_status` não fornecido."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        except User.DoesNotExist:
+            return Response(
+                {"error": "Usuário não encontrado."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Erro interno: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
-class PasswordRequirementsView(APIView):
+class GetTokenView(APIView):
     """
-    View para retornar os requisitos de senha do backend.
+    Retorna o access token atual do usuário logado.
     """
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
-        validators = get_password_validators(settings.AUTH_PASSWORD_VALIDATORS)
-        requirements = []
+        user = request.user
+        try:
+            # Busca o token mais recente do usuário logado
+            token = OutstandingToken.objects.filter(user=user).last()
+            if token:
+                return Response({"token": token.token}, status=200)
+            return Response({"error": "Token não encontrado."}, status=404)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
 
-        for validator in validators:
-            if hasattr(validator, 'get_help_text'):
-                requirements.append(validator.get_help_text())
+class ExcludeSelfAndFriendsUserListView(APIView):
+    """
+    View para listar usuários, excluindo o usuário autenticado, seus amigos, solicitações pendentes e usuários bloqueados.
+    """
+    permission_classes = [IsAuthenticated]
 
-        return Response({"requirements": requirements}, status=status.HTTP_200_OK)
+    def get(self, request):
+        try:
+            # Usuário autenticado
+            current_user = request.user
+
+            # IDs dos amigos onde o usuário atual é o 'user'
+            friends_as_user = Friend.objects.filter(user=current_user, status="accepted").values_list('friend_id', flat=True)
+
+            # IDs dos amigos onde o usuário atual é o 'friend'
+            friends_as_friend = Friend.objects.filter(friend=current_user, status="accepted").values_list('user_id', flat=True)
+
+            # IDs de solicitações pendentes enviadas pelo usuário atual
+            pending_sent = Friend.objects.filter(user=current_user, status="pending").values_list('friend_id', flat=True)
+
+            # IDs de solicitações pendentes recebidas pelo usuário atual
+            pending_received = Friend.objects.filter(friend=current_user, status="pending").values_list('user_id', flat=True)
+
+            # IDs de usuários bloqueados pelo usuário atual
+            blocked_users = BlockedUser.objects.filter(blocker=current_user).values_list('blocked_id', flat=True)
+
+            # IDs de usuários que bloquearam o usuário atual
+            blocked_by_users = BlockedUser.objects.filter(blocked=current_user).values_list('blocker_id', flat=True)
+
+            # Combinar todas as IDs a serem excluídas (amigos + solicitações pendentes + bloqueados)
+            excluded_ids = set(friends_as_user).union(
+                set(friends_as_friend),
+                set(pending_sent),
+                set(pending_received),
+                set(blocked_users),
+                set(blocked_by_users)
+            )
+
+            # Excluir o usuário atual e os IDs a serem excluídos
+            users = User.objects.exclude(id__in=excluded_ids).exclude(id=current_user.id).values(
+                'id', 'email', 'display_name', 'avatar', 'online_status'  # Inclui o campo `online_status`
+            )
+
+            return Response({"users": list(users)}, status=200)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+class UserProfileView(APIView):
+    """
+    View para obter informações do perfil de um usuário.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, user_id):
+        try:
+            # Busca o usuário pelo ID
+            user = User.objects.get(id=user_id)
+
+            # Verifica se o usuário logado é amigo do usuário solicitado
+            is_friend = Friend.objects.filter(
+                Q(user=request.user, friend=user) | Q(user=user, friend=request.user),
+                status="accepted"
+            ).exists()
+
+            # Dados do perfil
+            data = {
+                "id": user.id,
+                "display_name": user.display_name,
+                "avatar": user.avatar.url if user.avatar else None,
+                "online_status": user.online_status,
+                "wins": user.wins,
+                "losses": user.losses
+            }
+            return Response(data, status=200)
+        except User.DoesNotExist:
+            return Response({"error": "Usuário não encontrado."}, status=404)
+
+class MatchHistoryView(View):
+    def get(self, request, user_id, *args, **kwargs):
+        # Lógica será implementada depois
+        return JsonResponse({"message": "Histórico de partidas ainda não implementado."}, status=200)
+
+class UserRelationshipView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, user_id):
+        try:
+            user = request.user
+
+            # Verifica o relacionamento de amizade
+            friend_relation = Friend.objects.filter(
+                models.Q(user=user, friend_id=user_id) | models.Q(user_id=user_id, friend=user)
+            ).first()
+
+            friendship_id = friend_relation.id if friend_relation else None
+            status_value = friend_relation.status if friend_relation else None
+            friend_user_id = friend_relation.user_id if friend_relation else None
+            friend_friend_id = friend_relation.friend_id if friend_relation else None
+
+            # Verifica se o usuário está bloqueado
+            blocked_relation = BlockedUser.objects.filter(
+                models.Q(blocker=user, blocked_id=user_id) | models.Q(blocker_id=user_id, blocked=user)
+            ).first()
+            is_blocked = blocked_relation is not None
+            blocked_record_id = blocked_relation.id if blocked_relation else None
+            blocked_id = blocked_relation.blocked_id if blocked_relation else None
+            blocker_id = blocked_relation.blocker_id if blocked_relation else None
+
+            return Response({
+                "friendship_id": friendship_id,  # ID do relacionamento de amizade, se existir
+                "status": status_value,  # Status do relacionamento (pending ou accepted)
+                "user_id": friend_user_id,  # user_id da tabela chat_friend
+                "friend_id": friend_friend_id,  # friend_id da tabela chat_friend
+                "is_blocked": is_blocked,  # Se o usuário está bloqueado
+                "blocked_id": blocked_id,  # ID do usuário bloqueado, se existir
+                "blocker_id": blocker_id,  # ID do usuário que bloqueou, se existir
+                "blocked_record_id": blocked_record_id,  # ID do registro de bloqueio na tabela BlockedUser
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class VictoryRankingAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Ordena os usuários pelo número de vitórias (wins)
+        ranking = User.objects.order_by('-wins')[:10]  # Top 10 usuários
+
+        data = [
+            {
+                "id": user.id,
+                "display_name": user.display_name,
+                "avatar": user.avatar.url if user.avatar else None,
+                "wins": user.wins,
+                "losses": user.losses,
+            }
+            for user in ranking
+        ]
+        return Response(data, status=200)

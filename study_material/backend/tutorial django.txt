@@ -51,5 +51,10 @@ sobre o login
 
 pip install djangorestframework-simplejwt
 
+
+//SOBRE MULTI LINGUAGENS
+instalar o gettext
+https://github.com/mlocati/gettext-iconv-windows/releases
+
 python ../manage.py makemessages -l pt_BR -l en -l es
 python ../manage.py compilemessages

@@ -1,0 +1,175 @@
+/* Estilo Geral */
+.navbar-custom {
+  display: flex;
+  flex-wrap: nowrap; /* Evita quebra de linha */
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  height: 70px;
+  background-color: #f8f9fa;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  overflow: visible;
+}
+
+/* Botão de Hambúrguer */
+.custom-toggler {
+  border: none;
+  background: none;
+  outline: none;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+}
+
+.custom-toggler .toggler-icon {
+  display: block;
+  width: 25px;
+  height: 3px;
+  margin: 4px 0;
+  background-color: #000;
+  border-radius: 2px;
+  transition: all 0.3s ease-in-out;
+}
+
+.custom-toggler:hover .toggler-icon {
+  background-color: #007bff;
+}
+
+/* Menu Colapsado */
+.custom-collapse {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+  position: absolute;
+  top: 70px; /* Abaixo da navbar */
+  right: 0;
+  left: 0;
+  z-index: 10;
+}
+
+/* Links no Menu Colapsado */
+.nav-link {
+  font-size: 1rem;
+  margin: 0.5rem 0;
+  text-align: center;
+  color: #000;
+}
+
+.nav-link:hover {
+  color: #007bff;
+}
+
+/* Seletor de Idiomas no Menu Colapsado */
+.language-selector {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+/* Idiomas: Bandeiras e Texto */
+.language-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  width: 60px;
+  height: auto;
+  text-align: center;
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease-in-out;
+}
+
+.language-card:hover {
+  transform: scale(1.05);
+}
+
+.language-flag {
+  cursor: pointer;
+  width: 30px;
+  height: auto;
+  margin-bottom: 0.3rem;
+}
+
+.language-text {
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+/* Ajustes para Menu Não Colapsado */
+@media (min-width: 992px) {
+  .navbar-collapse {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    background-color: transparent; /* Fundo transparente */
+    box-shadow: none; /* Remove a sombra */
+    padding: 0;
+    position: static;
+  }
+
+  .nav-link {
+    font-size: 1rem;
+    margin: 0 0.5rem;
+    text-align: center;
+    color: #000;
+    white-space: nowrap; /* Evita quebra de linha */
+  }
+
+  .nav-link:hover {
+    color: #007bff;
+  }
+
+  .language-selector {
+    margin-top: 0;
+    margin-left: auto; /* Move o seletor de idiomas para a direita */
+    gap: 1rem; /* Espaçamento maior entre idiomas */
+  }
+
+  .custom-toggler {
+    display: none; /* Esconde o botão de hambúrguer em telas grandes */
+  }
+}
+
+/* Contêiner principal para avatar e textos */
+.user-info-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem; /* Espaço entre avatar e texto */
+}
+
+/* Avatar */
+.user-avatar {
+  width: 60px;
+  height: 60px;
+  object-fit: cover; /* Garante que a imagem fique proporcional */
+  border-radius: 50%; /* Avatar redondo */
+  border: 2px solid #007bff; /* Borda azul */
+}
+
+/* Contêiner para texto */
+.user-text-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* Alinha textos à esquerda */
+  justify-content: center;
+}
+
+/* Título "Jogo Pong" */
+.user-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #343a40;
+}
+
+/* Saudação "Olá, Fulano" */
+.user-greeting {
+  font-size: 1rem;
+  color: #6c757d;
+}
