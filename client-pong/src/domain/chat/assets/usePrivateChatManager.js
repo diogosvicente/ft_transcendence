@@ -62,7 +62,16 @@ const usePrivateChatManager = (roomId) => {
     }
   };
 
-  return { messages, sendMessage };
+  return { 
+    messages, 
+    sendMessage, 
+    cleanup: () => {
+      if (chatSocketRef.current) {
+        chatSocketRef.current.close();
+        chatSocketRef.current = null;
+      }
+    },
+  };
 };
 
 export default usePrivateChatManager;

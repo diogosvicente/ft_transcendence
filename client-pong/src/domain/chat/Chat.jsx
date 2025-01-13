@@ -34,17 +34,18 @@ const Chat = () => {
 
   // Função para abrir um chat privado
   const openChatWithUser = (friend) => {
-    const roomId = `room_${[localStorage.getItem("id"), friend.id].sort().join("_")}`;
-    const chatId = `private_${friend.id}`;
-    
+  const roomId = `room_${friend.id}`;
+  const chatId = `private_${friend.id}`;
+  
     if (!chatTabs.some((tab) => tab.id === chatId)) {
       setChatTabs((prevTabs) => [
         ...prevTabs,
         { id: chatId, name: friend.display_name, roomId, friend },
       ]);
     }
-    setActiveTab(chatId); // Define a aba recém-aberta como ativa
+    setActiveTab(chatId);
   };
+  
   
 
   // Função para fechar uma aba de chat

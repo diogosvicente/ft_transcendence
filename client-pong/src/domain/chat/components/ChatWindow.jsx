@@ -6,54 +6,69 @@ import { API_BASE_URL_NO_LANGUAGE } from "../../../assets/config/config.js";
 const ChatWindow = ({ chatTabs, activeTab, setActiveTab, closeChatTab }) => {
   const [message, setMessage] = useState("");
   const privateWebSockets = useRef({});
-
   const { messages: globalMessages, sendMessage: sendGlobalMessage } = useWebSocketManager("global");
-
   const [privateMessages, setPrivateMessages] = useState({});
 
-  const initializePrivateWebSocket = (tabId) => {
-    if (privateWebSockets.current[tabId]) return;
+  // Inicializa um WebSocket privado
+  const initializePrivateWebSocket = (roomId) => {
+    if (privateWebSockets.current[roomId]) {
+      const readyState = privateWebSockets.current[roomId].readyState;
+      if (readyState === WebSocket.OPEN || readyState === WebSocket.CONNECTING) return;
+    }
 
-    const ws = new WebSocket(`ws://localhost:8000/ws/chat/${tabId}/?access_token=${localStorage.getItem("access")}`);
+    const ws = new WebSocket(
+      `ws://localhost:8000/ws/chat/${roomId}/?access_token=${localStorage.getItem("access")}`
+    );
+
+    ws.onopen = () => {
+      console.log(`Conectado ao WebSocket privado: ${roomId}`);
+    };
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       setPrivateMessages((prev) => ({
         ...prev,
-        [tabId]: [...(prev[tabId] || []), data],
+        [roomId]: [...(prev[roomId] || []), data],
       }));
     };
 
     ws.onclose = () => {
-      console.warn(`Desconectado do room privado: ${tabId}`);
+      console.warn(`WebSocket privado desconectado: ${roomId}`);
     };
 
     ws.onerror = (error) => {
-      console.error(`Erro no WebSocket do room privado: ${tabId}`, error);
+      console.error(`Erro no WebSocket privado (${roomId}):`, error);
     };
 
-    privateWebSockets.current[tabId] = ws;
+    privateWebSockets.current[roomId] = ws;
   };
 
-  const sendPrivateMessage = (tabId, message) => {
-    const ws = privateWebSockets.current[tabId];
-    if (ws && message.trim()) {
+  // Envia mensagens privadas
+  const sendPrivateMessage = (roomId, message) => {
+    const ws = privateWebSockets.current[roomId];
+    if (ws && ws.readyState === WebSocket.OPEN && message.trim()) {
       ws.send(
         JSON.stringify({
           type: "chat_message",
-          room: tabId,
+          room: roomId,
           sender: localStorage.getItem("id"),
           message: message.trim(),
           timestamp: new Date().toISOString(),
         })
       );
+    } else if (ws && ws.readyState !== WebSocket.OPEN) {
+      console.warn(`WebSocket para o roomId ${roomId} não está aberto. Reabrindo...`);
+      initializePrivateWebSocket(roomId); // Tenta reconectar se necessário
+    } else {
+      console.error("WebSocket não está inicializado ou mensagem inválida.");
     }
   };
 
+  // Inicializa WebSockets para todas as abas privadas
   useEffect(() => {
     chatTabs.forEach((tab) => {
       if (tab.id !== "global") {
-        initializePrivateWebSocket(tab.id);
+        initializePrivateWebSocket(tab.roomId);
       }
     });
 
@@ -66,7 +81,10 @@ const ChatWindow = ({ chatTabs, activeTab, setActiveTab, closeChatTab }) => {
     if (activeTab === "global") {
       sendGlobalMessage(message);
     } else {
-      sendPrivateMessage(activeTab, message);
+      const activeRoom = chatTabs.find((tab) => tab.id === activeTab)?.roomId;
+      if (activeRoom) {
+        sendPrivateMessage(activeRoom, message);
+      }
     }
     setMessage("");
   };
@@ -74,7 +92,7 @@ const ChatWindow = ({ chatTabs, activeTab, setActiveTab, closeChatTab }) => {
   const currentMessages =
     activeTab === "global"
       ? globalMessages
-      : privateMessages[activeTab] || [];
+      : privateMessages[chatTabs.find((tab) => tab.id === activeTab)?.roomId] || [];
 
   return (
     <div className="chat-section">
