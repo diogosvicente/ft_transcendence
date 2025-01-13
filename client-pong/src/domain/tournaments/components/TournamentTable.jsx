@@ -79,7 +79,6 @@ const TournamentTable = ({
           </div>
         </div>
       )}
-
       <table className="table table-striped">
         <thead>
           <tr>
@@ -103,7 +102,7 @@ const TournamentTable = ({
                   <td>{index + 1}</td>
                   <td>{tournament.name}</td>
                   <td>{tournament.creator_display_name || "Desconhecido"}</td>
-                  <td>{new Date(tournament.created_at).toLocaleDateString("pt-BR")}</td>
+                  <td>{tournament.created_at}</td>
                   <td>{tournament.total_participants}</td>
                   <td>{tournament.status}</td>
                   <td>
@@ -116,13 +115,14 @@ const TournamentTable = ({
                     </button>
                     {tournament.status === "planned" &&
                       !tournament.user_registered && (
-                        <FontAwesomeIcon
-                          icon={faDoorOpen}
+                        <span
                           className="text-success cursor-pointer"
                           onClick={() => setExpandedTournament(tournament.id)}
                           style={{
                             cursor: "pointer",
-                            fontSize: "1.5em",
+                            fontSize: "1em",
+                            display: "inline-flex",
+                            alignItems: "center",
                             transition: "transform 0.2s",
                           }}
                           onMouseEnter={(e) =>
@@ -131,7 +131,14 @@ const TournamentTable = ({
                           onMouseLeave={(e) =>
                             (e.target.style.transform = "scale(1)")
                           }
-                        />
+                        >
+                          Entrar{" "}
+                          <FontAwesomeIcon
+                            icon={faDoorOpen}
+                            className="ms-1"
+                            style={{ fontSize: "1.5em" }}
+                          />
+                        </span>
                       )}
                     {tournament.user_registered && (
                       <span className="badge bg-success text-white">

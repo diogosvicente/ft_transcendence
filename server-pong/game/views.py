@@ -17,15 +17,15 @@ class PositionAtRankingToUserProfile(APIView):
 
         # Calcule o número de torneios vencidos por cada usuário
         ranking = User.objects.annotate(
-            tournaments_won=Count('tournaments_created', filter=Q(tournaments_created__winner_id=F('id')))
-        ).order_by('-tournaments_won')
+            total_tournaments_won=Count('tournaments_created', filter=Q(tournaments_created__winner_id=F('id')))
+        ).order_by('-total_tournaments_won')
 
         # Prepare a resposta
         data = [
             {
                 "id": user.id,
                 "name": user.email,  # Substituído por email
-                "tournaments_won": user.tournaments_won,
+                "tournaments_won": user.total_tournaments_won,
                 "position": index + 1
             }
             for index, user in enumerate(ranking)
@@ -50,12 +50,23 @@ class MatchHistoryAPIView(APIView):
         match_history = []
         for match in matches:
             opponent = match.player2 if match.player1 == user else match.player1
+            
+            # Determina o resultado com verificações para None
+            if match.score_player1 is not None and match.score_player2 is not None:
+                if (match.player1 == user and match.score_player1 > match.score_player2) or \
+                   (match.player2 == user and match.score_player2 > match.score_player1):
+                    result = "Vitória"
+                else:
+                    result = "Derrota"
+            else:
+                result = "Não definido"
+
             match_history.append({
                 "id": match.id,
                 "date": match.played_at,
-                "opponent_display_name": opponent.display_name,  # Use o campo display_name
-                "result": "Vitória" if (match.player1 == user and match.score_player1 > match.score_player2) or
-                                         (match.player2 == user and match.score_player2 > match.score_player1) else "Derrota",
+                "opponent_display_name": opponent.display_name,
+                "opponent_alias": getattr(opponent, "alias", None),
+                "result": result,
                 "score": {
                     "player1": match.score_player1,
                     "player2": match.score_player2,
@@ -335,7 +346,9 @@ class TournamentStartAPIView(APIView):
         tournament.save()
 
         # Atualiza o status dos participantes para "confirmed"
-        participants.update(status="confirmed")
+        for participant in participants:
+            participant.status = "confirmed"
+            participant.save()
 
         # Registra as partidas no esquema de pontos corridos
         matches = []
@@ -366,6 +379,50 @@ class TournamentStartAPIView(APIView):
                 "message": "Torneio iniciado com sucesso.",
                 "status": tournament.status,
                 "matches_created": len(matches),
+            },
+            status=200,
+        )
+
+class TournamentSetWinnerAPIView(APIView):
+    """
+    Define o vencedor de um torneio com base no participant_id (user_id).
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, pk):
+        try:
+            # Busca o torneio
+            tournament = Tournament.objects.get(pk=pk)
+        except Tournament.DoesNotExist:
+            return Response({"error": "Torneio não encontrado."}, status=404)
+
+        # Obtém o participant_id do corpo da requisição
+        participant_user_id = request.data.get("participant_id")
+        if not participant_user_id:
+            return Response({"error": "participant_id é obrigatório."}, status=400)
+
+        try:
+            # Verifica se o user_id está na tabela game_tournamentparticipant e pertence ao torneio
+            participant = TournamentParticipant.objects.get(
+                user_id=participant_user_id,
+                tournament_id=tournament.id  # Garantindo que pertence ao torneio
+            )
+        except TournamentParticipant.DoesNotExist:
+            return Response(
+                {"error": "O participante especificado não pertence a este torneio."},
+                status=400,
+            )
+
+        # Define o vencedor do torneio
+        tournament.winner_id = participant.user_id  # Atualiza com o user_id
+        tournament.save()
+
+        return Response(
+            {
+                "message": "Vencedor definido com sucesso.",
+                "tournament_id": tournament.id,
+                "winner_id": participant.user_id,  # ID do usuário (vencedor)
+                "winner_alias": participant.alias,  # Alias do vencedor
             },
             status=200,
         )

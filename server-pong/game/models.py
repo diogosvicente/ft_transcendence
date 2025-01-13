@@ -1,7 +1,6 @@
 from django.db import models
 from django.conf import settings
 
-
 class Tournament(models.Model):
     name = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -16,21 +15,20 @@ class Tournament(models.Model):
         default='planned'
     )
     winner = models.ForeignKey(
-        'TournamentParticipant',
+        'user_management.User',  # Referencia a tabela de usuários
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="tournaments_won"
     )
     created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        'user_management.User',
         on_delete=models.CASCADE,
         related_name="tournaments_created"
     )
 
     def __str__(self):
-        return f"{self.name} (Created by: {self.created_by.username})"
-
+        return f"{self.name} (Created by: {self.created_by.display_name})"
 
 class TournamentParticipant(models.Model):
     tournament = models.ForeignKey(
@@ -63,7 +61,6 @@ class TournamentParticipant(models.Model):
 
     def __str__(self):
         return f"{self.alias} ({self.user.username}) in {self.tournament.name} - {self.points} pts"
-
 
 class Match(models.Model):
     tournament = models.ForeignKey(
@@ -101,7 +98,6 @@ class Match(models.Model):
     def __str__(self):
         return f"Tournament Match {self.id}: {self.player1.username} vs {self.player2.username}"
 
-
 class MatchStatus(models.Model):
     match = models.ForeignKey(
         Match,
@@ -129,7 +125,6 @@ class MatchStatus(models.Model):
 
     def __str__(self):
         return f"{self.event_type} in Match {self.match.id} by {self.player.username if self.player else 'Unknown'}"
-
 
 class Notification(models.Model):
     match = models.ForeignKey(

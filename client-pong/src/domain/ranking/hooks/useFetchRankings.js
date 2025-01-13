@@ -27,7 +27,6 @@ const useFetchRankings = () => {
         );
 
         if (tournamentResponse.data) {
-          console.log("Tournament Rankings:", tournamentResponse.data); // Log para verificar o retorno
           setTournamentRanking(tournamentResponse.data);
         }
 
@@ -38,7 +37,6 @@ const useFetchRankings = () => {
         );
 
         if (victoriesResponse.data) {
-          console.log("Victories Rankings:", victoriesResponse.data); // Log para verificar o retorno
           setVictoriesRanking(victoriesResponse.data);
         }
       } catch (err) {
