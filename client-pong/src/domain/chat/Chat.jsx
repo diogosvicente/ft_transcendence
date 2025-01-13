@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import Navbar from "../template/Navbar";
 import "../../assets/styles/chat.css";
 
-import useFetchUsers from "./assets/useFetchUsers";
-import useUserActions from "./assets/useUserActions";
+import useFetchUsers from "./hooks/useFetchUsers";
+import useUserActions from "./hooks/useUserActions";
 import PlayerLists from "./components/PlayerLists";
 import ChatWindow from "./components/ChatWindow";
 import { useWebSocket } from "../webSocket/WebSocketProvider.jsx";

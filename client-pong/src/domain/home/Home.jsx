@@ -1,24 +1,38 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Navbar from "../template/Navbar";
+import useUserInfo from "./hooks/useUserInfo";
+import "../../assets/styles/home.css"
 
 const Home = () => {
-  const [email, setEmail] = useState("");
-
-  useEffect(() => {
-    // Recupera o email do usuário logado do localStorage
-    const storedEmail = localStorage.getItem("email");
-    setEmail(storedEmail || ""); // Define o email ou uma string vazia caso não exista
-  }, []);
+  const displayName = useUserInfo(); // Hook para obter o display_name do usuário
 
   return (
     <>
       <Navbar />
-      <div className="container mt-5">
-        <h1>Bem-vindo à Página Inicial!</h1>
-        {/* Exibe o email do usuário logado */}
-        {email && <p>Email do usuário logado: <strong>{email}</strong></p>}
-        <p>Conteúdo da página inicial vai aqui.</p>
+      <div className="container mt-5 text-center">
+        {/* Saudação ao jogador */}
+        <h1 className="h1-greeting">
+          Bem-vindo ao jogo, <span className="highlighted-name">{displayName}</span>!
+        </h1>
+
+        {/* Texto FT_TRANSCENDENCE estilizado */}
+        <h2 className="h2-title">FT_TRANSCENDENCE</h2>
+        <hr></hr>
+
+        {/* Animação da bola de Pong */}
+        <div
+          className="pong-ball"
+          style={{
+            width: "50px",
+            height: "50px",
+            backgroundColor: "#0072ff",
+            borderRadius: "50%",
+            margin: "2rem auto",
+            animation: "pongBall 2s infinite linear",
+          }}
+        ></div>
       </div>
+      
     </>
   );
 };

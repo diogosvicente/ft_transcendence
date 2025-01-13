@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import "../../../assets/styles/chatWindow.css";
-import useWebSocketManager from "../assets/WebSocketManager";
+import useWebSocketManager from "../hooks/WebSocketManager";
 import { API_BASE_URL_NO_LANGUAGE } from "../../../assets/config/config.js";
 
 const ChatWindow = ({ chatTabs, activeTab, setActiveTab, closeChatTab }) => {
