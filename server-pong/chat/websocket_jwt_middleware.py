@@ -22,7 +22,6 @@ class JWTAuthMiddleware(BaseMiddleware):
         query_string = parse_qs(scope["query_string"].decode())
         token = query_string.get("access_token", [None])[0]
 
-
         if token:
             try:
                 payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
@@ -52,3 +51,4 @@ class JWTAuthMiddleware(BaseMiddleware):
             return LazyAnonymousUser()
         except KeyError:
             return LazyAnonymousUser()
+
