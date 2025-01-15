@@ -13,6 +13,8 @@ import { GameCanvas } from "./domain/game/GameCanvas";
 import UserProfile from "./domain/userProfile/UserProfile.jsx";
 import EditProfile from "./domain/userProfile/UpdateProfile.jsx";
 
+import { Canvas } from "./domain/game/Canvas.jsx"
+
 function PrivateRoute({ children }) {
   const isAuthenticated = !!localStorage.getItem("access");
   return isAuthenticated ? children : <Navigate to="/" />;
@@ -33,6 +35,7 @@ function App() {
           }
         />
         <Route path="/local-match" element={<GameCanvas />} />
+        <Route path="/live-game" element={<Canvas />} />
         <Route
           path="/home"
           element={
