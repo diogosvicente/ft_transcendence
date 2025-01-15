@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import API_BASE_URL from "../../../assets/config/config";
 
-export const useTournaments = () => {
+export const useTournaments = ({ notifications, wsSendNotification }) => {
   const [tournaments, setTournaments] = useState([]);
   const [selectedTournament, setSelectedTournament] = useState(null);
   const [participants, setParticipants] = useState([]);
@@ -11,9 +11,31 @@ export const useTournaments = () => {
   const [aliases, setAliases] = useState({});
   const [error, setError] = useState(null);
 
+  // Fetch tournaments on initial load
   useEffect(() => {
     fetchTournaments();
   }, []);
+
+  // Handle WebSocket Notifications
+  useEffect(() => {
+    if (notifications) {
+      notifications.forEach((notification) => {
+        if (notification.type === "tournament") {
+          console.log("Novo torneio detectado via WebSocket:", notification);
+          
+          // Verifica se o torneio já existe na lista
+          const newTournament = notification.tournament;
+          setTournaments((prevTournaments) => {
+            const exists = prevTournaments.some((tournament) => tournament.id === newTournament.id);
+            if (!exists) {
+              return [newTournament, ...prevTournaments];
+            }
+            return prevTournaments; // Retorna a lista original se já existe
+          });
+        }
+      });
+    }
+  }, [notifications]);
 
   const fetchTournaments = async () => {
     const accessToken = localStorage.getItem("access");
@@ -65,13 +87,30 @@ export const useTournaments = () => {
       setError("Access token não encontrado.");
       return;
     }
-
+  
     if (!name || !alias) {
       alert("Preencha todos os campos!");
       return;
     }
-
+  
     try {
+      const userId = localStorage.getItem("id"); // Obtém o ID do usuário logado
+      if (!userId) {
+        setError("ID do usuário não encontrado no localStorage.");
+        return;
+      }
+  
+      // Busca o display_name do usuário logado
+      const userResponse = await axios.get(
+        `${API_BASE_URL}/api/user-management/user-info/${userId}/`,
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+  
+      const displayName = userResponse.data.display_name || "Usuário Desconhecido";
+  
+      // Criação do torneio
       const response = await axios.post(
         `${API_BASE_URL}/api/game/tournaments/create/`,
         { name, alias },
@@ -79,8 +118,34 @@ export const useTournaments = () => {
           headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
         }
       );
-      setTournaments([response.data.tournament, ...tournaments]);
-      alert("Torneio criado com sucesso!");
+  
+      // Formata a data de criação no padrão dd/mm/aaaa
+      const createdAt = new Date().toLocaleDateString("pt-BR");
+  
+      const createdTournament = {
+        ...response.data.tournament,
+        created_at: createdAt,
+        status: "planned",
+        creator_display_name: displayName,
+        creator_alias: alias,
+        total_participants: 1,
+        user_registered: true, // Sempre true para o usuário que criou o torneio
+        user_alias: alias,
+      };
+  
+      setTournaments((prevTournaments) => [createdTournament, ...prevTournaments]);
+  
+      // Notificação via WebSocket para todos os usuários
+      wsSendNotification({
+        type: "tournament",
+        message: `Novo torneio criado: ${createdTournament.name}`,
+        tournament: {
+          ...createdTournament,
+          user_registered: false, // Quem recebe a notificação não está registrado inicialmente
+        },
+      });
+  
+      // alert("Torneio criado com sucesso!");
     } catch (error) {
       console.error("Erro ao criar torneio:", error.response?.data || error.message);
       if (error.response?.status === 400) {
@@ -92,14 +157,11 @@ export const useTournaments = () => {
   };
 
   const handleRegister = async (tournamentId, alias) => {
-    console.log("Tournament ID:", tournamentId);
-    console.log("Alias recebido:", alias);
-  
     if (!alias || alias.trim() === "") {
       alert("O campo 'alias' é obrigatório para se inscrever.");
       return;
     }
-  
+
     try {
       const response = await axios.post(
         `${API_BASE_URL}/api/game/tournaments/${tournamentId}/register/`,
@@ -111,8 +173,7 @@ export const useTournaments = () => {
           },
         }
       );
-  
-      console.log("Resposta do servidor:", response.data);
+
       alert("Inscrição realizada com sucesso!");
       fetchTournaments(); // Atualizar a lista de torneios
     } catch (error) {

@@ -176,7 +176,6 @@ class BlockUserView(APIView):
             print(f"Erro geral: {e}")
             return Response({"error": f"Erro geral: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
 # Excluir amigos
 class RemoveFriendView(APIView):
     permission_classes = [IsAuthenticated]

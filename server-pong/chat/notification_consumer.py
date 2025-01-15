@@ -11,6 +11,13 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             self.room_group_name,
             self.channel_name
         )
+
+        # Adiciona o WebSocket ao grupo global de torneios
+        await self.channel_layer.group_add(
+            "tournaments",  # Grupo global para notificações de torneios
+            self.channel_name
+        )
+
         await self.accept()
 
     async def disconnect(self, close_code):
@@ -20,26 +27,75 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             self.channel_name
         )
 
+        # Remove o WebSocket do grupo global de torneios
+        await self.channel_layer.group_discard(
+            "tournaments",
+            self.channel_name
+        )
+
     async def receive(self, text_data):
         data = json.loads(text_data)
-        receiver_id = data.get("receiver_id")  # ID do destinatário
-        message = data.get("message")  # Conteúdo da mensagem
+        message_type = data.get("type", "notification")
 
-        # Envia a mensagem apenas para o grupo do destinatário
-        if receiver_id:
-            await self.channel_layer.group_send(
-                f"user_{receiver_id}",  # Grupo do destinatário
-                {
-                    "type": "notification_message",
-                    "message": message,
-                    "receiver_id": receiver_id,  # Inclui o receiver_id no evento
+        print(f"Mensagem recebida: {data}")  # Log para debug
+
+        if not message_type:
+            await self.send(text_data=json.dumps({
+                "error": "Tipo de mensagem inválido."
+            }))
+            return
+
+        if message_type == "notification":
+            receiver_id = data.get("receiver_id")
+            message = data.get("message")
+            if receiver_id:
+                # Envia mensagem para um grupo específico do usuário
+                await self.channel_layer.group_send(
+                    f"user_{receiver_id}",
+                    {
+                        "type": "notification_message",
+                        "message": message,
+                        "receiver_id": receiver_id,
+                    }
+                )
+
+        elif message_type == "tournament":
+            tournament = data.get("tournament", {})
+            if tournament and isinstance(tournament, dict) and "id" in tournament:
+                # Garante que todos os campos necessários estão presentes
+                complete_tournament = {
+                    "id": tournament.get("id"),
+                    "name": tournament.get("name"),
+                    "created_at": tournament.get("created_at", "N/A"),
+                    "status": tournament.get("status", "unknown"),
+                    "creator_alias": tournament.get("creator_alias", "N/A"),
+                    "creator_display_name": tournament.get("creator_display_name", "N/A"),
+                    "creator_id": tournament.get("creator_id"),
+                    "total_participants": tournament.get("total_participants", 0),
+                    "user_alias": tournament.get("user_alias"),
+                    "user_registered": tournament.get("user_registered", False),
                 }
-            )
+                print(f"Torneio processado: {complete_tournament}")  # Log para debug
+                # Envia mensagem para o grupo global de torneios
+                await self.channel_layer.group_send(
+                    "tournaments",
+                    {
+                        "type": "tournament_message",
+                        "tournament": complete_tournament,
+                    }
+                )
 
     async def notification_message(self, event):
-        # Envia a mensagem recebida para o WebSocket
+        # Envia uma mensagem de notificação ao WebSocket do cliente
         await self.send(text_data=json.dumps({
             "type": "notification",
             "message": event["message"],
             "receiver_id": event["receiver_id"],
+        }))
+
+    async def tournament_message(self, event):
+        # Envia uma mensagem de torneio ao WebSocket do cliente
+        await self.send(text_data=json.dumps({
+            "type": "tournament",
+            "tournament": event.get("tournament", {}),
         }))

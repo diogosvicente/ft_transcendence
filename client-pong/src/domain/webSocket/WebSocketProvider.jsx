@@ -10,6 +10,7 @@ export const useWebSocket = () => {
 
 export const WebSocketProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
+  const [tournaments, setTournaments] = useState([]); // Gerencia torneios
   const notificationSocketRef = useRef(null);
 
   const WS_NOTIFICATION_URL = "ws://localhost:8000/ws/notifications/";
@@ -41,14 +42,25 @@ export const WebSocketProvider = ({ children }) => {
     };
 
     ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log(`%cMensagem recebida (notificação):`, "color: blue;", data);
-
-      if (data.type === "notification") {
-        setNotifications((prev) => [...prev, data]);
-        toast.info(`Notificação: ${data.message}`);
+      try {
+        const data = JSON.parse(event.data);
+        console.log("Mensagem recebida do WebSocket:", data);
+    
+        if (data.type === "notification") {
+          setNotifications((prev) => [...prev, data]);
+          toast.info(`Notificação: ${data.message}`);
+        } else if (data.type === "tournament") {
+          console.log("Torneio recebido via WebSocket:", data.tournament);
+          setNotifications((prev) => [...prev, data]);
+          toast.success(`Novo torneio criado: ${data.tournament.name}`);
+        } else {
+          console.warn("Tipo de mensagem desconhecido:", data.type);
+        }
+      } catch (error) {
+        console.error("Erro ao processar mensagem WebSocket:", error);
       }
     };
+    
 
     ws.onclose = () => {
       console.warn(
@@ -69,11 +81,6 @@ export const WebSocketProvider = ({ children }) => {
   const wsSendNotification = (message) => {
     if (notificationSocketRef.current && notificationSocketRef.current.readyState === WebSocket.OPEN) {
       notificationSocketRef.current.send(JSON.stringify(message));
-      // console.log(
-      //   `%cMensagem enviada via WebSocket de notificações:`,
-      //   "color: purple; font-weight: bold;",
-      //   message
-      // );
     } else {
       console.error("WebSocket de notificações não está conectado.");
     }
@@ -104,6 +111,7 @@ export const WebSocketProvider = ({ children }) => {
 
   const value = {
     notifications,
+    tournaments,
     wsSendNotification,
     initializeNotificationWebSocket,
     closeNotificationWebSocket,

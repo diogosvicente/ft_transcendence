@@ -66,7 +66,9 @@ class Match(models.Model):
     tournament = models.ForeignKey(
         Tournament,
         on_delete=models.CASCADE,
-        related_name="matches"
+        related_name="matches",
+        null=True,  # Permite valores nulos
+        blank=True  # Permite que o campo seja deixado em branco em formulários
     )
     player1 = models.ForeignKey(
         settings.AUTH_USER_MODEL,

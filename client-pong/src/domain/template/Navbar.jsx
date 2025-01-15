@@ -24,6 +24,8 @@ const CustomNavbar = () => {
     const userId = localStorage.getItem("id");
     const accessToken = localStorage.getItem("access");
     const defaultAvatar = `${API_BASE_URL_NO_LANGUAGE}/media/avatars/default.png`;
+
+    // console.log(accessToken);
   
     if (userId && accessToken) {
       axios

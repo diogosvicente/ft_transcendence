@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faDoorOpen, faPlus, faArrowRight, faPlay } from "@fortawesome/free-solid-svg-icons";
+import { faDoorOpen, faPlus, faEye, faPlay } from "@fortawesome/free-solid-svg-icons";
 
 const TournamentTable = ({
   tournaments,
@@ -20,6 +20,11 @@ const TournamentTable = ({
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newTournamentName, setNewTournamentName] = useState("");
   const [newTournamentAlias, setNewTournamentAlias] = useState("");
+
+  // Atualiza console e monitora mudanças no estado de torneios
+  useEffect(() => {
+    console.log("Torneios atualizados:", tournaments);
+  }, [tournaments]);
 
   const handleFormSubmit = () => {
     if (!newTournamentName || !newTournamentAlias) {
@@ -88,6 +93,7 @@ const TournamentTable = ({
             <th>Data de Criação</th>
             <th>Participantes</th>
             <th>Status</th>
+            <th>Detalhes</th>
             <th>Ações</th>
           </tr>
         </thead>
@@ -107,59 +113,46 @@ const TournamentTable = ({
                   <td>{tournament.status}</td>
                   <td>
                     <button
-                      className="btn btn-primary btn-sm me-2"
+                      className="btn btn-link text-decoration-none p-0"
                       onClick={() => handleViewTournament(tournament.id)}
+                      title="Ver Detalhes"
                     >
-                      <FontAwesomeIcon icon={faArrowRight} className="me-1" />
-                      Ver Detalhes
+                      <FontAwesomeIcon icon={faEye} className="text-primary" />
                     </button>
-                    {tournament.status === "planned" &&
-                      !tournament.user_registered && (
-                        <span
-                          className="text-success cursor-pointer"
-                          onClick={() => setExpandedTournament(tournament.id)}
-                          style={{
-                            cursor: "pointer",
-                            fontSize: "1em",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            transition: "transform 0.2s",
-                          }}
-                          onMouseEnter={(e) =>
-                            (e.target.style.transform = "scale(1.2)")
-                          }
-                          onMouseLeave={(e) =>
-                            (e.target.style.transform = "scale(1)")
-                          }
-                        >
-                          Entrar{" "}
-                          <FontAwesomeIcon
-                            icon={faDoorOpen}
-                            className="ms-1"
-                            style={{ fontSize: "1.5em" }}
-                          />
-                        </span>
-                      )}
-                    {tournament.user_registered && (
-                      <span className="badge bg-success text-white">
-                        Inscrito como {tournament.user_alias}
-                      </span>
-                    )}
-                    {tournament.status === "planned" &&
-                      currentUserId === tournament.creator_id &&
-                      tournament.total_participants >= 3 && (
+                  </td>
+                  <td>
+                    <div className="d-flex flex-wrap gap-2">
+                      {tournament.status === "planned" && !tournament.user_registered && (
                         <button
-                          className="btn btn-warning btn-sm ms-2"
-                          onClick={() => handleStartTournament(tournament.id)}
+                          className="btn btn-warning btn-sm d-flex align-items-center"
+                          onClick={() => setExpandedTournament(tournament.id)}
                         >
-                          Iniciar Torneio
+                          <FontAwesomeIcon icon={faDoorOpen} className="me-1" />
+                          Entrar
                         </button>
                       )}
+                      {tournament.user_registered && (
+                        <span className="badge bg-success text-light">
+                          Inscrito como {tournament.user_alias}
+                        </span>
+                      )}
+                      {tournament.status === "planned" &&
+                        currentUserId === tournament.creator_id &&
+                        tournament.total_participants >= 3 && (
+                          <button
+                            className="btn btn-warning btn-sm d-flex align-items-center"
+                            onClick={() => handleStartTournament(tournament.id)}
+                          >
+                            <FontAwesomeIcon icon={faPlay} className="me-1" />
+                            Iniciar Torneio
+                          </button>
+                        )}
+                    </div>
                   </td>
                 </tr>
                 {expandedTournament === tournament.id && (
                   <tr>
-                    <td colSpan="7">
+                    <td colSpan="8">
                       <div className="p-3 bg-light">
                         <input
                           type="text"
@@ -180,6 +173,7 @@ const TournamentTable = ({
                           className="btn btn-success"
                           onClick={() => {
                             handleRegister(tournament.id, aliases[tournament.id]);
+                            setExpandedTournament(null);
                           }}
                         >
                           Confirmar Inscrição
@@ -192,6 +186,7 @@ const TournamentTable = ({
             ))}
         </tbody>
       </table>
+
     </div>
   );
 };

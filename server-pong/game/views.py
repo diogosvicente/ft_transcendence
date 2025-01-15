@@ -252,8 +252,11 @@ class TournamentCreateAPIView(APIView):
                 abandoned=False
             )
 
+            # Serializar o torneio completo
+            serialized_tournament = TournamentSerializer(tournament, context={"request": request}).data
+
             return Response(
-                {"message": "Torneio criado com sucesso.", "tournament": {"id": tournament.id, "name": tournament.name}},
+                {"message": "Torneio criado com sucesso.", "tournament": serialized_tournament},
                 status=status.HTTP_201_CREATED
             )
 
