@@ -18,8 +18,12 @@ export const Canvas = () => {
     };
 
     ws.onmessage = (event) => {
-      gameStateRef.current = JSON.parse(event.data);
-      console.log(gameStateRef.current);
+      const data = JSON.parse(event.data);
+      if (data.message) {
+        console.log(data.message);
+        return;
+      }
+      gameStateRef.current = data;
     };
 
     wsRef.current = ws;
@@ -37,7 +41,6 @@ export const Canvas = () => {
 
     isRunningRef.current = isRunning;
     const renderLoop = () => {
-      console.log(isRunningRef.current);
       if (isRunningRef.current) {
         window.requestAnimationFrame(renderLoop);
       }
@@ -45,14 +48,26 @@ export const Canvas = () => {
 
       ctx.fillStyle = "black";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
-    renderLoop();
 
-  }, []);
+      console.log(gameStateRef.current);
+
+      // draw ball
+      ctx.fillStyle = "white";
+      ctx.fillRect(
+        gameStateRef.current.ball.position.x,
+        gameStateRef.current.ball.position.y,
+        20,
+        20,
+      )
+
+    }
+    if (gameStateRef.current) {
+      renderLoop();
+    }
+
+  }, [isRunning]);
 
   const toggleRunning = () => {
-    /*TODO: send message to the server
-     *so it sends us the game state*/
     wsRef.current.send(JSON.stringify({ "action": isRunning ? "stop_game" : "start_game" }))
     setIsRunning(!isRunning);
   };

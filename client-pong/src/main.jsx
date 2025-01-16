@@ -6,8 +6,6 @@ import App from "./App";
 
 createRoot(document.getElementById("root")).render(
   <BrowserRouter>
-    <WebSocketProvider>
-      <App />
-    </WebSocketProvider>
+    <App />
   </BrowserRouter>
 );
