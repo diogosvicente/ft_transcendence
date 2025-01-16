@@ -1,13 +1,24 @@
+# Django Imports
 from django.db import models, IntegrityError
 from django.db.models import Count, Q, F
 from django.contrib.auth import get_user_model
+from django.utils.timezone import now
+
+# Django REST Framework Imports
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
+
+# Local App Imports
 from .models import Match, Tournament, TournamentParticipant
-from .serializers import TournamentSerializer, MatchSerializer, TournamentParticipantSerializer
-from django.utils.timezone import now
+from .serializers import (
+    TournamentSerializer,
+    MatchSerializer,
+    TournamentParticipantSerializer,
+)
+
+# WebSocket/Channels Imports
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
@@ -397,6 +408,24 @@ class TournamentStartAPIView(APIView):
 
         # Salva todas as partidas em um único batch
         Match.objects.bulk_create(matches)
+
+        # Envia mensagem de atualização via WebSocket para todos os usuários
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            "tournaments",
+            {
+                "type": "tournament_update_message",
+                "tournament": {
+                    "id": tournament.id,
+                    "name": tournament.name,
+                    "total_participants": participant_count,
+                    "status": "ongoing",  # Inclui o novo status do torneio
+                    "message": f"O torneio '{tournament.name}' foi iniciado!",
+                },
+            },
+        )
+
+
 
         return Response(
             {

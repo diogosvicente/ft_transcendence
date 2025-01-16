@@ -47,37 +47,49 @@ export const WebSocketProvider = ({ children }) => {
         console.log("Mensagem recebida do WebSocket:", data);
     
         if (data.type === "notification") {
+          // Atualiza notificações
           setNotifications((prev) => [...prev, data]);
           toast.info(`Notificação: ${data.message}`);
         } else if (data.type === "tournament") {
+          // Novo torneio criado
           console.log("Torneio recebido via WebSocket:", data.tournament);
           setNotifications((prev) => [...prev, data]);
           toast.success(`Novo torneio criado: ${data.tournament.name}`);
         } else if (data.type === "tournament_update") {
+          // Atualização de torneio recebida
           const tournament = data.tournament || {};
           const name = tournament.name || "Desconhecido";
           const totalParticipants = tournament.total_participants || 0;
-        
-          // Filtrar mensagens duplicadas ou inválidas
-          if (!tournament.id || totalParticipants < 0) {
-            console.warn("Mensagem WebSocket ignorada:", data);
+          const status = tournament.status || "unknown";
+    
+          // Verificar se os dados são válidos antes de atualizar
+          if (!tournament.id) {
+            console.warn("Mensagem WebSocket ignorada por falta de ID:", data);
             return;
           }
-        
+    
           console.log("Atualização de torneio recebida:", tournament);
-        
+    
+          // Atualiza a lista de notificações
           setNotifications((prev) => [...prev, data]);
-        
-          toast.info(
-            `Torneio atualizado: ${name} agora tem ${totalParticipants} participantes.`
-          );
-        
+    
+          // Exibe mensagens apropriadas
+          if (status === "ongoing") {
+            toast.success(tournament.message || `O torneio '${name}' foi iniciado!`);
+          } else {
+            toast.info(
+              `Torneio atualizado: ${name} agora tem ${totalParticipants} participantes.`
+            );
+          }
+    
+          // Atualiza a lista de torneios no estado local
           setTournaments((prevTournaments) =>
             prevTournaments.map((t) =>
               t.id === tournament.id
                 ? {
                     ...t,
-                    total_participants: totalParticipants,
+                    total_participants: totalParticipants, // Atualiza participantes
+                    status: status, // Atualiza status
                   }
                 : t
             )
@@ -89,7 +101,6 @@ export const WebSocketProvider = ({ children }) => {
         console.error("Erro ao processar mensagem WebSocket:", error);
       }
     };
-    
     
 
     ws.onclose = () => {

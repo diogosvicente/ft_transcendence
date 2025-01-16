@@ -42,7 +42,11 @@ export const useTournaments = ({ notifications, wsSendNotification }) => {
           setTournaments((prevTournaments) =>
             prevTournaments.map((tournament) =>
               tournament.id === updatedTournament.id
-                ? { ...tournament, total_participants: updatedTournament.total_participants }
+                ? {
+                    ...tournament,
+                    total_participants: updatedTournament.total_participants,
+                    status: updatedTournament.status, // Atualiza status
+                  }
                 : tournament
             )
           );
@@ -205,17 +209,7 @@ export const useTournaments = ({ notifications, wsSendNotification }) => {
             : tournament
         )
       );
-  
-      // Envia uma notificação via WebSocket para todos os usuários
-      // wsSendNotification({
-      //   type: "tournament_update",
-      //   message: `Novo participante no torneio: ${updatedTournament.name}`,
-      //   tournament: {
-      //     id: tournamentId,
-      //     name: updatedTournament.name,
-      //     total_participants: updatedTournament.total_participants, // Certifique-se de que está correto
-      //   },
-      // });
+
     } catch (error) {
       console.error("Erro ao registrar no torneio:", error.response?.data || error.message);
       alert(error.response?.data?.error || "Erro ao registrar. Tente novamente.");
@@ -228,14 +222,15 @@ export const useTournaments = ({ notifications, wsSendNotification }) => {
       alert("O torneio precisa de pelo menos 3 participantes para ser iniciado.");
       return;
     }
-
+  
     const accessToken = localStorage.getItem("access");
     if (!accessToken) {
       alert("Access token não encontrado.");
       return;
     }
-
+  
     try {
+      // Envia requisição para iniciar o torneio
       await axios.post(
         `${API_BASE_URL}/api/game/tournaments/${tournamentId}/start/`,
         {},
@@ -243,13 +238,16 @@ export const useTournaments = ({ notifications, wsSendNotification }) => {
           headers: { Authorization: `Bearer ${accessToken}` },
         }
       );
-      alert("Torneio iniciado com sucesso!");
-      fetchTournaments(); // Atualizar lista
+  
+      // O WebSocket deve atualizar a lista passivamente, então não precisa de `setTournaments` aqui
+      // alert("O torneio foi iniciado com sucesso!");
     } catch (error) {
-      console.error(error);
-      alert("Erro ao iniciar torneio. Tente novamente.");
+      console.error("Erro ao iniciar torneio:", error.response?.data || error.message);
+      alert(error.response?.data?.error || "Erro ao iniciar torneio. Tente novamente.");
     }
   };
+  
+  
 
   return {
     tournaments,
