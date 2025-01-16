@@ -7,6 +7,9 @@ export const Canvas = () => {
 
   const gameStateRef = useRef(null);
 
+  const [isRunning, setIsRunning] = useState(false);
+  const isRunningRef = useRef(false);
+
   useEffect(() => {
     const ws = new WebSocket("ws://localhost:8000/ws/game/");
 
@@ -28,36 +31,36 @@ export const Canvas = () => {
   }, []);
 
   useEffect(() => {
+
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
 
-    function mainLoop() {
-      if (gameStateRef.current && gameStateRef.current.isRunning) {
-        window.requestAnimationFrame(main);
+    isRunningRef.current = isRunning;
+    const renderLoop = () => {
+      console.log(isRunningRef.current);
+      if (isRunningRef.current) {
+        window.requestAnimationFrame(renderLoop);
       }
-
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       ctx.fillStyle = "black";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Your main loop contents
     }
-    mainLoop(); // Start the cycle
+    renderLoop();
 
   }, []);
 
-  const toggleStartPause = () => {
-    const action = gameStateRef.current.isRunning ? "stop_game" : "start_game";
-    wsRef.current.send(JSON.stringify({ "action": action }));
-    console.log(gameStateRef.current.isRunning);
-    gameStateRef.current.isRunning = !gameStateRef.current.isRunning;
+  const toggleRunning = () => {
+    /*TODO: send message to the server
+     *so it sends us the game state*/
+    wsRef.current.send(JSON.stringify({ "action": isRunning ? "stop_game" : "start_game" }))
+    setIsRunning(!isRunning);
   };
 
   return (
     <>
       <canvas width={800} height={590} ref={canvasRef}></canvas>
-      <input type="button" onClick={toggleStartPause} value={"Start/Pause"} />
+      <input type="button" onClick={toggleRunning} value="Start/Stop" />
     </>
   );
 };

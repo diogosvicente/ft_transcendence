@@ -6,7 +6,7 @@ from channels.layers import get_channel_layer
 class GameManager:
     def __init__(self):
         self.running = False
-        self.state = {"player1": {}, "player2": {}, "isRunning": self.running}
+        self.state = {"player1": {}, "player2": {}}
         self.channel_layer = get_channel_layer()
         self.loop_task = None
 

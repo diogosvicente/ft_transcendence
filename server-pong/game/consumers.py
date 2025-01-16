@@ -17,7 +17,6 @@ class GameConsumer(AsyncWebsocketConsumer):
             self.group_name,
             {"type": "game.state", "message": game_manager.state}
         )
-
         await self.accept()
 
     async def disconnect(self, code):
