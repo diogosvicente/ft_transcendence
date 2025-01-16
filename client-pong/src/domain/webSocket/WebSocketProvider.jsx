@@ -58,12 +58,29 @@ export const WebSocketProvider = ({ children }) => {
           const name = tournament.name || "Desconhecido";
           const totalParticipants = tournament.total_participants || 0;
         
-          console.log("Atualização de torneio recebida via WebSocket:", tournament);
+          // Filtrar mensagens duplicadas ou inválidas
+          if (!tournament.id || totalParticipants < 0) {
+            console.warn("Mensagem WebSocket ignorada:", data);
+            return;
+          }
+        
+          console.log("Atualização de torneio recebida:", tournament);
         
           setNotifications((prev) => [...prev, data]);
         
           toast.info(
             `Torneio atualizado: ${name} agora tem ${totalParticipants} participantes.`
+          );
+        
+          setTournaments((prevTournaments) =>
+            prevTournaments.map((t) =>
+              t.id === tournament.id
+                ? {
+                    ...t,
+                    total_participants: totalParticipants,
+                  }
+                : t
+            )
           );
         } else {
           console.warn("Tipo de mensagem desconhecido:", data.type);

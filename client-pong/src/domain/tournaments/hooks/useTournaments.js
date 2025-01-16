@@ -189,15 +189,16 @@ export const useTournaments = ({ notifications, wsSendNotification }) => {
         }
       );
   
-      // alert("Inscrição realizada com sucesso!");
+      // Obtém os dados atualizados do torneio da resposta da API
+      const updatedTournament = response.data.tournament;
   
-      // Atualiza o torneio específico na lista local e incrementa o total de participantes
+      // Atualiza o torneio específico na lista local
       setTournaments((prevTournaments) =>
         prevTournaments.map((tournament) =>
           tournament.id === tournamentId
             ? {
                 ...tournament,
-                total_participants: tournament.total_participants + 1,
+                total_participants: updatedTournament.total_participants, // Atualizado com o valor correto
                 user_registered: true,
                 user_alias: alias.trim(),
               }
@@ -206,20 +207,20 @@ export const useTournaments = ({ notifications, wsSendNotification }) => {
       );
   
       // Envia uma notificação via WebSocket para todos os usuários
-      wsSendNotification({
-        type: "tournament_update",
-        message: `Novo participante no torneio: ${response.data.tournament.name}`,
-        tournament: {
-          id: tournamentId,
-          total_participants: response.data.tournament.total_participants, // Atualizado
-        },
-      });
+      // wsSendNotification({
+      //   type: "tournament_update",
+      //   message: `Novo participante no torneio: ${updatedTournament.name}`,
+      //   tournament: {
+      //     id: tournamentId,
+      //     name: updatedTournament.name,
+      //     total_participants: updatedTournament.total_participants, // Certifique-se de que está correto
+      //   },
+      // });
     } catch (error) {
       console.error("Erro ao registrar no torneio:", error.response?.data || error.message);
       alert(error.response?.data?.error || "Erro ao registrar. Tente novamente.");
     }
   };
-  
   
   const handleStartTournament = async (tournamentId) => {
     const tournament = tournaments.find((t) => t.id === tournamentId);

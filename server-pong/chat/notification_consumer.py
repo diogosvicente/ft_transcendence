@@ -88,12 +88,13 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         elif message_type == "tournament_update":
             tournament = data.get("tournament", {})
             if tournament and isinstance(tournament, dict) and "id" in tournament:
-                # Atualiza apenas os campos necessários
                 updated_tournament = {
                     "id": tournament.get("id"),
+                    "name": tournament.get("name", "Torneio Desconhecido"),
                     "total_participants": tournament.get("total_participants", 0),
                 }
-                print(f"Atualização de torneio processada: {updated_tournament}")  # Log para debug
+                print(f"Atualização de torneio processada: {updated_tournament}")  # Log para depuração
+
                 # Envia mensagem de atualização para o grupo global de torneios
                 await self.channel_layer.group_send(
                     "tournaments",
@@ -102,6 +103,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
                         "tournament": updated_tournament,
                     }
                 )
+
 
     async def notification_message(self, event):
         # Envia uma mensagem de notificação ao WebSocket do cliente
@@ -119,11 +121,14 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         }))
 
     async def tournament_update_message(self, event):
-        # Log para depuração
-        print(f"Mensagem de atualização enviada: {event}")
+        # Filtra mensagens inválidas ou duplicadas
+        tournament = event.get("tournament", {})
+        if not tournament.get("id") or tournament.get("total_participants", 0) < 0:
+            print("Mensagem de atualização ignorada devido a dados inconsistentes.")
+            return
 
-        # Envia a mensagem ao WebSocket do cliente
+        # Envia ao WebSocket apenas mensagens válidas
         await self.send(text_data=json.dumps({
             "type": "tournament_update",
-            "tournament": event.get("tournament", {}),
+            "tournament": tournament,
         }))

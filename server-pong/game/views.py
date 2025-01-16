@@ -8,6 +8,8 @@ from rest_framework import status
 from .models import Match, Tournament, TournamentParticipant
 from .serializers import TournamentSerializer, MatchSerializer, TournamentParticipantSerializer
 from django.utils.timezone import now
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 class PositionAtRankingToUserProfile(APIView):
     permission_classes = [IsAuthenticated]
@@ -305,6 +307,25 @@ class TournamentRegisterAPIView(APIView):
         serializer = TournamentParticipantSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
+
+            # Incrementa o número total de participantes
+            tournament.total_participants = TournamentParticipant.objects.filter(tournament=tournament).count()
+            tournament.save()
+
+            # Envia mensagem de atualização via WebSocket
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                "tournaments",
+                {
+                    "type": "tournament_update_message",
+                    "tournament": {
+                        "id": tournament.id,
+                        "name": tournament.name,
+                        "total_participants": tournament.total_participants,
+                    },
+                },
+            )
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
