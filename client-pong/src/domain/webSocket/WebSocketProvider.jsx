@@ -53,6 +53,18 @@ export const WebSocketProvider = ({ children }) => {
           console.log("Torneio recebido via WebSocket:", data.tournament);
           setNotifications((prev) => [...prev, data]);
           toast.success(`Novo torneio criado: ${data.tournament.name}`);
+        } else if (data.type === "tournament_update") {
+          const tournament = data.tournament || {};
+          const name = tournament.name || "Desconhecido";
+          const totalParticipants = tournament.total_participants || 0;
+        
+          console.log("Atualização de torneio recebida via WebSocket:", tournament);
+        
+          setNotifications((prev) => [...prev, data]);
+        
+          toast.info(
+            `Torneio atualizado: ${name} agora tem ${totalParticipants} participantes.`
+          );
         } else {
           console.warn("Tipo de mensagem desconhecido:", data.type);
         }
@@ -60,6 +72,7 @@ export const WebSocketProvider = ({ children }) => {
         console.error("Erro ao processar mensagem WebSocket:", error);
       }
     };
+    
     
 
     ws.onclose = () => {

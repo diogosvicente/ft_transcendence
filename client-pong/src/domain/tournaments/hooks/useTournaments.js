@@ -22,7 +22,7 @@ export const useTournaments = ({ notifications, wsSendNotification }) => {
       notifications.forEach((notification) => {
         if (notification.type === "tournament") {
           console.log("Novo torneio detectado via WebSocket:", notification);
-          
+
           // Verifica se o torneio já existe na lista
           const newTournament = notification.tournament;
           setTournaments((prevTournaments) => {
@@ -33,9 +33,24 @@ export const useTournaments = ({ notifications, wsSendNotification }) => {
             return prevTournaments; // Retorna a lista original se já existe
           });
         }
+
+        if (notification.type === "tournament_update") {
+          console.log("Atualização de torneio detectada via WebSocket:", notification);
+
+          // Atualiza o torneio específico com os novos dados
+          const updatedTournament = notification.tournament;
+          setTournaments((prevTournaments) =>
+            prevTournaments.map((tournament) =>
+              tournament.id === updatedTournament.id
+                ? { ...tournament, total_participants: updatedTournament.total_participants }
+                : tournament
+            )
+          );
+        }
       });
     }
   }, [notifications]);
+
 
   const fetchTournaments = async () => {
     const accessToken = localStorage.getItem("access");
@@ -161,7 +176,7 @@ export const useTournaments = ({ notifications, wsSendNotification }) => {
       alert("O campo 'alias' é obrigatório para se inscrever.");
       return;
     }
-
+  
     try {
       const response = await axios.post(
         `${API_BASE_URL}/api/game/tournaments/${tournamentId}/register/`,
@@ -173,15 +188,39 @@ export const useTournaments = ({ notifications, wsSendNotification }) => {
           },
         }
       );
-
-      alert("Inscrição realizada com sucesso!");
-      fetchTournaments(); // Atualizar a lista de torneios
+  
+      // alert("Inscrição realizada com sucesso!");
+  
+      // Atualiza o torneio específico na lista local e incrementa o total de participantes
+      setTournaments((prevTournaments) =>
+        prevTournaments.map((tournament) =>
+          tournament.id === tournamentId
+            ? {
+                ...tournament,
+                total_participants: tournament.total_participants + 1,
+                user_registered: true,
+                user_alias: alias.trim(),
+              }
+            : tournament
+        )
+      );
+  
+      // Envia uma notificação via WebSocket para todos os usuários
+      wsSendNotification({
+        type: "tournament_update",
+        message: `Novo participante no torneio: ${response.data.tournament.name}`,
+        tournament: {
+          id: tournamentId,
+          total_participants: response.data.tournament.total_participants, // Atualizado
+        },
+      });
     } catch (error) {
       console.error("Erro ao registrar no torneio:", error.response?.data || error.message);
       alert(error.response?.data?.error || "Erro ao registrar. Tente novamente.");
     }
   };
-
+  
+  
   const handleStartTournament = async (tournamentId) => {
     const tournament = tournaments.find((t) => t.id === tournamentId);
     if (!tournament || tournament.total_participants < 3) {

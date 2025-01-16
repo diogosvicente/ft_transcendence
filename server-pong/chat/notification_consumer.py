@@ -85,6 +85,24 @@ class NotificationConsumer(AsyncWebsocketConsumer):
                     }
                 )
 
+        elif message_type == "tournament_update":
+            tournament = data.get("tournament", {})
+            if tournament and isinstance(tournament, dict) and "id" in tournament:
+                # Atualiza apenas os campos necessários
+                updated_tournament = {
+                    "id": tournament.get("id"),
+                    "total_participants": tournament.get("total_participants", 0),
+                }
+                print(f"Atualização de torneio processada: {updated_tournament}")  # Log para debug
+                # Envia mensagem de atualização para o grupo global de torneios
+                await self.channel_layer.group_send(
+                    "tournaments",
+                    {
+                        "type": "tournament_update_message",
+                        "tournament": updated_tournament,
+                    }
+                )
+
     async def notification_message(self, event):
         # Envia uma mensagem de notificação ao WebSocket do cliente
         await self.send(text_data=json.dumps({
@@ -97,5 +115,15 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         # Envia uma mensagem de torneio ao WebSocket do cliente
         await self.send(text_data=json.dumps({
             "type": "tournament",
+            "tournament": event.get("tournament", {}),
+        }))
+
+    async def tournament_update_message(self, event):
+        # Log para depuração
+        print(f"Mensagem de atualização enviada: {event}")
+
+        # Envia a mensagem ao WebSocket do cliente
+        await self.send(text_data=json.dumps({
+            "type": "tournament_update",
             "tournament": event.get("tournament", {}),
         }))
