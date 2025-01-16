@@ -22,7 +22,7 @@ export const useTournaments = ({ notifications, wsSendNotification }) => {
       notifications.forEach((notification) => {
         if (notification.type === "tournament") {
           console.log("Novo torneio detectado via WebSocket:", notification);
-
+  
           // Verifica se o torneio já existe na lista
           const newTournament = notification.tournament;
           setTournaments((prevTournaments) => {
@@ -33,10 +33,10 @@ export const useTournaments = ({ notifications, wsSendNotification }) => {
             return prevTournaments; // Retorna a lista original se já existe
           });
         }
-
+  
         if (notification.type === "tournament_update") {
           console.log("Atualização de torneio detectada via WebSocket:", notification);
-
+  
           // Atualiza o torneio específico com os novos dados
           const updatedTournament = notification.tournament;
           setTournaments((prevTournaments) =>
@@ -44,8 +44,8 @@ export const useTournaments = ({ notifications, wsSendNotification }) => {
               tournament.id === updatedTournament.id
                 ? {
                     ...tournament,
-                    total_participants: updatedTournament.total_participants,
-                    status: updatedTournament.status, // Atualiza status
+                    total_participants: updatedTournament.total_participants ?? tournament.total_participants, // Atualiza participantes
+                    status: updatedTournament.status ?? tournament.status, // Atualiza status
                   }
                 : tournament
             )
@@ -54,7 +54,7 @@ export const useTournaments = ({ notifications, wsSendNotification }) => {
       });
     }
   }, [notifications]);
-
+  
 
   const fetchTournaments = async () => {
     const accessToken = localStorage.getItem("access");
@@ -246,8 +246,6 @@ export const useTournaments = ({ notifications, wsSendNotification }) => {
       alert(error.response?.data?.error || "Erro ao iniciar torneio. Tente novamente.");
     }
   };
-  
-  
 
   return {
     tournaments,

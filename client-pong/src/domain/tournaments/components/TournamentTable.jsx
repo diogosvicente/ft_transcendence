@@ -136,17 +136,16 @@ const TournamentTable = ({
                           Inscrito como {tournament.user_alias}
                         </span>
                       )}
-                      {tournament.status === "planned" &&
-                        currentUserId === tournament.creator_id &&
-                        tournament.total_participants >= 3 && (
-                          <button
-                            className="btn btn-warning btn-sm d-flex align-items-center"
-                            onClick={() => handleStartTournament(tournament.id)}
-                          >
-                            <FontAwesomeIcon icon={faPlay} className="me-1" />
-                            Iniciar Torneio
-                          </button>
-                        )}
+                      {tournament.status === "planned" && currentUserId === tournament.creator_id && 
+                      tournament.total_participants >= 3 && (
+                        <button
+                          className="btn btn-warning btn-sm d-flex align-items-center"
+                          onClick={() => handleStartTournament(tournament.id)}
+                        >
+                          <FontAwesomeIcon icon={faPlay} className="me-1" />
+                          Iniciar Torneio
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
