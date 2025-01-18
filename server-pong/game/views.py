@@ -324,6 +324,9 @@ class TournamentRegisterAPIView(APIView):
             tournament.save()
 
             # Envia mensagem de atualização via WebSocket
+            from channels.layers import get_channel_layer
+            from asgiref.sync import async_to_sync
+
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
                 "tournaments",
@@ -333,11 +336,29 @@ class TournamentRegisterAPIView(APIView):
                         "id": tournament.id,
                         "name": tournament.name,
                         "total_participants": tournament.total_participants,
+                        "status": tournament.status,
+                        "creator_id": tournament.created_by.id,
+                        "creator_display_name": tournament.created_by.display_name,
                     },
                 },
             )
 
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            # Retorna os dados atualizados do torneio
+            return Response(
+                {
+                    "tournament": {
+                        "id": tournament.id,
+                        "name": tournament.name,
+                        "total_participants": tournament.total_participants,
+                        "status": tournament.status,
+                        "creator_id": tournament.created_by.id,
+                        "creator_display_name": tournament.created_by.display_name,
+                        "user_registered": True,
+                        "user_alias": alias,
+                    }
+                },
+                status=status.HTTP_201_CREATED,
+            )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class TournamentStartAPIView(APIView):

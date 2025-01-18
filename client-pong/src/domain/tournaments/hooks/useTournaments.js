@@ -209,12 +209,14 @@ export const useTournaments = ({ notifications, wsSendNotification }) => {
             : tournament
         )
       );
-
+  
+  
     } catch (error) {
       console.error("Erro ao registrar no torneio:", error.response?.data || error.message);
       alert(error.response?.data?.error || "Erro ao registrar. Tente novamente.");
     }
   };
+  
   
   const handleStartTournament = async (tournamentId) => {
     const tournament = tournaments.find((t) => t.id === tournamentId);
