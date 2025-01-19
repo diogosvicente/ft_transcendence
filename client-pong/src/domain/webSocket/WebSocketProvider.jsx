@@ -10,16 +10,16 @@ export const useWebSocket = () => {
 
 export const WebSocketProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
-  const [tournaments, setTournaments] = useState([]); // Gerencia torneios
+  const [tournaments, setTournaments] = useState([]);
+  const [shouldResetChatWindow, setShouldResetChatWindow] = useState(false); // Flag para resetar ChatWindow
   const notificationSocketRef = useRef(null);
 
   const WS_NOTIFICATION_URL = "ws://localhost:8000/ws/notifications/";
 
-  // Função para inicializar o WebSocket de notificações
   const initializeNotificationWebSocket = (accessToken, userId, context = "manual") => {
     if (!accessToken || !userId) {
       console.warn(
-        `%cWebSocket de notificações não será inicializado: Token ou ID do usuário ausentes.`,
+        "%cWebSocket de notificações não será inicializado: Token ou ID do usuário ausentes.",
         "color: orange; font-weight: bold;"
       );
       return;
@@ -31,7 +31,6 @@ export const WebSocketProvider = ({ children }) => {
     }
 
     const wsUrl = `${WS_NOTIFICATION_URL}?access_token=${accessToken}&user_id=${userId}`;
-
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
@@ -42,83 +41,97 @@ export const WebSocketProvider = ({ children }) => {
     };
 
     ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        console.log("Mensagem recebida do WebSocket:", data);
-    
-        if (data.type === "notification") {
-          // Atualiza notificações
-          setNotifications((prev) => [...prev, data]);
-          toast.info(`Notificação: ${data.message}`);
-        } else if (data.type === "tournament") {
-          // Novo torneio criado
-          console.log("Torneio recebido via WebSocket:", data.tournament);
-          setNotifications((prev) => [...prev, data]);
-          toast.success(`Novo torneio criado: ${data.tournament.name}`);
-        } else if (data.type === "tournament_update") {
-          // Atualização de torneio recebida
-          const tournament = data.tournament || {};
-          const name = tournament.name || "Desconhecido";
-          const totalParticipants = tournament.total_participants || 0;
-          const status = tournament.status || "unknown";
-    
-          // Verificar se os dados são válidos antes de atualizar
-          if (!tournament.id) {
-            console.warn("Mensagem WebSocket ignorada por falta de ID:", data);
-            return;
-          }
-    
-          console.log("Atualização de torneio recebida:", tournament);
-    
-          // Atualiza a lista de notificações
-          setNotifications((prev) => [...prev, data]);
-    
-          // Exibe mensagens apropriadas
-          if (status === "ongoing") {
-            toast.success(tournament.message || `O torneio '${name}' foi iniciado!`);
-          } else {
-            toast.info(
-              `Torneio atualizado: ${name} agora tem ${totalParticipants} participantes.`
-            );
-          }
-    
-          // Atualiza a lista de torneios no estado local
-          setTournaments((prevTournaments) =>
-            prevTournaments.map((t) =>
-              t.id === tournament.id
-                ? {
-                    ...t,
-                    total_participants: totalParticipants, // Atualiza participantes
-                    status: status, // Atualiza status
-                  }
-                : t
-            )
-          );
-        } else {
-          console.warn("Tipo de mensagem desconhecido:", data.type);
-        }
-      } catch (error) {
-        console.error("Erro ao processar mensagem WebSocket:", error);
-      }
+      processWebSocketMessage(event);
     };
-    
 
     ws.onclose = () => {
       console.warn(
-        `%cWebSocket de notificações desconectado. Tentando reconexão...`,
+        "%cWebSocket de notificações desconectado. Tentando reconexão...",
         "color: orange; font-weight: bold;"
       );
       setTimeout(() => initializeNotificationWebSocket(accessToken, userId, "reconnect"), 3000);
     };
 
     ws.onerror = (error) => {
-      console.error(`%cErro no WebSocket de notificações:`, "color: red;", error);
+      console.error("%cErro no WebSocket de notificações:", "color: red;", error);
     };
 
     notificationSocketRef.current = ws;
   };
 
-  // Função para enviar mensagens via WebSocket de notificações
+  const processWebSocketMessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      console.log("Mensagem recebida do WebSocket:", data);
+
+      if (data.type === "notification") {
+        setNotifications((prev) => [...prev, data]);
+        toast.info(`Notificação: ${data.message}`);
+
+        // Ativa a flag para resetar o ChatWindow ao detectar mensagens de bloqueio
+        if (
+          data.message === "Você foi bloqueado." ||
+          data.message === "Você bloqueou o usuário." ||
+          data.message === "Você foi removido da lista de amigos." ||
+          data.message === "Você removeu um amigo da sua lista."
+        ) {
+          console.log("Bloqueio detectado. Ativando flag para resetar ChatWindow...");
+          setShouldResetChatWindow(true);
+        }
+      } else if (data.type === "tournament") {
+        handleNewTournament(data);
+      } else if (data.type === "tournament_update") {
+        handleTournamentUpdate(data);
+      } else {
+        console.warn("Tipo de mensagem desconhecido:", data.type);
+      }
+    } catch (error) {
+      console.error("Erro ao processar mensagem WebSocket:", error);
+    }
+  };
+
+  const handleNewTournament = (data) => {
+    console.log("Torneio recebido via WebSocket:", data.tournament);
+    setNotifications((prev) => [...prev, data]);
+    toast.success(`Novo torneio criado: ${data.tournament.name}`);
+  };
+
+  const handleTournamentUpdate = (data) => {
+    const tournament = data.tournament || {};
+    const name = tournament.name || "Desconhecido";
+    const totalParticipants = tournament.total_participants || 0;
+    const status = tournament.status || "unknown";
+
+    if (!tournament.id) {
+      console.warn("Mensagem WebSocket ignorada por falta de ID:", data);
+      return;
+    }
+
+    console.log("Atualização de torneio recebida:", tournament);
+
+    setNotifications((prev) => [...prev, data]);
+
+    if (status === "ongoing") {
+      toast.success(tournament.message || `O torneio '${name}' foi iniciado!`);
+    } else {
+      toast.info(
+        `Torneio atualizado: ${name} agora tem ${totalParticipants} participantes.`
+      );
+    }
+
+    setTournaments((prevTournaments) =>
+      prevTournaments.map((t) =>
+        t.id === tournament.id
+          ? {
+              ...t,
+              total_participants: totalParticipants,
+              status: status,
+            }
+          : t
+      )
+    );
+  };
+
   const wsSendNotification = (message) => {
     if (notificationSocketRef.current && notificationSocketRef.current.readyState === WebSocket.OPEN) {
       notificationSocketRef.current.send(JSON.stringify(message));
@@ -127,16 +140,14 @@ export const WebSocketProvider = ({ children }) => {
     }
   };
 
-  // Fechar WebSocket ao desmontar
   const closeNotificationWebSocket = () => {
     if (notificationSocketRef.current) {
       notificationSocketRef.current.close();
       notificationSocketRef.current = null;
-      console.log(`%cWebSocket de notificações fechado.`, "color: red; font-weight: bold;");
+      console.log("%cWebSocket de notificações fechado.", "color: red; font-weight: bold;");
     }
   };
 
-  // Inicialização automática ao carregar ou recarregar
   useEffect(() => {
     const accessToken = localStorage.getItem("access");
     const userId = localStorage.getItem("id");
@@ -148,7 +159,7 @@ export const WebSocketProvider = ({ children }) => {
     return () => {
       closeNotificationWebSocket();
     };
-  }, []); // Somente no primeiro render
+  }, []);
 
   const value = {
     notifications,
@@ -156,6 +167,8 @@ export const WebSocketProvider = ({ children }) => {
     wsSendNotification,
     initializeNotificationWebSocket,
     closeNotificationWebSocket,
+    shouldResetChatWindow, // Expõe a flag para o Chat
+    setShouldResetChatWindow, // Permite resetar a flag
   };
 
   return <WebSocketContext.Provider value={value}>{children}</WebSocketContext.Provider>;

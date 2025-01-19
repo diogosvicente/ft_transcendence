@@ -14,6 +14,8 @@ const Chat = () => {
   const {
     wsSendNotification,
     notifications,
+    shouldResetChatWindow, // Flag para verificar se precisa resetar o ChatWindow
+    setShouldResetChatWindow, // Função para resetar a flag após o reset
   } = useWebSocket();
 
   const [friends, setFriends] = useState([]);
@@ -32,11 +34,25 @@ const Chat = () => {
   const [chatTabs, setChatTabs] = useState([{ id: "global", name: "Chat Global" }]);
   const [activeTab, setActiveTab] = useState("global"); // Aba ativa
 
+  // Função para resetar o estado do ChatWindow
+  const resetChatWindow = () => {
+    setChatTabs([{ id: "global", name: "Chat Global" }]); // Apenas Chat Global
+    setActiveTab("global"); // Aba ativa será o Chat Global
+  };
+
+  // Monitora a flag shouldResetChatWindow
+  useEffect(() => {
+    if (shouldResetChatWindow) {
+      resetChatWindow();
+      setShouldResetChatWindow(false); // Reseta a flag após o reset
+    }
+  }, [shouldResetChatWindow, setShouldResetChatWindow]);
+
   // Função para abrir um chat privado
   const openChatWithUser = (friend) => {
-  const roomId = `room_${friend.id}`;
-  const chatId = `private_${friend.id}`;
-  
+    const roomId = `room_${friend.id}`;
+    const chatId = `private_${friend.id}`;
+
     if (!chatTabs.some((tab) => tab.id === chatId)) {
       setChatTabs((prevTabs) => [
         ...prevTabs,
@@ -45,8 +61,6 @@ const Chat = () => {
     }
     setActiveTab(chatId);
   };
-  
-  
 
   // Função para fechar uma aba de chat
   const closeChatTab = (chatId) => {

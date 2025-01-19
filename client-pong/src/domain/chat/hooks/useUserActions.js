@@ -1,7 +1,7 @@
 import axios from "axios";
 import API_BASE_URL from "../../../assets/config/config.js";
 
-const useUserActions = (wsSendNotification) => {
+const useUserActions = (wsSendNotification, resetChatWindow)  => {
 
   const getAuthDetails = () => ({
     accessToken: localStorage.getItem("access"),
@@ -60,14 +60,14 @@ const useUserActions = (wsSendNotification) => {
 
   const blockUser = async (userId) => {
     const { accessToken, loggedID } = getAuthDetails();
-
+  
     try {
       await axios.post(
         `${API_BASE_URL}/api/chat/block-user/`,
         { user_id: userId },
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
-
+  
       sendNotification(
         "notification",
         "blockUser",
@@ -76,7 +76,7 @@ const useUserActions = (wsSendNotification) => {
         "Você foi bloqueado.",
         { sender_id: loggedID, receiver_id: userId }
       );
-
+  
       sendNotification(
         "notification",
         "blockUser",
@@ -85,11 +85,17 @@ const useUserActions = (wsSendNotification) => {
         "Você bloqueou o usuário.",
         { sender_id: userId, receiver_id: loggedID }
       );
+  
+      if (resetChatWindow) {
+        resetChatWindow();
+      } else {
+        console.warn("resetChatWindow não foi fornecido ao useUserActions.");
+      }
     } catch (err) {
       handleError(err, "Erro ao bloquear usuário.");
     }
   };
-
+  
   const unblockUser = async (blockedRecordId) => {
     const { accessToken, loggedID } = getAuthDetails();
 
@@ -122,7 +128,7 @@ const useUserActions = (wsSendNotification) => {
     } catch (err) {
       handleError(err, "Erro ao desbloquear usuário.");
     }
-  };
+  };  
 
   const acceptFriendRequest = async (requestId) => {
     const { accessToken, loggedID } = getAuthDetails();
@@ -197,35 +203,44 @@ const useUserActions = (wsSendNotification) => {
     const { accessToken, loggedID } = getAuthDetails();
 
     try {
-      const response = await axios.delete(`${API_BASE_URL}/api/chat/remove-friend/`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-        data: { id: requestId },
-      });
+        const response = await axios.delete(`${API_BASE_URL}/api/chat/remove-friend/`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+            data: { id: requestId },
+        });
 
-      const { user_id, friend_id } = response.data;
-      const receiverId = user_id === loggedID ? friend_id : user_id;
+        const { user_id, friend_id } = response.data;
+        const receiverId = user_id === loggedID ? friend_id : user_id;
 
-      sendNotification(
-        "notification",
-        "removeFriend",
-        loggedID,
-        receiverId,
-        "Você foi removido da lista de amigos.",
-        { sender_id: loggedID, receiver_id: receiverId }
-      );
+        sendNotification(
+            "notification",
+            "removeFriend",
+            loggedID,
+            receiverId,
+            "Você foi removido da lista de amigos.",
+            { sender_id: loggedID, receiver_id: receiverId }
+        );
 
-      sendNotification(
-        "notification",
-        "removeFriend",
-        receiverId,
-        loggedID,
-        "Você removeu um amigo da sua lista.",
-        { sender_id: receiverId, receiver_id: loggedID }
-      );
+        sendNotification(
+            "notification",
+            "removeFriend",
+            receiverId,
+            loggedID,
+            "Você removeu um amigo da sua lista.",
+            { sender_id: receiverId, receiver_id: loggedID }
+        );
+
+        // Reseta o ChatWindow ao remover um amigo
+        if (resetChatWindow) {
+            console.log("Resetando ChatWindow após remoção de amigo...");
+            resetChatWindow();
+        } else {
+            console.warn("resetChatWindow não foi fornecido ao useUserActions.");
+        }
     } catch (err) {
-      handleError(err, "Erro ao remover amigo.");
+        handleError(err, "Erro ao remover amigo.");
     }
   };
+
 
   const challengeUser = async (userId) => {
     const { accessToken, loggedID } = getAuthDetails();

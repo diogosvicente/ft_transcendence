@@ -5,8 +5,6 @@ from rest_framework import status
 from chat.models import Friend, BlockedUser
 from user_management.models import User
 from django.db import models
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
 
 # Lista de amigos
 class FriendsListView(APIView):

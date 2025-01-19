@@ -3,7 +3,7 @@ import "../../../assets/styles/chatWindow.css";
 import useWebSocketManager from "../hooks/WebSocketManager";
 import { API_BASE_URL_NO_LANGUAGE } from "../../../assets/config/config.js";
 
-const ChatWindow = ({ chatTabs, activeTab, setActiveTab, closeChatTab }) => {
+const ChatWindow = ({ chatTabs, activeTab, setActiveTab, closeChatTab, resetChatWindow  }) => {
   const [message, setMessage] = useState("");
   const privateWebSockets = useRef({});
   const { messages: globalMessages, sendMessage: sendGlobalMessage } = useWebSocketManager("global");
