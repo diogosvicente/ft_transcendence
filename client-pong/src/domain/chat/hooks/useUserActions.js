@@ -241,26 +241,52 @@ const useUserActions = (wsSendNotification, resetChatWindow)  => {
     }
   };
 
-
   const challengeUser = async (userId) => {
     const { accessToken, loggedID } = getAuthDetails();
-
+  
     try {
+      // Solicitação para o backend
+      const response = await axios.post(
+        `${API_BASE_URL}/api/game/challenge-user/`,
+        { opponent_id: userId },
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+  
+      // Acessa o match_id da resposta
+      const matchId = response.data.match_id;
+  
+      if (!matchId) {
+        console.error("match_id não está definido na resposta do backend.");
+        alert("Erro ao registrar o desafio. Tente novamente.");
+        return;
+      }
+  
+      // Notificação para o desafiante
       sendNotification(
         "notification",
         "challengeUser",
-        loggedID,
         userId,
-        "Você desafiou este usuário para uma partida!",
-        { sender_id: loggedID, receiver_id: userId }
+        loggedID,
+        "Você enviou um desafio para uma partida!",
+        { sender_id: loggedID, receiver_id: userId, match_id: matchId }
       );
-
-      alert("Desafio enviado com sucesso!");
+  
+      // Notificação para o desafiado
+      sendNotification(
+        "notification",
+        "challengeUser",
+        loggedID, // ID do remetente (você)
+        userId, // ID do destinatário (oponente)
+        "Você foi desafiado para uma partida!",
+        { sender_id: userId, receiver_id: loggedID, match_id: matchId }
+      );
+  
     } catch (err) {
+      console.error("Erro ao desafiar usuário:", err);
       handleError(err, "Erro ao desafiar usuário.");
     }
   };
-
+  
   return {
     addFriend,
     blockUser,

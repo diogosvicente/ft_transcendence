@@ -86,6 +86,7 @@ const Chat = () => {
     acceptFriendRequest,
     rejectFriendRequest,
     removeFriend,
+    challengeUser
   } = useUserActions(wsSendNotification);
 
   return (
@@ -107,6 +108,7 @@ const Chat = () => {
           acceptFriendRequest={acceptFriendRequest}
           rejectFriendRequest={rejectFriendRequest}
           removeFriend={removeFriend}
+          challengeUser={challengeUser}
           openChatWithUser={openChatWithUser} // Passa a função para abrir o chat privado
           error={error}
         />

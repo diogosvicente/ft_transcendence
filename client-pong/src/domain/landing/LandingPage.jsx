@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef  } from "react";
 import { Button, Stack, Form, Container, Alert, Tabs, Tab } from "react-bootstrap";
-import LoadingModal from "./LoadingModal";
 import { useNavigate } from "react-router-dom";
 
 //WebSocket
@@ -594,7 +593,6 @@ const LoginAndRegisterForm = () => {
             </Form>
           </Tab>
         </Tabs>
-        <LoadingModal showLoading={showLoading} handleClose={handleClose} />
       </Container>
     </div>
   );

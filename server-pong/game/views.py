@@ -500,3 +500,84 @@ class TournamentSetWinnerAPIView(APIView):
             },
             status=200,
         )
+
+class ChallengeUserAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        opponent_id = request.data.get("opponent_id")
+
+        if not opponent_id:
+            return Response({"error": "O ID do oponente é obrigatório."}, status=400)
+
+        try:
+            opponent = get_user_model().objects.get(id=opponent_id)
+        except get_user_model().DoesNotExist:
+            return Response({"error": "O oponente não foi encontrado."}, status=404)
+
+        # Verifica se os jogadores são diferentes
+        if user.id == opponent.id:
+            return Response({"error": "Você não pode desafiar a si mesmo."}, status=400)
+
+        # Cria a partida
+        match = Match.objects.create(
+            player1=user,
+            player2=opponent,
+            status="pending",
+            tournament_id=None  # Torneio é nulo para desafios diretos
+        )
+
+        # Envia notificação via WebSocket
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"user_{opponent.id}",  # Grupo do WebSocket do oponente
+            {
+                "type": "game_challenge",
+                "message": f"{user.display_name} desafiou você para uma partida!",
+                "match_id": match.id,
+            },
+        )
+
+        return Response(
+            {
+                "message": "Desafio enviado com sucesso.",
+                "match_id": match.id,
+                "status": match.status,
+            },
+            status=201,
+        )
+
+class AcceptChallengeAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        match_id = request.data.get("match_id")
+
+        if not match_id:
+            return Response({"error": "O ID da partida é obrigatório."}, status=400)
+
+        try:
+            match = Match.objects.get(id=match_id, status="pending")
+        except Match.DoesNotExist:
+            return Response({"error": "Partida não encontrada ou já iniciada."}, status=404)
+
+        # Atualiza o status da partida para "ongoing"
+        match.status = "ongoing"
+        match.save()
+
+        # Envia notificação via WebSocket para ambos os jogadores
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"match_{match_id}",
+            {
+                "type": "match_update",
+                "message": "A partida foi iniciada!",
+                "match_id": match_id,
+            },
+        )
+
+        return Response(
+            {"message": "Partida iniciada com sucesso.", "status": match.status},
+            status=200,
+        )

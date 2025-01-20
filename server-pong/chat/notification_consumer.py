@@ -132,3 +132,11 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             "type": "tournament_update",
             "tournament": tournament,
         }))
+    
+    async def game_challenge(self, event):
+        # Lida com mensagens do tipo "game_challenge"
+        await self.send(text_data=json.dumps({
+            "type": "game_challenge",
+            "message": event["message"],
+            "match_id": event["match_id"],
+        }))
