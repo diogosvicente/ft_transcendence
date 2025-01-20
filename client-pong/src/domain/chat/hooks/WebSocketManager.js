@@ -1,12 +1,32 @@
+import axios from "axios";
 import { useState, useRef, useCallback, useEffect } from "react";
+import API_BASE_URL from "../../../assets/config/config.js";
 
 const useWebSocketManager = (roomName = "global") => {
   const [messages, setMessages] = useState([]); // Mensagens recebidas
+  const [blockedUsers, setBlockedUsers] = useState([]); // IDs de usuários bloqueados
+  const blockedUsersRef = useRef([]); // Referência para manter os usuários bloqueados atualizados
   const chatSocketRef = useRef(null);
   const WS_CHAT_URL = "ws://localhost:8000/ws/chat/";
 
   const userId = localStorage.getItem("id");
   const accessToken = localStorage.getItem("access");
+
+  const fetchBlockedUsers = useCallback(async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/chat/blocked-users-ids-list/`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      setBlockedUsers(response.data.blocked_users); // Salva os IDs de usuários bloqueados
+      blockedUsersRef.current = response.data.blocked_users; // Atualiza o valor na referência
+    } catch (error) {
+      console.error("Erro ao buscar usuários bloqueados:", error);
+    }
+  }, [accessToken]);
+
+  useEffect(() => {
+    fetchBlockedUsers();
+  }, [fetchBlockedUsers]);
 
   const connectWebSocket = useCallback(() => {
     if (!accessToken) {
@@ -20,9 +40,16 @@ const useWebSocketManager = (roomName = "global") => {
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
 
+      console.log("blockedUsersRef: ", blockedUsersRef.current);
+
       // Verifica se os dados recebidos estão completos
       if (data.message && data.sender) {
-        setMessages((prev) => [...prev, data]);
+        // Permite a mensagem se for do próprio usuário ou se o sender não estiver bloqueado
+        if (data.sender === userId || !blockedUsersRef.current.includes(parseInt(data.sender))) {
+          setMessages((prev) => [...prev, data]);
+        } else {
+          console.warn(`Mensagem ignorada do sender bloqueado (${data.sender})`);
+        }
       } else {
         console.warn("Dados da mensagem incompletos:", data);
       }
