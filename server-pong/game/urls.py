@@ -10,7 +10,8 @@ from .views import (
     TournamentStartAPIView,
     TournamentSetWinnerAPIView,
     ChallengeUserAPIView,
-    AcceptChallengeAPIView
+    AcceptChallengeAPIView,
+    DeclineChallengeAPIView
 )
 
 urlpatterns = [
@@ -28,4 +29,5 @@ urlpatterns = [
     path('tournaments/<int:pk>/set-winner/', TournamentSetWinnerAPIView.as_view(), name='set-tournament-winner'),
     path('challenge-user/', ChallengeUserAPIView.as_view(), name='challenge_user'),
     path('accept-challenge/', AcceptChallengeAPIView.as_view(), name='accept_challenge'),
+    path("decline-challenge/", DeclineChallengeAPIView.as_view(), name="decline-challenge"),
 ]

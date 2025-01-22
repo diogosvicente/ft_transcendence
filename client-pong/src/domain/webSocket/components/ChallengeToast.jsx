@@ -1,0 +1,32 @@
+import React from "react";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+const ChallengeToast = ({ sender, matchId, onAccept, onDecline }) => {
+  return (
+    <div>
+      <p>{sender} desafiou você para uma partida!</p>
+      <div>
+        <button
+          onClick={() => {
+            onAccept(matchId);
+            toast.dismiss();
+          }}
+          style={{ marginRight: "10px" }}
+        >
+          Aceitar
+        </button>
+        <button
+          onClick={() => {
+            onDecline(matchId);
+            toast.dismiss();
+          }}
+        >
+          Recusar
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default ChallengeToast;

@@ -140,3 +140,17 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             "message": event["message"],
             "match_id": event["match_id"],
         }))
+
+    async def game_start(self, event):
+        await self.send(text_data=json.dumps({
+            "type": "game_start",
+            "message": event["message"],
+            "match_id": event["match_id"],
+        }))
+
+    async def game_challenge_declined(self, event):
+        await self.send(text_data=json.dumps({
+            "type": "game_challenge_declined",
+            "message": event["message"],
+            "match_id": event["match_id"],
+        }))

@@ -12,6 +12,7 @@ import Ranking from "./domain/ranking/Ranking.jsx";
 import { GameCanvas } from "./domain/game/GameCanvas";
 import UserProfile from "./domain/userProfile/UserProfile.jsx";
 import EditProfile from "./domain/userProfile/UpdateProfile.jsx";
+import GamePage from "./domain/gameRemote/GamePage.jsx";
 
 import { Canvas } from "./domain/game/Canvas.jsx"
 
@@ -76,12 +77,21 @@ function App() {
             </PrivateRoute>
           }
         />
-        {/* Nova rota para editar perfil */}
+        {/* rota para editar perfil */}
         <Route
           path="/edit-profile"
           element={
             <PrivateRoute>
               <EditProfile />
+            </PrivateRoute>
+          }
+        />
+        {/* Nova rota para a página do jogo */}
+        <Route
+          path="/game/:matchId"
+          element={
+            <PrivateRoute>
+              <GamePage />
             </PrivateRoute>
           }
         />

@@ -536,6 +536,7 @@ class ChallengeUserAPIView(APIView):
                 "type": "game_challenge",
                 "message": f"{user.display_name} desafiou você para uma partida!",
                 "match_id": match.id,
+                "sender_id": user.id,
             },
         )
 
@@ -552,13 +553,14 @@ class AcceptChallengeAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        user = request.user
         match_id = request.data.get("match_id")
 
         if not match_id:
             return Response({"error": "O ID da partida é obrigatório."}, status=400)
 
         try:
-            match = Match.objects.get(id=match_id, status="pending")
+            match = Match.objects.get(id=match_id, player2=user, status="pending")
         except Match.DoesNotExist:
             return Response({"error": "Partida não encontrada ou já iniciada."}, status=404)
 
@@ -566,18 +568,50 @@ class AcceptChallengeAPIView(APIView):
         match.status = "ongoing"
         match.save()
 
-        # Envia notificação via WebSocket para ambos os jogadores
+        # Notifica ambos os jogadores para se conectarem ao WebSocket do jogo
+        channel_layer = get_channel_layer()
+        for player_id in [match.player1.id, match.player2.id]:
+            async_to_sync(channel_layer.group_send)(
+                f"user_{player_id}",
+                {
+                    "type": "game_start",
+                    "message": "A partida foi aceita. Conecte-se ao jogo!",
+                    "match_id": match.id,
+                },
+            )
+
+        return Response(
+            {"message": "Partida aceita. Conecte-se ao jogo.", "match_id": match.id},
+            status=200,
+        )
+
+class DeclineChallengeAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        match_id = request.data.get("match_id")
+
+        if not match_id:
+            return Response({"error": "O ID da partida é obrigatório."}, status=400)
+
+        try:
+            match = Match.objects.get(id=match_id, player2=user, status="pending")
+        except Match.DoesNotExist:
+            return Response({"error": "Partida não encontrada ou já iniciada."}, status=404)
+
+        # Notifica o desafiante que o desafio foi recusado
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
-            f"match_{match_id}",
+            f"user_{match.player1.id}",
             {
-                "type": "match_update",
-                "message": "A partida foi iniciada!",
-                "match_id": match_id,
+                "type": "game_challenge_declined",
+                "message": f"{user.display_name} recusou o seu desafio.",
+                "match_id": match.id,
             },
         )
 
-        return Response(
-            {"message": "Partida iniciada com sucesso.", "status": match.status},
-            status=200,
-        )
+        # Remove a partida
+        match.delete()
+
+        return Response({"message": "Desafio recusado."}, status=200)

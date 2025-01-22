@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useRef, useState, useEffect } from "react";
 import { toast } from "react-toastify";
+import axios from "axios";
 import "react-toastify/dist/ReactToastify.css";
+import ChallengeToast from "./components/ChallengeToast";
+import API_BASE_URL from "../../assets/config/config.js";
 
 const WebSocketContext = createContext();
 
@@ -15,6 +18,12 @@ export const WebSocketProvider = ({ children }) => {
   const notificationSocketRef = useRef(null);
 
   const WS_NOTIFICATION_URL = "ws://localhost:8000/ws/notifications/";
+  
+  const getAuthDetails = () => {
+    const accessToken = localStorage.getItem("access");
+    const loggedID = localStorage.getItem("id");
+    return { accessToken, loggedID };
+  };
 
   const initializeNotificationWebSocket = (accessToken, userId, context = "manual") => {
     if (!accessToken || !userId) {
@@ -64,7 +73,17 @@ export const WebSocketProvider = ({ children }) => {
       const data = JSON.parse(event.data);
       console.log("Mensagem recebida do WebSocket:", data);
 
-      if (data.type === "notification") {
+      if (data.type === "game_challenge") {
+        // Toast interativo para aceitar ou recusar
+        toast.info(
+          <ChallengeToast
+            sender={data.message}
+            matchId={data.match_id}
+            onAccept={handleAcceptChallenge}
+            onDecline={handleDeclineChallenge}
+          />
+        );
+      } else if (data.type === "notification") {
         setNotifications((prev) => [...prev, data]);
         toast.info(`Notificação: ${data.message}`);
 
@@ -78,6 +97,11 @@ export const WebSocketProvider = ({ children }) => {
           console.log("Bloqueio detectado. Ativando flag para resetar ChatWindow...");
           setShouldResetChatWindow(true);
         }
+      } else if (data.type === "game_start") {
+        toast.success(`Partida iniciada: ${data.message}`);
+        window.location.href = `/game/${data.match_id}`;
+      } else if (data.type === "game_challenge_declined") {
+        toast.info(data.message);
       } else if (data.type === "tournament") {
         handleNewTournament(data);
       } else if (data.type === "tournament_update") {
@@ -89,6 +113,43 @@ export const WebSocketProvider = ({ children }) => {
       console.error("Erro ao processar mensagem WebSocket:", error);
     }
   };
+
+  const handleAcceptChallenge = async (matchId) => {
+    try {
+      const { accessToken } = getAuthDetails();
+  
+      await axios.post(
+        `${API_BASE_URL}/api/game/accept-challenge/`,
+        { match_id: matchId },
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+  
+      toast.success("Você aceitou o desafio!");
+      // Redirecionar para o WebSocket do jogo
+      window.location.href = `/game/${matchId}`;
+    } catch (err) {
+      console.error("Erro ao aceitar desafio:", err);
+      toast.error("Erro ao aceitar o desafio.");
+    }
+  };
+  
+  const handleDeclineChallenge = async (matchId) => {
+    try {
+      const { accessToken } = getAuthDetails();
+  
+      await axios.post(
+        `${API_BASE_URL}/api/game/decline-challenge/`,
+        { match_id: matchId },
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+  
+      toast.info("Você recusou o desafio.");
+    } catch (err) {
+      console.error("Erro ao recusar desafio:", err);
+      toast.error("Erro ao recusar o desafio.");
+    }
+  };
+  
 
   const handleNewTournament = (data) => {
     console.log("Torneio recebido via WebSocket:", data.tournament);
