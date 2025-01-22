@@ -4,8 +4,8 @@ export const gameCore = (canvas, sendState) => {
   // Variáveis de controle
   let ballX = canvas.width / 2;
   let ballY = canvas.height / 2;
-  let ballSpeedX = 300;
-  let ballSpeedY = 300;
+  let ballSpeedX = 0; // Velocidade inicial é zero até a contagem regressiva
+  let ballSpeedY = 0;
 
   const PADDLE_HEIGHT = 100;
   const PADDLE_THICKNESS = 10;
@@ -15,9 +15,10 @@ export const gameCore = (canvas, sendState) => {
 
   const PLAYER_SPEED = 5;
 
-  let playerSide = "left"; // Controle padrão (será configurado pelo lado atribuído)
-  let opponentPaddleY = canvas.height / 2 - PADDLE_HEIGHT / 2;
+  let scorePlayer1 = 0;
+  let scorePlayer2 = 0;
 
+  let playerSide = "left"; // Controle padrão
   let isPaused = false;
 
   const setPlayerSide = (side) => {
@@ -25,9 +26,15 @@ export const gameCore = (canvas, sendState) => {
     console.log(`Jogador configurado no lado: ${side}`);
   };
 
+  const startWithDirection = (direction) => {
+    ballSpeedX = direction.x;
+    ballSpeedY = direction.y;
+    isPaused = false;
+    gameLoop();
+  };
+
   const start = () => {
     window.addEventListener("keydown", keyDownHandler);
-    window.addEventListener("keyup", keyUpHandler);
     requestAnimationFrame(gameLoop);
   };
 
@@ -37,7 +44,7 @@ export const gameCore = (canvas, sendState) => {
     update();
     draw(ctx);
 
-    // Envia o estado do jogo para o servidor
+    // Envia o estado do paddle para o servidor
     if (typeof sendState === "function") {
       sendState({
         ballX,
@@ -84,40 +91,54 @@ export const gameCore = (canvas, sendState) => {
 
     // Pontuação para jogador 1 (esquerda)
     if (ballX > canvas.width) {
+      scorePlayer1 += 1;
       resetBall();
     }
 
     // Pontuação para jogador 2 (direita)
     if (ballX < 0) {
+      scorePlayer2 += 1;
       resetBall();
     }
   };
 
   const draw = (ctx) => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Fundo do jogo
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Desenha a bola
+  
+    // Linha Central
+    ctx.setLineDash([10, 10]);
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(canvas.width / 2, 0);
+    ctx.lineTo(canvas.width / 2, canvas.height);
+    ctx.stroke();
+  
+    // Placar
     ctx.fillStyle = "white";
-    ctx.fillRect(ballX, ballY, 10, 10);
-
-    // Desenha os paddles
+    ctx.font = "48px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(`${scorePlayer1} - ${scorePlayer2}`, canvas.width / 2, 50);
+  
+    // Paddles e Bola
+    ctx.setLineDash([]);
     ctx.fillStyle = "white";
     ctx.fillRect(0, leftPaddleY, PADDLE_THICKNESS, PADDLE_HEIGHT);
-    ctx.fillRect(
-      canvas.width - PADDLE_THICKNESS,
-      rightPaddleY,
-      PADDLE_THICKNESS,
-      PADDLE_HEIGHT
-    );
+    ctx.fillRect(canvas.width - PADDLE_THICKNESS, rightPaddleY, PADDLE_THICKNESS, PADDLE_HEIGHT);
+    ctx.fillRect(ballX - 5, ballY - 5, 10, 10); // Corrige a posição da bola
   };
 
   const resetBall = () => {
     ballX = canvas.width / 2;
     ballY = canvas.height / 2;
     ballSpeedX = -ballSpeedX;
-    ballSpeedY = 300;
+    ballSpeedY = 300 * (Math.random() > 0.5 ? 1 : -1); // Direção aleatória
+    isPaused = true;
+    setTimeout(() => (isPaused = false), 1000); // Pausa de 1 segundo antes de recomeçar
   };
 
   const syncState = (state) => {
@@ -125,6 +146,14 @@ export const gameCore = (canvas, sendState) => {
     ballY = state.ballY;
     leftPaddleY = state.leftPaddleY;
     rightPaddleY = state.rightPaddleY;
+  };
+
+  const updatePaddlePosition = (paddle, position) => {
+    if (paddle === "left") {
+      leftPaddleY = position;
+    } else if (paddle === "right") {
+      rightPaddleY = position;
+    }
   };
 
   const keyDownHandler = (e) => {
@@ -142,9 +171,5 @@ export const gameCore = (canvas, sendState) => {
     }
   };
 
-  const keyUpHandler = () => {
-    // Não necessário para o movimento contínuo
-  };
-
-  return { start, syncState, setPlayerSide };
+  return { start, startWithDirection, syncState, setPlayerSide, updatePaddlePosition };
 };

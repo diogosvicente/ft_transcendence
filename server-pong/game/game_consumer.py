@@ -1,93 +1,140 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
 import json
 import random
+import asyncio
 
 class GameConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.user_id = self.scope["user"].id  # ID do usuário autenticado
-        self.match_id = self.scope["url_route"]["kwargs"]["match_id"]  # ID da partida
-        self.room_group_name = f"match_{self.match_id}"  # Nome do grupo da partida
+        self.user_id = self.scope["user"].id
+        self.match_id = self.scope["url_route"]["kwargs"]["match_id"]
+        self.room_group_name = f"match_{self.match_id}"
 
-        # Adiciona o jogador ao grupo da partida
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
-
-        # Atribui aleatoriamente o lado para o jogador
+        # Inicializa o estado do jogo para a partida atual
         if not hasattr(self.channel_layer, "game_state"):
-            self.channel_layer.game_state = {"players": {}}
+            self.channel_layer.game_state = {}
 
-        # Atribuir lado apenas se o jogador não estiver conectado
-        if self.user_id not in self.channel_layer.game_state["players"]:
-            assigned_side = "left" if len(self.channel_layer.game_state["players"]) == 0 else "right"
-            self.channel_layer.game_state["players"][self.user_id] = assigned_side
+        if self.match_id not in self.channel_layer.game_state:
+            self.channel_layer.game_state[self.match_id] = {
+                "players": {},
+                "paddles": {"left": 300, "right": 300},
+                "ball": {"x": 400, "y": 300, "speed_x": 0, "speed_y": 0},
+            }
+
+        game_state = self.channel_layer.game_state[self.match_id]
+
+        # Define o lado do jogador
+        if len(game_state["players"]) < 2:
+            assigned_side = "left" if "left" not in game_state["players"].values() else "right"
+            game_state["players"][self.user_id] = assigned_side
+            self.assigned_side = assigned_side
         else:
-            assigned_side = self.channel_layer.game_state["players"][self.user_id]
+            await self.close()
+            return
 
-        self.assigned_side = assigned_side
-
+        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
 
-        # Notifica o cliente sobre o lado atribuído
+        print(f"Jogador {self.user_id} atribuído ao lado {self.assigned_side}")
+
         await self.send(text_data=json.dumps({
             "type": "assigned_side",
             "side": self.assigned_side,
+            "player_id": self.user_id,
         }))
 
-        # Notifica os outros jogadores sobre o novo jogador
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                "type": "player_join",
-                "player_id": self.user_id,
-                "side": self.assigned_side,
-            }
-        )
+        await self.channel_layer.group_send(self.room_group_name, {
+            "type": "player_join",
+            "player_id": self.user_id,
+            "side": self.assigned_side,
+        })
+
+        if len(game_state["players"]) == 2:
+            await self.start_game_countdown()
 
     async def disconnect(self, close_code):
-        # Remove o jogador do grupo
-        await self.channel_layer.group_discard(
-            self.room_group_name,
-            self.channel_name
-        )
+        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
-        # Remove o jogador do estado do jogo
-        if self.user_id in self.channel_layer.game_state["players"]:
-            del self.channel_layer.game_state["players"][self.user_id]
+        game_state = self.channel_layer.game_state[self.match_id]
+        if self.user_id in game_state["players"]:
+            del game_state["players"][self.user_id]
 
-        # Notifica os outros jogadores sobre a desconexão
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                "type": "player_disconnect",
-                "player_id": self.user_id,
-            }
-        )
+        await self.channel_layer.group_send(self.room_group_name, {
+            "type": "player_disconnect",
+            "player_id": self.user_id,
+        })
 
     async def receive(self, text_data):
         data = json.loads(text_data)
         message_type = data.get("type")
 
-        if message_type == "state_update":
-            # Envia o estado atualizado do jogo para todos os jogadores
+        if message_type == "player_move":
+            direction = data.get("direction")
+            paddle_side = self.assigned_side
+            game_state = self.channel_layer.game_state[self.match_id]
+            current_position = game_state["paddles"][paddle_side]
+
+            if direction == "up":
+                new_position = max(0, current_position - 10)
+            elif direction == "down":
+                new_position = min(600 - 100, current_position + 10)
+
+            game_state["paddles"][paddle_side] = new_position
+
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
-                    "type": "game_state",
-                    "state": data["state"],
+                    "type": "paddle_move",
+                    "paddle": paddle_side,
+                    "position": new_position,
                 }
             )
 
-    async def game_state(self, event):
-        # Envia o estado do jogo para o cliente
+    async def start_game_countdown(self):
+        for i in range(3, 0, -1):
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    "type": "countdown",
+                    "message": str(i),
+                }
+            )
+            await asyncio.sleep(1)
+
+        game_state = self.channel_layer.game_state[self.match_id]
+        game_state["ball"]["speed_x"] = random.choice([-5, 5])
+        game_state["ball"]["speed_y"] = random.choice([-3, 3])
+
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                "type": "start_game",
+                "ball_direction": {
+                    "x": game_state["ball"]["speed_x"],
+                    "y": game_state["ball"]["speed_y"],
+                },
+            }
+        )
+
+    async def countdown(self, event):
         await self.send(text_data=json.dumps({
-            "type": "state_update",
-            "state": event["state"],
+            "type": "countdown",
+            "message": event["message"],
+        }))
+
+    async def start_game(self, event):
+        await self.send(text_data=json.dumps({
+            "type": "start_game",
+            "ball_direction": event["ball_direction"],
+        }))
+
+    async def paddle_move(self, event):
+        await self.send(text_data=json.dumps({
+            "type": "player_move",
+            "paddle": event["paddle"],
+            "position": event["position"],
         }))
 
     async def player_join(self, event):
-        # Notifica os clientes sobre um novo jogador
         await self.send(text_data=json.dumps({
             "type": "player_join",
             "player_id": event["player_id"],
@@ -95,7 +142,6 @@ class GameConsumer(AsyncWebsocketConsumer):
         }))
 
     async def player_disconnect(self, event):
-        # Notifica os clientes sobre a desconexão de um jogador
         await self.send(text_data=json.dumps({
             "type": "player_disconnect",
             "player_id": event["player_id"],

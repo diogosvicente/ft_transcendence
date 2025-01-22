@@ -14,8 +14,8 @@ from rest_framework import status
 from .models import Match, Tournament, TournamentParticipant
 from .serializers import (
     TournamentSerializer,
-    MatchSerializer,
     TournamentParticipantSerializer,
+    MatchSerializer
 )
 
 # WebSocket/Channels Imports
@@ -615,3 +615,38 @@ class DeclineChallengeAPIView(APIView):
         match.delete()
 
         return Response({"message": "Desafio recusado."}, status=200)
+
+class MatchDetailView(APIView):
+    """
+    Retorna os detalhes de uma partida específica.
+    """
+    permission_classes = [IsAuthenticated]  # Apenas usuários autenticados podem acessar
+
+    def get(self, request, id):
+        try:
+            # Busca a partida
+            match = Match.objects.get(id=id)
+            
+            # Verifica se o usuário logado é participante da partida
+            if request.user != match.player1 and request.user != match.player2:
+                return Response({"detail": "Você não tem permissão para acessar esta partida."}, status=status.HTTP_403_FORBIDDEN)
+
+            # Serializa os dados da partida
+            serializer = MatchSerializer(match)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Match.DoesNotExist:
+            return Response({"detail": "Partida não encontrada."}, status=status.HTTP_404_NOT_FOUND)
+    """
+    Retorna os detalhes de uma partida específica.
+    """
+    queryset = Match.objects.all()
+    serializer_class = MatchSerializer
+    lookup_field = 'id'
+    permission_classes = [IsAuthenticated]  # Apenas usuários autenticados podem acessar
+
+    def get_queryset(self):
+        """
+        Filtra as partidas para garantir que apenas os participantes possam acessar.
+        """
+        user = self.request.user
+        return Match.objects.filter(player1=user) | Match.objects.filter(player2=user)

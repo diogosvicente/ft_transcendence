@@ -1,0 +1,144 @@
+/* gameRoom.css */
+
+/* Corpo Principal */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Arial', sans-serif;
+  background-color: #ffffff; /* Fundo branco */
+  color: #333333;
+}
+
+/* Navbar */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: #4caf50;
+  padding: 10px 20px;
+  color: white;
+  font-size: 1.5rem;
+  text-align: center;
+  z-index: 1000;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Game Room Container */
+.game-room {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+  height: calc(100vh - 70px); /* Altura total menos o Navbar */
+  margin-top: 70px; /* Para compensar o Navbar */
+  padding: 0 20px; /* Espaçamento lateral */
+}
+
+/* Seção de Informações */
+.game-info {
+  width: 25%;
+  max-width: 300px;
+  background-color: #f9f9f9; /* Fundo claro */
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  text-align: center;
+}
+
+.game-info h1 {
+  font-size: 1.8rem;
+  color: #000000; /* Destaque no título */
+}
+
+.players-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+}
+
+.player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.player img.avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 2px solid #4caf50;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.player p {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #333333;
+}
+
+.players-info span {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #4caf50;
+}
+
+/* Detalhes Adicionais */
+.game-info p {
+  font-size: 1rem;
+  color: #555555;
+}
+
+/* Tabuleiro do Jogo */
+.game-board {
+  flex-grow: 1; /* Ocupa todo o espaço restante */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+canvas {
+  background-color: #000; /* Fundo preto do jogo */
+  border-radius: 10px;
+  border: 2px solid #4caf50;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 800px;
+  height: 600px;
+  margin-bottom: 20px;
+}
+
+/* Indicador de Paddle */
+.paddle-info {
+  font-size: 1.2rem;
+  color: #4caf50;
+  text-align: center;
+  margin-top: 10px;
+}
+
+.countdown-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.7);
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  z-index: 1000;
+}
+
+.countdown-text {
+  font-size: 3rem;
+  color: #ffffff;
+  font-weight: bold;
+}
