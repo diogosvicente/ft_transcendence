@@ -137,7 +137,7 @@ export const gameCore = (canvas, sendState) => {
     ballY = canvas.height / 2;
     ballSpeedX = -ballSpeedX;
     ballSpeedY = 300 * (Math.random() > 0.5 ? 1 : -1); // Direção aleatória
-    isPaused = true;
+    // isPaused = true;
     setTimeout(() => (isPaused = false), 1000); // Pausa de 1 segundo antes de recomeçar
   };
 

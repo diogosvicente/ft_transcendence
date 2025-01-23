@@ -81,7 +81,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             game_state = self.channel_layer.game_state[self.match_id]
             current_position = game_state["paddles"][paddle_side]
 
-            print(f"Jogador {self.user_id} movendo paddle {paddle_side} para {direction}")
+            # print(f"Jogador {self.user_id} movendo paddle {paddle_side} para {direction}")
 
             if direction == "up":
                 new_position = max(0, current_position - 10)
@@ -112,8 +112,9 @@ class GameConsumer(AsyncWebsocketConsumer):
             await asyncio.sleep(1)
 
         game_state = self.channel_layer.game_state[self.match_id]
-        game_state["ball"]["speed_x"] = random.choice([-5, 5])
-        game_state["ball"]["speed_y"] = random.choice([-3, 3])
+        game_state["ball"]["speed_x"] = random.choice([-100, 100])
+        game_state["ball"]["speed_y"] = random.choice([-100, 100])
+
 
         await self.channel_layer.group_send(
             self.room_group_name,
