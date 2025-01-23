@@ -162,9 +162,9 @@ export const gameCore = (canvas, sendState) => {
       if (e.key === "s" && leftPaddleY < canvas.height - PADDLE_HEIGHT)
         leftPaddleY += PLAYER_SPEED;
     } else if (playerSide === "right") {
-      if (e.key === "ArrowUp" && rightPaddleY > 0) rightPaddleY -= PLAYER_SPEED;
+      if (e.key === "w" && rightPaddleY > 0) rightPaddleY -= PLAYER_SPEED;
       if (
-        e.key === "ArrowDown" &&
+        e.key === "s" &&
         rightPaddleY < canvas.height - PADDLE_HEIGHT
       )
         rightPaddleY += PLAYER_SPEED;

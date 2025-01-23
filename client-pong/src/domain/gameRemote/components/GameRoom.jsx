@@ -99,11 +99,11 @@ const GameRoom = ({ matchId, userId, matchData, isPlayer1 }) => {
             direction: e.key === "w" ? "up" : "down",
           })
         );
-      } else if (assignedSide === "right" && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+      } else if (assignedSide === "right" && (e.key === "w" || e.key === "s")) {
         socket.send(
           JSON.stringify({
             type: "player_move",
-            direction: e.key === "ArrowUp" ? "up" : "down",
+            direction: e.key === "w" ? "up" : "down",
           })
         );
       }
