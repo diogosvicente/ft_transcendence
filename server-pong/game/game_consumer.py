@@ -9,6 +9,8 @@ class GameConsumer(AsyncWebsocketConsumer):
         self.match_id = self.scope["url_route"]["kwargs"]["match_id"]
         self.room_group_name = f"match_{self.match_id}"
 
+        print(f"Conectando jogador com ID {self.user_id} à partida {self.match_id}")
+
         # Inicializa o estado do jogo para a partida atual
         if not hasattr(self.channel_layer, "game_state"):
             self.channel_layer.game_state = {}
@@ -21,20 +23,23 @@ class GameConsumer(AsyncWebsocketConsumer):
             }
 
         game_state = self.channel_layer.game_state[self.match_id]
+        print(f"Estado atual do jogo: {json.dumps(game_state)}")
 
         # Define o lado do jogador
         if len(game_state["players"]) < 2:
             assigned_side = "left" if "left" not in game_state["players"].values() else "right"
             game_state["players"][self.user_id] = assigned_side
             self.assigned_side = assigned_side
+            print(f"Jogador {self.user_id} pegou o lado {self.assigned_side}")
         else:
+            print("Sala cheia. Fechando conexão.")
             await self.close()
             return
 
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
 
-        print(f"Jogador {self.user_id} atribuído ao lado {self.assigned_side}")
+        print(f"Jogador {self.user_id} conectado ao grupo {self.room_group_name}")
 
         await self.send(text_data=json.dumps({
             "type": "assigned_side",
@@ -49,14 +54,17 @@ class GameConsumer(AsyncWebsocketConsumer):
         })
 
         if len(game_state["players"]) == 2:
+            print(f"Jogadores conectados: {game_state['players']}")
             await self.start_game_countdown()
 
     async def disconnect(self, close_code):
+        print(f"Jogador {self.user_id} desconectado.")
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
         game_state = self.channel_layer.game_state[self.match_id]
         if self.user_id in game_state["players"]:
             del game_state["players"][self.user_id]
+            print(f"Jogador {self.user_id} removido do estado do jogo.")
 
         await self.channel_layer.group_send(self.room_group_name, {
             "type": "player_disconnect",
@@ -72,6 +80,8 @@ class GameConsumer(AsyncWebsocketConsumer):
             paddle_side = self.assigned_side
             game_state = self.channel_layer.game_state[self.match_id]
             current_position = game_state["paddles"][paddle_side]
+
+            print(f"Jogador {self.user_id} movendo paddle {paddle_side} para {direction}")
 
             if direction == "up":
                 new_position = max(0, current_position - 10)
@@ -91,6 +101,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 
     async def start_game_countdown(self):
         for i in range(3, 0, -1):
+            print(f"Iniciando contagem: {i}")
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
@@ -135,6 +146,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         }))
 
     async def player_join(self, event):
+        print(f"Jogador conectado ao jogo: {event}")
         await self.send(text_data=json.dumps({
             "type": "player_join",
             "player_id": event["player_id"],
@@ -142,6 +154,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         }))
 
     async def player_disconnect(self, event):
+        print(f"Jogador desconectado do jogo: {event}")
         await self.send(text_data=json.dumps({
             "type": "player_disconnect",
             "player_id": event["player_id"],

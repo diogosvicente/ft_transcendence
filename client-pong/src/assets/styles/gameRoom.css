@@ -1,30 +1,9 @@
 /* gameRoom.css */
 
 /* Corpo Principal */
-body {
-  margin: 0;
-  padding: 0;
-  font-family: 'Arial', sans-serif;
-  background-color: #ffffff; /* Fundo branco */
-  color: #333333;
-}
 
 /* Navbar */
-.navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  background-color: #4caf50;
-  padding: 10px 20px;
-  color: white;
-  font-size: 1.5rem;
-  text-align: center;
-  z-index: 1000;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-/* Game Room Container */
+e Room Container */
 .game-room {
   display: flex;
   flex-direction: row;

@@ -12,7 +12,9 @@ const GameRoom = ({ matchId, userId, matchData, isPlayer1 }) => {
   const defaultAvatar = `${API_BASE_URL}/media/avatars/default.png`; // Caminho do avatar padrão
 
   useEffect(() => {
-    const ws = new WebSocket(`ws://localhost:8000/ws/game/${matchId}/`);
+    const accessToken = localStorage.getItem("access");
+    const wsUrl = `ws://localhost:8000/ws/game/${matchId}/?access_token=${accessToken}`;
+    const ws = new WebSocket(wsUrl);
     setSocket(ws);
 
     let game;
