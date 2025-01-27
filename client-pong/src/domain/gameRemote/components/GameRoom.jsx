@@ -18,63 +18,70 @@ const GameRoom = ({ matchId, userId, matchData, isPlayer1 }) => {
     const wsUrl = `ws://localhost:8000/ws/game/${matchId}/?access_token=${accessToken}`;
     const ws = new WebSocket(wsUrl);
     setSocket(ws);
-  
-    const canvas = canvasRef.current;
-  
-    // Inicializa o canvas com gameCore
-    if (canvas && !gameRef.current) {
-      gameRef.current = gameCore(canvas);
-    }
-  
-    // Atualiza o canvas em tempo real
-    const animate = () => {
-      if (pendingState && gameRef.current) {
-        gameRef.current.renderState(pendingState);
+
+    const initializeGame = () => {
+      const canvas = canvasRef.current;
+      if (canvas && !gameRef.current) {
+        gameRef.current = gameCore(canvas); // Inicializa o gameCore e salva em gameRef
+        console.log("Game inicializado com sucesso.");
+
+        // Renderiza o estado pendente, se existir
+        if (pendingState) {
+          console.log("Renderizando estado pendente...");
+          gameRef.current.renderState(pendingState);
+          setPendingState(null); // Limpa o estado pendente após renderizar
+        }
       }
-      requestAnimationFrame(animate); // Mantém o loop de animação
     };
-  
-    animate();
-  
+
     ws.onopen = () => {
       console.log("WebSocket conectado.");
+      initializeGame(); // Inicializa o game assim que o WebSocket conectar
     };
-  
+
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       console.log("Mensagem WebSocket recebida:", data);
-  
+
       switch (data.type) {
-        case "state_update":
-          // Salva o estado mais recente para renderização
-          setPendingState(data.state);
-          break;
-  
         case "assigned_side":
           setAssignedSide(data.side);
+          console.log(`Jogador configurado no lado: ${data.side}`);
           break;
-  
+
         case "countdown":
+          console.log("Mensagem de contagem regressiva recebida:", data.message);
           setCountdown(data.message);
           break;
-  
+        
         case "game_start":
+          console.log("Jogo iniciado após a contagem regressiva.");
           setCountdown(null); // Remove a contagem regressiva
           break;
-  
+
+        case "state_update":
+          if (gameRef.current) {
+            console.log("Renderizando estado do jogo:", data.state);
+            gameRef.current.renderState(data.state);
+          } else {
+            console.warn("Game ainda não foi inicializado. Salvando estado pendente.");
+            setPendingState(data.state); // Salva estado pendente para renderizar depois
+          }
+          break;
+
         default:
-          console.warn("Mensagem desconhecida recebida:", data);
+          console.warn("Mensagem desconhecida:", data);
       }
     };
-  
+
     ws.onclose = () => {
       console.warn("WebSocket desconectado.");
     };
-  
+
     ws.onerror = (error) => {
       console.error("Erro no WebSocket:", error);
     };
-  
+
     return () => {
       console.log("Limpando WebSocket...");
       if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
@@ -92,7 +99,6 @@ const GameRoom = ({ matchId, userId, matchData, isPlayer1 }) => {
     }
 
     if (["w", "s"].includes(e.key)) {
-      console.log(`Enviando movimento para o backend: ${e.key === "w" ? "up" : "down"}`);
       socket.send(
         JSON.stringify({
           type: "player_move",
@@ -116,50 +122,49 @@ const GameRoom = ({ matchId, userId, matchData, isPlayer1 }) => {
 
   return (
     <div>
-        <Navbar />
-        <div className="game-room">
-            <div className="game-info">
-                <h1>Partida Remota</h1>
-                <div className="players-info">
-                    <div className="player">
-                        <img
-                            src={matchData.player1_avatar ? `${API_BASE_URL}${matchData.player1_avatar}` : defaultAvatar}
-                            alt={matchData.player1_display}
-                            className="avatar"
-                        />
-                        <p>{matchData.player1_display}</p>
-                        {isPlayer1 && <p>(você)</p>}
-                    </div>
-                    <span>VS</span>
-                    <div className="player">
-                        <img
-                            src={matchData.player2_avatar ? `${API_BASE_URL}${matchData.player2_avatar}` : defaultAvatar}
-                            alt={matchData.player2_display}
-                            className="avatar"
-                        />
-                        <p>{matchData.player2_display}</p>
-                        {!isPlayer1 && <p>(você)</p>}
-                    </div>
-                </div>
+      <Navbar />
+      <div className="game-room">
+        <div className="game-info">
+          <h1>Partida Remota</h1>
+          <div className="players-info">
+            <div className="player">
+              <img
+                src={matchData.player1_avatar ? `${API_BASE_URL}${matchData.player1_avatar}` : defaultAvatar}
+                alt={matchData.player1_display}
+                className="avatar"
+              />
+              <p>{matchData.player1_display}</p>
+              {isPlayer1 && <p>(você)</p>}
             </div>
-
-            <div className="game-board">
-                <canvas ref={canvasRef} width="800" height="600"></canvas>
-                {countdown && (
-                    <div className="countdown-overlay">
-                        <p className="countdown-text">{countdown}</p>
-                    </div>
-                )}
-                {assignedSide && (
-                    <p className="paddle-info">
-                        Você controla o paddle: <strong>{assignedSide === "left" ? "Esquerda" : "Direita"}</strong>
-                    </p>
-                )}
+            <span>VS</span>
+            <div className="player">
+              <img
+                src={matchData.player2_avatar ? `${API_BASE_URL}${matchData.player2_avatar}` : defaultAvatar}
+                alt={matchData.player2_display}
+                className="avatar"
+              />
+              <p>{matchData.player2_display}</p>
+              {!isPlayer1 && <p>(você)</p>}
             </div>
+          </div>
         </div>
-    </div>
-);
 
+        <div className="game-board">
+          <canvas ref={canvasRef} width="800" height="600"></canvas>
+          {countdown && (
+            <div className="countdown-overlay">
+              <p className="countdown-text">{countdown}</p>
+            </div>
+          )}
+          {assignedSide && (
+            <p className="paddle-info">
+              Você controla o paddle: <strong>{assignedSide === "left" ? "Esquerda" : "Direita"}</strong>
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default GameRoom;
