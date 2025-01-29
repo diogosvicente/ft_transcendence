@@ -11,6 +11,7 @@ const GameRoom = ({ matchId, userId, matchData, isPlayer1 }) => {
   const [assignedSide, setAssignedSide] = useState(null); // Lado do jogador
   const [countdown, setCountdown] = useState(null); // Contagem regressiva
   const [pendingState, setPendingState] = useState(null); // Armazena estado pendente
+  const [isPaused, setIsPaused] = useState(false); // Estado para pausa da partida
   const defaultAvatar = `${API_BASE_URL}/media/avatars/default.png`; // Avatar padrão
 
   useEffect(() => {
@@ -57,6 +58,20 @@ const GameRoom = ({ matchId, userId, matchData, isPlayer1 }) => {
         case "game_start":
           console.log("Jogo iniciado após a contagem regressiva.");
           setCountdown(null); // Remove a contagem regressiva
+          break;
+        
+        case "paused":
+          setIsPaused(true);
+          console.log("Partida pausada.");
+          break;
+
+        case "resumed":
+          setIsPaused(false);
+          console.log("Partida retomada.");
+          if (pendingState && gameRef.current) {
+            gameRef.current.renderState(pendingState);
+            setPendingState(null);
+          }
           break;
 
         case "state_update":
@@ -114,7 +129,17 @@ const GameRoom = ({ matchId, userId, matchData, isPlayer1 }) => {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [assignedSide, socket]);
+  }, [assignedSide, socket, isPaused]);
+
+  const togglePause = () => {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(
+        JSON.stringify({
+          type: isPaused ? "resume_game" : "pause_game",
+        })
+      );
+    }
+  };
 
   if (!matchData || assignedSide === null) {
     return <div>Carregando informações da partida...</div>;
@@ -126,6 +151,9 @@ const GameRoom = ({ matchId, userId, matchData, isPlayer1 }) => {
       <div className="game-room">
         <div className="game-info">
           <h1>Partida Remota</h1>
+          <button className="pause-button" onClick={togglePause}>
+            {isPaused ? "Retomar Partida" : "Pausar Partida"}
+          </button>
           <div className="players-info">
             <div className="player">
               <img
@@ -150,6 +178,11 @@ const GameRoom = ({ matchId, userId, matchData, isPlayer1 }) => {
         </div>
 
         <div className="game-board">
+          {isPaused && (
+            <div className="overlay">
+              <p className="overlay-text">A partida está pausada.</p>
+            </div>
+          )}
           <canvas ref={canvasRef} width="800" height="600"></canvas>
           {countdown && (
             <div className="countdown-overlay">

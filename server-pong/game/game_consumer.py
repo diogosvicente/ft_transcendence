@@ -99,9 +99,19 @@ class GameConsumer(AsyncWebsocketConsumer):
             data = json.loads(text_data)
             print(f"Mensagem recebida do jogador {self.user_id}: {data}")
 
+            # Obtém o estado do jogo do Redis
+            game_state = json.loads(self.redis.get(self.match_id))
+
+            # Verifica o status da partida salvo no Redis
+            match_status = game_state.get("status", "ongoing")
+
+            # Lógica de movimentação (bloqueada se a partida estiver pausada)
             if data["type"] == "player_move":
+                if match_status == "paused":
+                    print(f"Movimentação bloqueada: a partida {self.match_id} está pausada.")
+                    return  # Ignora o movimento
+
                 direction = data.get("direction")
-                game_state = json.loads(self.redis.get(self.match_id))
                 paddle = self.assigned_side
                 current_position = game_state["paddles"][paddle]
 
@@ -117,8 +127,35 @@ class GameConsumer(AsyncWebsocketConsumer):
                 # Envia o estado atualizado para todos os jogadores
                 await self.send_to_group("state_update", game_state)
 
+            # Lógica para pausar a partida
+            elif data["type"] == "pause_game":
+                if match_status != "ongoing":
+                    print(f"Não é possível pausar a partida {self.match_id} pois já está em estado {match_status}.")
+                    return  # Apenas pode pausar se estiver em andamento
+
+                # Atualiza o estado no Redis
+                game_state["status"] = "paused"
+                self.redis.set(self.match_id, json.dumps(game_state))
+
+                print(f"Partida {self.match_id} pausada por jogador {self.user_id}.")
+                await self.send_to_group("paused", {"message": "A partida foi pausada."})
+
+            # Lógica para retomar a partida
+            elif data["type"] == "resume_game":
+                if match_status != "paused":
+                    print(f"Não é possível retomar a partida {self.match_id} pois está em estado {match_status}.")
+                    return  # Apenas pode retomar se estiver pausada
+
+                # Atualiza o estado no Redis
+                game_state["status"] = "ongoing"
+                self.redis.set(self.match_id, json.dumps(game_state))
+
+                print(f"Partida {self.match_id} retomada por jogador {self.user_id}.")
+                await self.send_to_group("resumed", {"message": "A partida foi retomada."})
+
         except Exception as e:
             print(f"Erro ao processar mensagem recebida: {e}")
+
 
     async def start_countdown(self):
         try:
@@ -141,8 +178,21 @@ class GameConsumer(AsyncWebsocketConsumer):
     async def game_loop(self):
         try:
             while True:
-                # Carrega o estado do jogo
+                # Carrega o estado do jogo do Redis
                 game_state = json.loads(self.redis.get(self.match_id))
+                match_status = game_state.get("status", "ongoing")  # Obtém o status do jogo
+
+                # Se o jogo estiver pausado, entra em um loop de espera
+                if match_status == "paused":
+                    print(f"Partida {self.match_id} pausada. Aguardando retomada...")
+                    while match_status == "paused":
+                        await asyncio.sleep(1)  # Aguarda 1 segundo antes de verificar novamente
+                        game_state = json.loads(self.redis.get(self.match_id))  # Atualiza o estado
+                        match_status = game_state.get("status", "ongoing")  # Verifica se foi retomado
+
+                    print(f"Partida {self.match_id} retomada! Continuando jogo...")
+
+                # Continua o processamento da física do jogo
                 ball = game_state["ball"]
 
                 # Atualiza a posição da bola
@@ -177,6 +227,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             print(f"Erro no game loop: {e}")
             await self.close()
 
+    
     async def send_to_group(self, message_type, data):
         try:
             await self.channel_layer.group_send(
