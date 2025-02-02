@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { getWsUrl } from "../../assets/config/config";
 
 export const Canvas = () => {
   const canvasRef = useRef(null);
@@ -11,7 +12,7 @@ export const Canvas = () => {
   const isRunningRef = useRef(false);
 
   useEffect(() => {
-    const ws = new WebSocket("ws://localhost:8000/ws/game/");
+    const ws = new WebSocket(getWsUrl("/ws/game/"));
 
     ws.onopen = (event) => {
       console.log("WebSocket connection openned");

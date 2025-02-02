@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { getWsUrl } from "../../../assets/config/config.js"
 
 const usePrivateChatManager = (roomId) => {
   const [messages, setMessages] = useState([]); // Mensagens do room atual
@@ -6,7 +7,7 @@ const usePrivateChatManager = (roomId) => {
 
   const userId = localStorage.getItem("id");
   const accessToken = localStorage.getItem("access");
-  const WS_CHAT_URL = "ws://localhost:8000/ws/chat/"; // Base WebSocket URL
+  const WS_CHAT_URL = getWsUrl("/ws/chat/");
 
   useEffect(() => {
     if (!roomId || !accessToken) return;

@@ -26,12 +26,3 @@ urlpatterns = [
     path("relationship/<int:user_id>/", UserRelationshipView.as_view(), name="user-relationship"),
     path("ranking/victories/", VictoryRankingAPIView.as_view(), name="victory-ranking"),
 ]
-
-# URLs disponíveis:
-# Registro: http://127.0.0.1:8000/api/user-management/register/
-# Login: http://127.0.0.1:8000/api/user-management/login/
-# Logout: http://127.0.0.1:8000/api/user-management/logout/
-# Avatar: http://127.0.0.1:8000/api/user-management/avatar?email=usuario@example.com
-# Validação do 2FA: http://127.0.0.1:8000/api/user-management/2fa/validate/
-# Listar Não Amigos: http://127.0.0.1:8000/api/user-management/users/exclude-self/
-# Relacionamento: http://127.0.0.1:8000/api/chat/relationship/<user_id>/

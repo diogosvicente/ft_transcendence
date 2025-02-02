@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react";
+import { getWsUrl } from "../../../assets/config/config";
 
 const useWebSocketManagerPrivateChat = (roomId) => {
   const [messages, setMessages] = useState([]);
   const chatSocketRef = useRef(null);
-  const WS_CHAT_URL = "ws://localhost:8000/ws/chat/";
+  const WS_CHAT_URL = getWsUrl("/ws/chat/");
 
   const userId = localStorage.getItem("id");
   const accessToken = localStorage.getItem("access");

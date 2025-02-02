@@ -731,3 +731,19 @@ class MatchFinalizeAPIView(APIView):
             "winner_id": winner_id,
             "finalization_type": finalization_type
         }, status=200)
+
+class OngoingMatchAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        # Procura partidas onde o usuário é player1 ou player2 e o status é "ongoing",
+        # ordenando por id decrescente para pegar a última registrada.
+        match = Match.objects.filter(
+            Q(player1=user) | Q(player2=user),
+            status="ongoing"
+        ).order_by('-id').first()
+        if match:
+            serializer = MatchSerializer(match)
+            return Response(serializer.data)
+        return Response({"detail": "Nenhuma partida em andamento."}, status=404)

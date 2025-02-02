@@ -1,13 +1,13 @@
 import axios from "axios";
 import { useState, useRef, useCallback, useEffect } from "react";
-import API_BASE_URL from "../../../assets/config/config.js";
+import API_BASE_URL, { getWsUrl } from "../../../assets/config/config.js";
 
 const useWebSocketManager = (roomName = "global") => {
   const [messages, setMessages] = useState([]); // Mensagens recebidas
   const [blockedUsers, setBlockedUsers] = useState([]); // IDs de usuários bloqueados
   const blockedUsersRef = useRef([]); // Referência para manter os usuários bloqueados atualizados
   const chatSocketRef = useRef(null);
-  const WS_CHAT_URL = "ws://localhost:8000/ws/chat/";
+  const WS_CHAT_URL = getWsUrl("/ws/chat/");
 
   const userId = localStorage.getItem("id");
   const accessToken = localStorage.getItem("access");

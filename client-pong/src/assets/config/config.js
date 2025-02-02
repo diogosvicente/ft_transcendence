@@ -1,26 +1,32 @@
 // src/config/config.js
-let API_LANGUAGE = localStorage.getItem("language") || "en"; // Idioma padrão
+
+// Configuração de idioma
+let API_LANGUAGE = localStorage.getItem("language") || "en";
 
 export const setApiLanguage = (language) => {
   API_LANGUAGE = language;
-  localStorage.setItem("language", language); // Salva o idioma no localStorage
+  localStorage.setItem("language", language);
 };
 
-// const API_BASE_URL = `http://127.0.0.1:8000/${API_LANGUAGE}`;
-const API_BASE_URL = `http://127.0.0.1:8000`;
-const API_BASE_URL_NO_LANGUAGE = `http://127.0.0.1:8000`; // URL base sem idioma
+// URLs Base
+export const API_BASE_URL = `http://127.0.0.1:8000`;
+export const FRONT_BASE_URL = `http://localhost:5173`;
 
-// Avatar default
-const DEFAULT_AVATAR = `${API_BASE_URL_NO_LANGUAGE}/media/avatars/default.png`;
+// Avatar padrão
+export const DEFAULT_AVATAR = `${API_BASE_URL}/media/avatars/default.png`;
 
 // Função para obter o avatar
 export const getAvatar = (avatarPath) => {
   if (!avatarPath) return DEFAULT_AVATAR;
-  if (!avatarPath.startsWith("/media/")) {
-    return `${API_BASE_URL_NO_LANGUAGE}/media/${avatarPath}`;
-  }
-  return `${API_BASE_URL_NO_LANGUAGE}${avatarPath}`;
+  return avatarPath.startsWith("/media/")
+    ? `${API_BASE_URL}${avatarPath}`
+    : `${API_BASE_URL}/media/${avatarPath}`;
 };
 
-export { API_BASE_URL_NO_LANGUAGE, DEFAULT_AVATAR }; // Exporta a URL base sem idioma e o avatar padrão
-export default API_BASE_URL; // Exporta a URL base com idioma
+// Função para obter a URL do WebSocket
+export const getWsUrl = (path = "") => {
+  return API_BASE_URL.replace(/^http/, "ws") + path;
+};
+
+// Exportação padrão
+export default API_BASE_URL;

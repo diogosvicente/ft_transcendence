@@ -13,7 +13,8 @@ from .views import (
     AcceptChallengeAPIView,
     DeclineChallengeAPIView,
     MatchDetailView,
-    MatchFinalizeAPIView
+    MatchFinalizeAPIView,
+    OngoingMatchAPIView
 )
 
 urlpatterns = [
@@ -38,4 +39,5 @@ urlpatterns = [
     # Detalhes e finalização de partidas
     path('match/<int:id>/', MatchDetailView.as_view(), name='match-detail'),
     path('match/<int:pk>/walkover/', MatchFinalizeAPIView.as_view(), name='match-walkover'),
+    path('match/ongoing/', OngoingMatchAPIView.as_view(), name='ongoing-match')
 ]

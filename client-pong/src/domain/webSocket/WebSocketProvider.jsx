@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "react-toastify/dist/ReactToastify.css";
 import ChallengeToast from "./components/ChallengeToast";
-import API_BASE_URL from "../../assets/config/config.js";
+import API_BASE_URL, { getWsUrl } from "../../assets/config/config.js";
 
 const WebSocketContext = createContext();
 
@@ -19,7 +19,7 @@ export const WebSocketProvider = ({ children }) => {
   const [shouldResetChatWindow, setShouldResetChatWindow] = useState(false); // Flag para resetar ChatWindow
   const notificationSocketRef = useRef(null);
 
-  const WS_NOTIFICATION_URL = "ws://localhost:8000/ws/notifications/";
+  const WS_NOTIFICATION_URL = getWsUrl("/ws/notifications/");
   
   const getAuthDetails = () => {
     const accessToken = localStorage.getItem("access");

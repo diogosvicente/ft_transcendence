@@ -3,7 +3,7 @@ import Navbar from "../../template/Navbar";
 import { gameCore } from "../core/gameCore";
 import { useNavigate } from "react-router-dom";
 import "../../../assets/styles/gameRoom.css";
-import API_BASE_URL from "../../../assets/config/config";
+import API_BASE_URL, { getWsUrl } from "../../../assets/config/config";
 
 const GameRoom = ({ matchId, userId, matchData, isPlayer1 }) => {
   const canvasRef = useRef(null);
@@ -20,7 +20,7 @@ const GameRoom = ({ matchId, userId, matchData, isPlayer1 }) => {
   // useEffect para criar a conexão WebSocket (única vez por matchId)
   useEffect(() => {
     const accessToken = localStorage.getItem("access");
-    const wsUrl = `ws://localhost:8000/ws/game/${matchId}/?access_token=${accessToken}`;
+    const wsUrl = `${getWsUrl(`/ws/game/${matchId}/`)}?access_token=${accessToken}`;
     const ws = new WebSocket(wsUrl);
     socketRef.current = ws;
 
