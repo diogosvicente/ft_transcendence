@@ -26,8 +26,8 @@ const GamePage = () => {
 
   useEffect(() => {
     const url = `${API_BASE_URL}/api/game/match/${matchId}/`;
-    console.log("URL da API:", url); // Log para verificar a URL completa
-    console.log("Token de acesso:", accessToken); // Log do token para verificar se está correto
+    // console.log("URL da API:", url); // Log para verificar a URL completa
+    // console.log("Token de acesso:", accessToken); // Log do token para verificar se está correto
     console.log("ID do usuário logado (loggedUserId):", loggedUserId); // Log do ID do usuário logado
 
     // Buscar os dados completos da partida

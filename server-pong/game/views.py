@@ -1,16 +1,13 @@
-# Django Imports
-from django.db import models, IntegrityError
+from django.db import models, IntegrityError, transaction
 from django.db.models import Count, Q, F
 from django.contrib.auth import get_user_model
-from django.utils.timezone import now
+from django.utils import timezone
 
-# Django REST Framework Imports
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 
-# Local App Imports
 from .models import Match, Tournament, TournamentParticipant
 from .serializers import (
     TournamentSerializer,
@@ -18,9 +15,8 @@ from .serializers import (
     MatchSerializer
 )
 
-# WebSocket/Channels Imports
 from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
+from asgiref.sync import async_to_sync, sync_to_async
 
 class PositionAtRankingToUserProfile(APIView):
     permission_classes = [IsAuthenticated]
@@ -650,3 +646,88 @@ class MatchDetailView(APIView):
         """
         user = self.request.user
         return Match.objects.filter(player1=user) | Match.objects.filter(player2=user)
+
+class MatchFinalizeAPIView(APIView):
+    """
+    Finaliza a partida seja por WalkOver (WO) ou por atingimento da pontuação final.
+    
+    Parâmetros esperados:
+      - finalization_type: "walkover" ou "points"
+    
+    Se for "walkover", o usuário autenticado que chamar esta endpoint será considerado vencedor.
+    Se for "points", a partida será finalizada comparando os scores:
+      - Se score_player1 > score_player2, o vencedor é player1;
+      - Se score_player2 > score_player1, o vencedor é player2.
+    
+    Após a finalização, o campo winner_id é atualizado e os contadores de vitórias (wins) e derrotas (losses)
+    dos usuários envolvidos são incrementados.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            match = Match.objects.get(pk=pk)
+        except Match.DoesNotExist:
+            return Response({"error": "Partida não encontrada."}, status=404)
+
+        if request.user != match.player1 and request.user != match.player2:
+            return Response({"error": "Você não participa desta partida."}, status=403)
+
+        finalization_type = request.data.get("finalization_type", "points")
+        winner_id = None
+
+        if finalization_type == "walkover":
+            if request.user == match.player1:
+                match.score_player1 = 1
+                match.score_player2 = 0
+                winner_id = match.player1.id
+            else:
+                match.score_player1 = 0
+                match.score_player2 = 1
+                winner_id = match.player2.id
+            match.is_winner_by_wo = True
+
+        elif finalization_type == "points":
+            threshold = 5
+            if match.score_player1 >= threshold or match.score_player2 >= threshold:
+                if match.score_player1 > match.score_player2:
+                    winner_id = match.player1.id
+                elif match.score_player2 > match.score_player1:
+                    winner_id = match.player2.id
+                else:
+                    return Response({"error": "Empate não pode ser finalizado."}, status=400)
+            else:
+                return Response({"error": "Pontuação insuficiente para finalizar a partida."}, status=400)
+        else:
+            return Response({"error": "finalization_type inválido."}, status=400)
+
+        # Define o winner_id para ambos os casos (por WO ou por pontos)
+        try:
+            with transaction.atomic():
+                match.winner_id = winner_id
+                match.status = "completed"
+                match.last_updated = timezone.now()
+                match.played_at = timezone.now()
+                match.save()
+
+                if winner_id == match.player1.id:
+                    loser_id = match.player2.id
+                else:
+                    loser_id = match.player1.id
+
+                User = get_user_model()
+                winner = User.objects.get(pk=winner_id)
+                loser = User.objects.get(pk=loser_id)
+                winner.wins = (winner.wins or 0) + 1
+                loser.losses = (loser.losses or 0) + 1
+                winner.save()
+                loser.save()
+        except Exception as e:
+            return Response({"error": f"Erro ao atualizar estatísticas: {e}"}, status=500)
+
+        return Response({
+            "message": "Partida finalizada.",
+            "match_id": match.id,
+            "winner_id": winner_id,
+            "finalization_type": finalization_type
+        }, status=200)

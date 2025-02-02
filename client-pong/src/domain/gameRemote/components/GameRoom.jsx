@@ -1,48 +1,50 @@
 import React, { useEffect, useRef, useState } from "react";
 import Navbar from "../../template/Navbar";
 import { gameCore } from "../core/gameCore";
+import { useNavigate } from "react-router-dom";
 import "../../../assets/styles/gameRoom.css";
 import API_BASE_URL from "../../../assets/config/config";
 
 const GameRoom = ({ matchId, userId, matchData, isPlayer1 }) => {
   const canvasRef = useRef(null);
-  const gameRef = useRef(null); // Referência para o gameCore
-  const [socket, setSocket] = useState(null);
-  const [assignedSide, setAssignedSide] = useState(null); // Lado do jogador
-  const [countdown, setCountdown] = useState(null); // Contagem regressiva
-  const [pendingState, setPendingState] = useState(null); // Armazena estado pendente
-  const [isPaused, setIsPaused] = useState(false); // Estado para pausa da partida
-  const defaultAvatar = `${API_BASE_URL}/media/avatars/default.png`; // Avatar padrão
+  const gameRef = useRef(null);
+  const navigate = useNavigate();
+  // Usamos useRef para armazenar a conexão WebSocket de forma estável
+  const socketRef = useRef(null);
+  const [assignedSide, setAssignedSide] = useState(null);
+  const [countdown, setCountdown] = useState(null);
+  const [pendingState, setPendingState] = useState(null);
+  const [isPaused, setIsPaused] = useState(false);
+  const defaultAvatar = `${API_BASE_URL}/media/avatars/default.png`;
 
+  // useEffect para criar a conexão WebSocket (única vez por matchId)
   useEffect(() => {
     const accessToken = localStorage.getItem("access");
     const wsUrl = `ws://localhost:8000/ws/game/${matchId}/?access_token=${accessToken}`;
     const ws = new WebSocket(wsUrl);
-    setSocket(ws);
+    socketRef.current = ws;
 
     const initializeGame = () => {
       const canvas = canvasRef.current;
       if (canvas && !gameRef.current) {
-        gameRef.current = gameCore(canvas); // Inicializa o gameCore e salva em gameRef
+        gameRef.current = gameCore(canvas);
         console.log("Game inicializado com sucesso.");
-
-        // Renderiza o estado pendente, se existir
         if (pendingState) {
           console.log("Renderizando estado pendente...");
           gameRef.current.renderState(pendingState);
-          setPendingState(null); // Limpa o estado pendente após renderizar
+          setPendingState(null);
         }
       }
     };
 
     ws.onopen = () => {
       console.log("WebSocket conectado.");
-      initializeGame(); // Inicializa o game assim que o WebSocket conectar
+      initializeGame();
     };
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      console.log("Mensagem WebSocket recebida:", data);
+      // console.log("Mensagem WebSocket recebida:", data);
 
       switch (data.type) {
         case "assigned_side":
@@ -51,15 +53,28 @@ const GameRoom = ({ matchId, userId, matchData, isPlayer1 }) => {
           break;
 
         case "countdown":
-          console.log("Mensagem de contagem regressiva recebida:", data.message);
-          setCountdown(data.message);
+          const countdownMessage = data.state?.message;
+          if (countdownMessage) {
+            setCountdown(countdownMessage);
+          } else {
+            console.warn("⚠ A contagem regressiva veio sem dados válidos:", data);
+          }
           break;
-        
+
+        case "wo_countdown":
+          if (data.state?.countdown !== undefined) {
+            setCountdown(data.state.countdown);
+            console.log(`Contagem para WO: ${data.state.countdown}`);
+          } else {
+            console.warn("⚠ Dados inválidos para WO countdown:", data);
+          }
+          break;
+
         case "game_start":
           console.log("Jogo iniciado após a contagem regressiva.");
-          setCountdown(null); // Remove a contagem regressiva
+          setCountdown(null);
           break;
-        
+
         case "paused":
           setIsPaused(true);
           console.log("Partida pausada.");
@@ -76,11 +91,24 @@ const GameRoom = ({ matchId, userId, matchData, isPlayer1 }) => {
 
         case "state_update":
           if (gameRef.current) {
-            console.log("Renderizando estado do jogo:", data.state);
             gameRef.current.renderState(data.state);
           } else {
             console.warn("Game ainda não foi inicializado. Salvando estado pendente.");
-            setPendingState(data.state); // Salva estado pendente para renderizar depois
+            setPendingState(data.state);
+          }
+          break;
+
+        case "walkover":
+          alert(data.state.message);
+          console.log("Partida finalizada por WO. Redirecionando...");
+          navigate(data.state.redirect_url);
+          break;
+
+        case "match_finished":
+          // Exibe um alerta com a mensagem final e um botão "OK" para sair da partida
+          if (window.confirm(data.state.final_alert)) {
+            console.log("Partida finalizada por pontos. Redirecionando...");
+            navigate(data.state.redirect_url);
           }
           break;
 
@@ -103,18 +131,29 @@ const GameRoom = ({ matchId, userId, matchData, isPlayer1 }) => {
         ws.close();
       }
     };
-  }, [matchId, pendingState]);
+  }, [matchId]);
+
+  // Esse useEffect monitora mudanças em pendingState para inicializar o game se ainda não estiver feito
+  useEffect(() => {
+    if (pendingState && !gameRef.current) {
+      const canvas = canvasRef.current;
+      if (canvas) {
+        gameRef.current = gameCore(canvas);
+        console.log("Game inicializado via pendingState.");
+        gameRef.current.renderState(pendingState);
+        setPendingState(null);
+      }
+    }
+  }, [pendingState]);
 
   const handleKeyDown = (e) => {
-    if (!assignedSide || !socket) return;
-
-    if (socket.readyState !== WebSocket.OPEN) {
+    if (!assignedSide || !socketRef.current) return;
+    if (socketRef.current.readyState !== WebSocket.OPEN) {
       console.warn("Tentativa de enviar mensagem para WebSocket fechado.");
       return;
     }
-
     if (["w", "s"].includes(e.key)) {
-      socket.send(
+      socketRef.current.send(
         JSON.stringify({
           type: "player_move",
           direction: e.key === "w" ? "up" : "down",
@@ -125,15 +164,14 @@ const GameRoom = ({ matchId, userId, matchData, isPlayer1 }) => {
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeyDown);
-
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [assignedSide, socket, isPaused]);
+  }, [assignedSide, isPaused]);
 
   const togglePause = () => {
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(
+    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+      socketRef.current.send(
         JSON.stringify({
           type: isPaused ? "resume_game" : "pause_game",
         })
@@ -176,7 +214,6 @@ const GameRoom = ({ matchId, userId, matchData, isPlayer1 }) => {
             </div>
           </div>
         </div>
-
         <div className="game-board">
           {isPaused && (
             <div className="overlay">

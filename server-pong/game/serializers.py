@@ -44,12 +44,10 @@ class MatchSerializer(serializers.ModelSerializer):
             'played_at',
             'last_updated',
             'is_winner_by_wo',
+            'winner_id',  # Novo campo adicionado
         ]
 
     def get_player1_display(self, obj):
-        """
-        Retorna o display_name e o alias do player1.
-        """
         player1_user = obj.player1
         player1_participant = TournamentParticipant.objects.filter(
             user=player1_user,
@@ -62,9 +60,6 @@ class MatchSerializer(serializers.ModelSerializer):
         return "Desconhecido"
 
     def get_player2_display(self, obj):
-        """
-        Retorna o display_name e o alias do player2.
-        """
         player2_user = obj.player2
         player2_participant = TournamentParticipant.objects.filter(
             user=player2_user,
@@ -77,17 +72,11 @@ class MatchSerializer(serializers.ModelSerializer):
         return "Desconhecido"
 
     def get_player1_avatar(self, obj):
-        """
-        Retorna o avatar do player1.
-        """
         if obj.player1:
             return obj.player1.avatar.url if obj.player1.avatar else None
         return None
 
     def get_player2_avatar(self, obj):
-        """
-        Retorna o avatar do player2.
-        """
         if obj.player2:
             return obj.player2.avatar.url if obj.player2.avatar else None
         return None

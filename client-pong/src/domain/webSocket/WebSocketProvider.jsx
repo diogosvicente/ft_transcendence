@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useRef, useState, useEffect } from "react";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "react-toastify/dist/ReactToastify.css";
 import ChallengeToast from "./components/ChallengeToast";
@@ -12,6 +13,7 @@ export const useWebSocket = () => {
 };
 
 export const WebSocketProvider = ({ children }) => {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [tournaments, setTournaments] = useState([]);
   const [shouldResetChatWindow, setShouldResetChatWindow] = useState(false); // Flag para resetar ChatWindow
@@ -99,7 +101,7 @@ export const WebSocketProvider = ({ children }) => {
         }
       } else if (data.type === "game_start") {
         toast.success(`Partida iniciada: ${data.message}`);
-        window.location.href = `/game/${data.match_id}`;
+        navigate(`/game/${data.match_id}`);
       } else if (data.type === "game_challenge_declined") {
         toast.info(data.message);
       } else if (data.type === "tournament") {
@@ -126,7 +128,7 @@ export const WebSocketProvider = ({ children }) => {
   
       toast.success("Você aceitou o desafio!");
       // Redirecionar para o WebSocket do jogo
-      window.location.href = `/game/${matchId}`;
+      navigate(`/game/${matchId}`);
     } catch (err) {
       console.error("Erro ao aceitar desafio:", err);
       toast.error("Erro ao aceitar o desafio.");

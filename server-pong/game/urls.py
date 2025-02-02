@@ -3,16 +3,17 @@ from .views import (
     PositionAtRankingToUserProfile,
     MatchHistoryAPIView,
     TournamentRankingAPIView,
-    TournamentListAPIView,  # Lista de torneios
-    TournamentDetailAPIView,  # Detalhes com partidas e participantes
-    TournamentCreateAPIView,  # Criação de torneio
-    TournamentRegisterAPIView,  # Registro no torneio
+    TournamentListAPIView,
+    TournamentDetailAPIView,
+    TournamentCreateAPIView,
+    TournamentRegisterAPIView,
     TournamentStartAPIView,
     TournamentSetWinnerAPIView,
     ChallengeUserAPIView,
     AcceptChallengeAPIView,
     DeclineChallengeAPIView,
-    MatchDetailView
+    MatchDetailView,
+    MatchFinalizeAPIView
 )
 
 urlpatterns = [
@@ -28,9 +29,13 @@ urlpatterns = [
     path('tournaments/<int:pk>/register/', TournamentRegisterAPIView.as_view(), name='tournament-register'),
     path("tournaments/<int:pk>/start/", TournamentStartAPIView.as_view(), name="tournament-start"),
     path('tournaments/<int:pk>/set-winner/', TournamentSetWinnerAPIView.as_view(), name='set-tournament-winner'),
+
+    # Endpoints de desafio
     path('challenge-user/', ChallengeUserAPIView.as_view(), name='challenge_user'),
     path('accept-challenge/', AcceptChallengeAPIView.as_view(), name='accept_challenge'),
     path("decline-challenge/", DeclineChallengeAPIView.as_view(), name="decline-challenge"),
-    path('match/<int:id>/', MatchDetailView.as_view(), name='match-detail'),
 
+    # Detalhes e finalização de partidas
+    path('match/<int:id>/', MatchDetailView.as_view(), name='match-detail'),
+    path('match/<int:pk>/walkover/', MatchFinalizeAPIView.as_view(), name='match-walkover'),
 ]
