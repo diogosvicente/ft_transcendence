@@ -217,7 +217,6 @@ export const useTournaments = ({ notifications, wsSendNotification }) => {
     }
   };
   
-  
   const handleStartTournament = async (tournamentId) => {
     const tournament = tournaments.find((t) => t.id === tournamentId);
     if (!tournament || tournament.total_participants < 3) {

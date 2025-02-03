@@ -14,7 +14,8 @@ from .views import (
     DeclineChallengeAPIView,
     MatchDetailView,
     MatchFinalizeAPIView,
-    OngoingMatchAPIView
+    OngoingMatchAPIView,
+    TournamentMatchesAPIView
 )
 
 urlpatterns = [
@@ -30,6 +31,7 @@ urlpatterns = [
     path('tournaments/<int:pk>/register/', TournamentRegisterAPIView.as_view(), name='tournament-register'),
     path("tournaments/<int:pk>/start/", TournamentStartAPIView.as_view(), name="tournament-start"),
     path('tournaments/<int:pk>/set-winner/', TournamentSetWinnerAPIView.as_view(), name='set-tournament-winner'),
+    path('tournaments/<int:pk>/matches/', TournamentMatchesAPIView.as_view(), name='tournament-matches'),
 
     # Endpoints de desafio
     path('challenge-user/', ChallengeUserAPIView.as_view(), name='challenge_user'),

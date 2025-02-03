@@ -74,9 +74,9 @@ export const WebSocketProvider = ({ children }) => {
     try {
       const data = JSON.parse(event.data);
       console.log("Mensagem recebida do WebSocket:", data);
-
+  
       if (data.type === "game_challenge") {
-        // Toast interativo para aceitar ou recusar
+        // Toast interativo para aceitar ou recusar o desafio 1vs1
         toast.info(
           <ChallengeToast
             sender={data.message}
@@ -86,10 +86,11 @@ export const WebSocketProvider = ({ children }) => {
           />
         );
       } else if (data.type === "notification") {
+        // Adiciona a notificação ao estado e exibe o toast
         setNotifications((prev) => [...prev, data]);
         toast.info(`Notificação: ${data.message}`);
-
-        // Ativa a flag para resetar o ChatWindow ao detectar mensagens de bloqueio
+  
+        // Verifica mensagens relacionadas a bloqueios para resetar o ChatWindow, se necessário
         if (
           data.message === "Você foi bloqueado." ||
           data.message === "Você bloqueou o usuário." ||
@@ -100,13 +101,19 @@ export const WebSocketProvider = ({ children }) => {
           setShouldResetChatWindow(true);
         }
       } else if (data.type === "game_start") {
-        toast.success(`Partida iniciada: ${data.message}`);
-        navigate(`/game/${data.match_id}`);
+        // Essa mensagem pode ser enviada tanto para partidas 1vs1 quanto para partidas de torneio enfileiradas.
+        // No caso do torneio, o payload vem dentro de data.state com match_id.
+        const message = data.state?.message || data.message;
+        const matchId = data.state?.match_id || data.match_id;
+        toast.success(`Partida iniciada: ${message}`);
+        navigate(`/game/${matchId}`);
       } else if (data.type === "game_challenge_declined") {
         toast.info(data.message);
       } else if (data.type === "tournament") {
+        // Trata criação de novo torneio via WebSocket
         handleNewTournament(data);
       } else if (data.type === "tournament_update") {
+        // Atualiza informações do torneio, incluindo status e andamento das partidas
         handleTournamentUpdate(data);
       } else {
         console.warn("Tipo de mensagem desconhecido:", data.type);
@@ -127,7 +134,7 @@ export const WebSocketProvider = ({ children }) => {
       );
   
       toast.success("Você aceitou o desafio!");
-      // Redirecionar para o WebSocket do jogo
+      // Redireciona para o jogo
       navigate(`/game/${matchId}`);
     } catch (err) {
       console.error("Erro ao aceitar desafio:", err);
@@ -152,7 +159,6 @@ export const WebSocketProvider = ({ children }) => {
     }
   };
   
-
   const handleNewTournament = (data) => {
     console.log("Torneio recebido via WebSocket:", data.tournament);
     setNotifications((prev) => [...prev, data]);
@@ -196,7 +202,10 @@ export const WebSocketProvider = ({ children }) => {
   };
 
   const wsSendNotification = (message) => {
-    if (notificationSocketRef.current && notificationSocketRef.current.readyState === WebSocket.OPEN) {
+    if (
+      notificationSocketRef.current &&
+      notificationSocketRef.current.readyState === WebSocket.OPEN
+    ) {
       notificationSocketRef.current.send(JSON.stringify(message));
     } else {
       console.error("WebSocket de notificações não está conectado.");

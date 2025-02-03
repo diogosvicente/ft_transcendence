@@ -4,8 +4,65 @@ import os
 import redis
 from datetime import datetime, timedelta
 from channels.generic.websocket import AsyncWebsocketConsumer
-from asgiref.sync import sync_to_async
-from game.models import Match as GameMatch
+from asgiref.sync import sync_to_async, async_to_sync
+from django.db import transaction
+from django.utils import timezone
+from channels.layers import get_channel_layer
+from game.models import Match as GameMatch, Tournament, TournamentParticipant
+
+# Funções auxiliares para o avanço do torneio
+def determine_tournament_winner(tournament_id):
+    """
+    Determina o vencedor do torneio com base na soma dos pontos dos participantes.
+    Essa é uma implementação simplificada – ajuste conforme sua lógica de negócio.
+    """
+    participants = TournamentParticipant.objects.filter(tournament_id=tournament_id)
+    if participants.exists():
+        winner = max(participants, key=lambda p: p.points)
+        return winner.user_id
+    return None
+
+def advance_tournament(tournament_id):
+    """
+    Procura pela próxima partida pendente (status 'pending') ordenada pelo id.
+    Se encontrar, atualiza seu status para 'ongoing' e envia uma mensagem de game_start para o grupo correspondente.
+    Caso contrário, finaliza o torneio.
+    """
+    with transaction.atomic():
+        tournament = Tournament.objects.select_for_update().get(id=tournament_id)
+        pending_matches = GameMatch.objects.filter(tournament_id=tournament_id, status='pending').order_by('id')
+        channel_layer = get_channel_layer()
+        if pending_matches.exists():
+            next_match = pending_matches.first()
+            next_match.status = 'ongoing'
+            next_match.last_updated = timezone.now()
+            next_match.save()
+            async_to_sync(channel_layer.group_send)(
+                f"match_{next_match.id}",
+                {
+                    "type": "game_start",
+                    "message": "A próxima partida do torneio foi iniciada automaticamente.",
+                    "match_id": next_match.id,
+                },
+            )
+            print(f"Iniciando partida {next_match.id} para o torneio {tournament_id}")
+        else:
+            tournament.status = 'completed'
+            tournament.winner_id = determine_tournament_winner(tournament_id)
+            tournament.save()
+            async_to_sync(channel_layer.group_send)(
+                "tournaments",
+                {
+                    "type": "tournament_update_message",
+                    "tournament": {
+                        "id": tournament.id,
+                        "name": tournament.name,
+                        "status": "completed",
+                        "message": f"O torneio '{tournament.name}' foi finalizado.",
+                    },
+                },
+            )
+            print(f"Torneio {tournament_id} finalizado.")
 
 class GameConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -130,7 +187,6 @@ class GameConsumer(AsyncWebsocketConsumer):
                 # Se sobrar apenas um jogador, define o WO imediatamente
                 game_state["status"] = "paused"
                 game_state["wo_pending"] = True
-                from datetime import datetime
                 game_state["wo_initiated_at"] = datetime.utcnow().isoformat()
                 self.redis.set(self.match_id, json.dumps(game_state))
                 print(f"Partida {self.match_id} pausada. Finalizando partida por WO imediatamente.")
@@ -184,7 +240,6 @@ class GameConsumer(AsyncWebsocketConsumer):
             match.is_winner_by_wo = True
             match.winner_id = winner_id
             match.status = "completed"
-            from django.utils import timezone
             match.last_updated = timezone.now()
             match.played_at = timezone.now()
             match.save()
@@ -345,6 +400,22 @@ class GameConsumer(AsyncWebsocketConsumer):
 
         await sync_to_async(self.update_match_by_points)(winner_id, loser_id, game_state["scores"])
         self.redis.delete(self.match_id)
+        
+        # Notifica o TournamentManager
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"tournament_{self.get_tournament_id()}",
+            {
+                "type": "match_finished",
+                "tournament_id": self.get_tournament_id(),
+                "match_id": self.match_id,
+            }
+        )
+    
+    def get_tournament_id(self):
+        # Assume que o objeto Match possui um campo tournament_id. Se não, adicione lógica para obter isso.
+        match = GameMatch.objects.get(pk=self.match_id)
+        return match.tournament_id
 
     def update_match_by_points(self, winner_id, loser_id, scores):
         try:
@@ -356,10 +427,18 @@ class GameConsumer(AsyncWebsocketConsumer):
             else:
                 match.winner_id = match.player2_id
             match.status = "completed"
-            from django.utils import timezone
             match.last_updated = timezone.now()
             match.played_at = timezone.now()
             match.save()
+
+            # Se a partida estiver atrelada a um torneio, atualiza os pontos do participante vencedor
+            if match.tournament_id is not None:
+                participant = TournamentParticipant.objects.get(
+                    tournament_id=match.tournament_id, 
+                    user_id=winner_id
+                )
+                participant.points = (participant.points or 0) + 3
+                participant.save()
 
             from django.contrib.auth import get_user_model
             User = get_user_model()
@@ -369,10 +448,10 @@ class GameConsumer(AsyncWebsocketConsumer):
             loser.losses = (loser.losses or 0) + 1
             winner.save()
             loser.save()
-            print(f"Atualizados: Winner (ID: {winner_id}) wins={winner.wins}; Loser (ID: {loser_id}) losses={loser.losses}")
+
         except Exception as e:
             print(f"Erro ao atualizar partida por pontos: {e}")
-
+    
     async def send_to_group(self, message_type, data):
         try:
             await self.channel_layer.group_send(

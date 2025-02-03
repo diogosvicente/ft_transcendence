@@ -10,7 +10,6 @@ export const setApiLanguage = (language) => {
 
 // URLs Base
 export const API_BASE_URL = `http://127.0.0.1:8000`;
-export const FRONT_BASE_URL = `http://localhost:5173`;
 
 // Avatar padrão
 export const DEFAULT_AVATAR = `${API_BASE_URL}/media/avatars/default.png`;
