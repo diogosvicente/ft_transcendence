@@ -360,7 +360,7 @@ class TournamentRegisterAPIView(APIView):
 class TournamentStartAPIView(APIView):
     """
     Permite que o criador do torneio inicie o torneio, mudando o status para "ongoing".
-    Também registra todas as partidas no esquema de pontos corridos.
+    Também registra todas as partidas no esquema de pontos corridos e inicia automaticamente a primeira partida.
     """
     permission_classes = [IsAuthenticated]
 
@@ -372,26 +372,15 @@ class TournamentStartAPIView(APIView):
 
         # Verifica se o usuário é o criador do torneio
         if tournament.created_by != request.user:
-            return Response(
-                {"error": "Apenas o criador do torneio pode iniciá-lo."},
-                status=403,
-            )
+            return Response({"error": "Apenas o criador do torneio pode iniciá-lo."}, status=403)
 
-        # Verifica se o status atual é "planned"
         if tournament.status != "planned":
-            return Response(
-                {"error": "O torneio já foi iniciado ou está concluído."},
-                status=400,
-            )
+            return Response({"error": "O torneio já foi iniciado ou está concluído."}, status=400)
 
-        # Verifica se há pelo menos 3 participantes
         participants = TournamentParticipant.objects.filter(tournament=tournament)
         participant_count = participants.count()
         if participant_count < 3:
-            return Response(
-                {"error": "O torneio precisa de pelo menos 3 participantes para ser iniciado."},
-                status=400,
-            )
+            return Response({"error": "O torneio precisa de pelo menos 3 participantes para ser iniciado."}, status=400)
 
         # Atualiza o status do torneio para "ongoing"
         tournament.status = "ongoing"
@@ -402,9 +391,9 @@ class TournamentStartAPIView(APIView):
             participant.status = "confirmed"
             participant.save()
 
-        # Registra as partidas no esquema de pontos corridos
+        # Cria as partidas (round-robin)
         matches = []
-        participant_list = list(participants)  # Converte o queryset em uma lista para iteração
+        participant_list = list(participants)
         for i in range(participant_count):
             for j in range(i + 1, participant_count):
                 player1 = participant_list[i]
@@ -422,11 +411,44 @@ class TournamentStartAPIView(APIView):
                         is_winner_by_wo=False,
                     )
                 )
-
-        # Salva todas as partidas em um único batch
         Match.objects.bulk_create(matches)
 
-        # Envia mensagem de atualização via WebSocket para todos os usuários
+        # Inicia automaticamente a primeira partida
+        first_match = Match.objects.filter(tournament_id=tournament.id, status="pending").order_by("id").first()
+        if first_match:
+            first_match.status = "ongoing"
+            first_match.save()
+
+            # Envia mensagem para o grupo "match_<match_id>"
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f"match_{first_match.id}",
+                {
+                    "type": "game_start",  # Este tipo será tratado no GameConsumer
+                    "message": "A partida do torneio foi iniciada automaticamente.",
+                    "match_id": first_match.id,
+                },
+            )
+
+            # Opcional: envia também uma notificação para o usuário via NotificationConsumer
+            async_to_sync(channel_layer.group_send)(
+                f"user_{first_match.player1_id}",
+                {
+                    "type": "game_start",
+                    "message": "Sua partida no torneio foi iniciada.",
+                    "match_id": first_match.id,
+                },
+            )
+            async_to_sync(channel_layer.group_send)(
+                f"user_{first_match.player2_id}",
+                {
+                    "type": "game_start",
+                    "message": "Sua partida no torneio foi iniciada.",
+                    "match_id": first_match.id,
+                },
+            )
+
+        # Notifica a todos os usuários conectados à área de torneios sobre a atualização
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
             "tournaments",
@@ -436,13 +458,11 @@ class TournamentStartAPIView(APIView):
                     "id": tournament.id,
                     "name": tournament.name,
                     "total_participants": participant_count,
-                    "status": "ongoing",  # Inclui o novo status do torneio
+                    "status": "ongoing",
                     "message": f"O torneio '{tournament.name}' foi iniciado!",
                 },
             },
         )
-
-
 
         return Response(
             {
