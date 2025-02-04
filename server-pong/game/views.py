@@ -413,41 +413,6 @@ class TournamentStartAPIView(APIView):
                 )
         Match.objects.bulk_create(matches)
 
-        # Inicia automaticamente a primeira partida
-        first_match = Match.objects.filter(tournament_id=tournament.id, status="pending").order_by("id").first()
-        if first_match:
-            first_match.status = "ongoing"
-            first_match.save()
-
-            # Envia mensagem para o grupo "match_<match_id>"
-            channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(
-                f"match_{first_match.id}",
-                {
-                    "type": "game_start",  # Este tipo será tratado no GameConsumer
-                    "message": "A partida do torneio foi iniciada automaticamente.",
-                    "match_id": first_match.id,
-                },
-            )
-
-            # Opcional: envia também uma notificação para o usuário via NotificationConsumer
-            async_to_sync(channel_layer.group_send)(
-                f"user_{first_match.player1_id}",
-                {
-                    "type": "game_start",
-                    "message": "Sua partida no torneio foi iniciada.",
-                    "match_id": first_match.id,
-                },
-            )
-            async_to_sync(channel_layer.group_send)(
-                f"user_{first_match.player2_id}",
-                {
-                    "type": "game_start",
-                    "message": "Sua partida no torneio foi iniciada.",
-                    "match_id": first_match.id,
-                },
-            )
-
         # Notifica a todos os usuários conectados à área de torneios sobre a atualização
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
