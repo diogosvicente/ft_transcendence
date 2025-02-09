@@ -48,7 +48,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             # Recupera o estado atual do jogo
             game_state = json.loads(self.redis.get(self.match_id))
 
-            # Verifica se o jogador já está na partida, etc.
+            # Verifica se o jogador já está na partida
             if str(self.user_id) in game_state["players"]:
                 self.assigned_side = game_state["players"][str(self.user_id)]
                 print(f"Reconexão detectada para o jogador {self.user_id} no lado {self.assigned_side}.")
@@ -80,8 +80,11 @@ class GameConsumer(AsyncWebsocketConsumer):
                 "state": game_state,
             }))
             await self.send_to_group("state_update", game_state)
-            await self.start_countdown()
-            asyncio.create_task(self.game_loop())
+            
+            # Apenas o host (lado "left") inicia a contagem regressiva e o loop do jogo.
+            if self.assigned_side == "left":
+                await self.start_countdown()
+                asyncio.create_task(self.game_loop())
         except Exception as e:
             print(f"Erro ao conectar jogador: {e}")
             await self.close()

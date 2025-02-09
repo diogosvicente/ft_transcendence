@@ -591,24 +591,29 @@ class AcceptChallengeAPIView(APIView):
     def post(self, request):
         user = request.user
         match_id = request.data.get("match_id")
-
+        
         if not match_id:
             return Response({"error": "O ID da partida é obrigatório."}, status=400)
-
+        
         try:
-            match = Match.objects.get(id=match_id, player2=user, status="pending")
+            # Busca a partida pendente independentemente de qual jogador seja
+            match = Match.objects.get(id=match_id, status="pending")
         except Match.DoesNotExist:
             return Response({"error": "Partida não encontrada ou já iniciada."}, status=404)
-
+        
+        # Verifica se o usuário faz parte da partida
+        if user != match.player1 and user != match.player2:
+            return Response({"error": "Você não faz parte desta partida."}, status=403)
+        
         # Atualiza o status da partida para "ongoing"
         match.status = "ongoing"
         match.save()
-
+        
         # Notifica ambos os jogadores para se conectarem ao WebSocket do jogo
         channel_layer = get_channel_layer()
-        for player_id in [match.player1.id, match.player2.id]:
+        for player in [match.player1, match.player2]:
             async_to_sync(channel_layer.group_send)(
-                f"user_{player_id}",
+                f"user_{player.id}",
                 {
                     "type": "game_start",
                     "message": "A partida foi aceita. Conecte-se ao jogo!",
@@ -616,7 +621,7 @@ class AcceptChallengeAPIView(APIView):
                     "tournament_id": match.tournament_id,
                 },
             )
-
+        
         return Response(
             {"message": "Partida aceita. Conecte-se ao jogo.", "match_id": match.id},
             status=200,
@@ -628,30 +633,38 @@ class DeclineChallengeAPIView(APIView):
     def post(self, request):
         user = request.user
         match_id = request.data.get("match_id")
-
+        
         if not match_id:
             return Response({"error": "O ID da partida é obrigatório."}, status=400)
-
+        
         try:
-            match = Match.objects.get(id=match_id, player2=user, status="pending")
+            # Busca a partida pendente independentemente de qual jogador seja
+            match = Match.objects.get(id=match_id, status="pending")
         except Match.DoesNotExist:
             return Response({"error": "Partida não encontrada ou já iniciada."}, status=404)
-
-        # Notifica o desafiante que o desafio foi recusado
+        
+        # Verifica se o usuário faz parte da partida
+        if user != match.player1 and user != match.player2:
+            return Response({"error": "Você não faz parte desta partida."}, status=403)
+        
+        # Determina qual jogador será notificado: o outro participante
+        notify_id = match.player2.id if user == match.player1 else match.player1.id
+        
+        # Notifica o outro jogador de que o desafio foi recusado
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
-            f"user_{match.player1.id}",
+            f"user_{notify_id}",
             {
                 "type": "game_challenge_declined",
                 "message": f"{user.display_name} recusou o seu desafio.",
                 "match_id": match.id,
             },
         )
-
-        # Remove a partida
+        
+        # Se não for parte de um torneio, remove a partida; caso contrário, atualiza o status para "declined"
         if match.tournament_id is None:
             match.delete()
-
+        
         return Response({"message": "Desafio recusado."}, status=200)
 
 class MatchDetailView(APIView):
