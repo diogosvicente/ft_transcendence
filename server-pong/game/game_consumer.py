@@ -2,7 +2,7 @@ import json
 import asyncio
 import os
 import redis
-from datetime import datetime, timedelta
+from datetime import datetime
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
 from channels.db import database_sync_to_async
@@ -41,14 +41,13 @@ class GameConsumer(AsyncWebsocketConsumer):
                     "ball": {"x": 400, "y": 300, "speed_x": 0, "speed_y": 0},
                     "scores": {"left": 0, "right": 0},
                     "initial_players": [],
-                    "tournament_id": self.tournament_id  # Inclui o tournament_id aqui
+                    "tournament_id": self.tournament_id
                 }
                 self.redis.set(self.match_id, json.dumps(initial_state))
 
             # Recupera o estado atual do jogo
             game_state = json.loads(self.redis.get(self.match_id))
 
-            # (O restante do connect() permanece igual...)
             # Verifica se o jogador já está na partida, etc.
             if str(self.user_id) in game_state["players"]:
                 self.assigned_side = game_state["players"][str(self.user_id)]
@@ -94,6 +93,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             return match_obj.tournament_id
         except GameMatch.DoesNotExist:
             return None
+
     async def disconnect(self, close_code):
         try:
             redis_value = self.redis.get(self.match_id)
@@ -117,10 +117,8 @@ class GameConsumer(AsyncWebsocketConsumer):
             num_players = len(game_state["players"])
             
             if num_players == 1 and game_state.get("status", "ongoing") == "ongoing":
-                # Se sobrar apenas um jogador, define o WO imediatamente
                 game_state["status"] = "paused"
                 game_state["wo_pending"] = True
-                from datetime import datetime
                 game_state["wo_initiated_at"] = datetime.utcnow().isoformat()
                 self.redis.set(self.match_id, json.dumps(game_state))
                 print(f"Partida {self.match_id} pausada. Finalizando partida por WO imediatamente.")
@@ -135,7 +133,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             print(f"Erro ao desconectar jogador {self.user_id}: {e}")
 
     async def wo_countdown(self):
-        # Removida a contagem regressiva; não é mais utilizada.
+        # Contagem regressiva não utilizada
         pass
 
     async def finalize_match_by_wo(self):
@@ -149,10 +147,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                     loser_id = pid
                     break
 
-            # Determina o redirect_url conforme tournament_id presente no estado.
-            # Se tournament_id não estiver presente ou for null, redireciona para "/chat/", caso contrário, para "/tournaments/"
             tournament_id = game_state.get("tournament_id")
-            
             print(f"[DEBUG] tournament_id: {tournament_id}")
             redirect_url = "/tournaments/" if tournament_id else "/chat/"
 
@@ -165,6 +160,11 @@ class GameConsumer(AsyncWebsocketConsumer):
                 "final_alert": "Partida finalizada por WO! Clique em OK para sair da partida."
             })
             await sync_to_async(self.update_match_by_wo)(winner_id, loser_id)
+
+            # Se for partida de torneio e for a última, atualiza o vencedor do torneio
+            if tournament_id:
+                if await self.is_last_tournament_match():
+                    await self.update_tournament_winner()
         else:
             print("Finalização por WO não executada – quantidade inesperada de jogadores.")
 
@@ -188,14 +188,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             elif side == loser_side:
                 loser_id = uid
 
-        # Consulta o match para recuperar o tournament_id (se houver)
-        try:
-            match_obj = GameMatch.objects.get(pk=self.match_id)
-            tournament_id = match_obj.tournament_id
-        except Exception as e:
-            tournament_id = None
-            print(f"Erro ao recuperar tournament_id: {e}")
-
+        tournament_id = game_state.get("tournament_id")
         redirect_url = "/tournaments/" if tournament_id else "/chat/"
 
         await self.send_to_group("match_finished", {
@@ -208,6 +201,12 @@ class GameConsumer(AsyncWebsocketConsumer):
         })
 
         await sync_to_async(self.update_match_by_points)(winner_id, loser_id, game_state["scores"])
+
+        # Se for partida de torneio e for a última, atualiza o vencedor do torneio
+        if tournament_id:
+            if await self.is_last_tournament_match():
+                await self.update_tournament_winner()
+
         self.redis.delete(self.match_id)
     
     def update_match_by_wo(self, winner_id, loser_id):
@@ -235,8 +234,89 @@ class GameConsumer(AsyncWebsocketConsumer):
             loser.losses = (loser.losses or 0) + 1
             winner.save()
             loser.save()
+
+            # Se a partida pertence a um torneio, atualize os pontos do participante vencedor
+            if match.tournament:
+                try:
+                    from game.models import TournamentParticipant
+                    participant = TournamentParticipant.objects.get(
+                        tournament_id=match.tournament.id,
+                        user_id=winner_id
+                    )
+                    current_points = participant.points if participant.points is not None else 0
+                    participant.points = current_points + 3
+                    participant.save()
+                    print(f"[DEBUG] (WO) +3 pontos adicionados para user_id {winner_id} no tournament {match.tournament.id}")
+                except TournamentParticipant.DoesNotExist:
+                    print(f"[DEBUG] (WO) TournamentParticipant não encontrado para tournament_id={match.tournament.id} e user_id={winner_id}")
         except Exception as e:
             print(f"Erro ao atualizar partida por WO no banco: {e}")
+
+    def update_match_by_points(self, winner_id, loser_id, scores):
+        try:
+            match = GameMatch.objects.get(pk=self.match_id)
+            match.score_player1 = scores["left"]
+            match.score_player2 = scores["right"]
+            if str(match.player1_id) == str(winner_id):
+                match.winner_id = match.player1_id
+            else:
+                match.winner_id = match.player2_id
+            match.status = "completed"
+            from django.utils import timezone
+            match.last_updated = timezone.now()
+            match.played_at = timezone.now()
+            match.save()
+
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            winner = User.objects.get(pk=winner_id)
+            loser = User.objects.get(pk=loser_id)
+            winner.wins = (winner.wins or 0) + 1
+            loser.losses = (loser.losses or 0) + 1
+            winner.save()
+            loser.save()
+            print(f"[DEBUG] Atualizados: Winner (ID: {winner_id}) wins={winner.wins}; Loser (ID: {loser_id}) losses={loser.losses}")
+
+            # Se a partida pertence a um torneio, atualize os pontos do participante vencedor
+            if match.tournament:
+                try:
+                    from game.models import TournamentParticipant
+                    participant = TournamentParticipant.objects.get(
+                        tournament_id=match.tournament.id,
+                        user_id=winner_id
+                    )
+                    current_points = participant.points if participant.points is not None else 0
+                    participant.points = current_points + 3
+                    participant.save()
+                    print(f"[DEBUG] (Points) +3 pontos adicionados para user_id {winner_id} no tournament {match.tournament.id}")
+                except TournamentParticipant.DoesNotExist:
+                    print(f"[DEBUG] (Points) TournamentParticipant não encontrado para tournament_id={match.tournament.id} e user_id={winner_id}")
+        except Exception as e:
+            print(f"Erro ao atualizar partida por pontos: {e}")
+
+    @database_sync_to_async
+    def is_last_tournament_match(self):
+        try:
+            match = GameMatch.objects.get(pk=self.match_id)
+            return match.last_tournament_match
+        except Exception as e:
+            print(f"Erro ao verificar se é a última partida do torneio: {e}")
+            return False
+
+    @database_sync_to_async
+    def update_tournament_winner(self):
+        try:
+            from game.models import TournamentParticipant, Tournament
+            participants = TournamentParticipant.objects.filter(tournament_id=self.tournament_id)
+            if participants.exists():
+                winner_participant = participants.order_by("-points").first()
+                tournament = Tournament.objects.get(pk=self.tournament_id)
+                tournament.winner_id = winner_participant.user_id
+                tournament.status = "completed"  # ou outra lógica de finalização
+                tournament.save()
+                print(f"[DEBUG] Torneio {self.tournament_id} atualizado com o vencedor {winner_participant.user_id}")
+        except Exception as e:
+            print(f"Erro ao atualizar o torneio {self.tournament_id}: {e}")
 
     async def receive(self, text_data):
         try:
@@ -354,60 +434,6 @@ class GameConsumer(AsyncWebsocketConsumer):
         except Exception as e:
             print(f"Erro no game loop: {e}")
             await self.close()
-
-    def update_match_by_points(self, winner_id, loser_id, scores):
-        try:
-            match = GameMatch.objects.get(pk=self.match_id)
-            match.score_player1 = scores["left"]
-            match.score_player2 = scores["right"]
-            if str(match.player1_id) == str(winner_id):
-                match.winner_id = match.player1_id
-            else:
-                match.winner_id = match.player2_id
-            match.status = "completed"
-            from django.utils import timezone
-            match.last_updated = timezone.now()
-            match.played_at = timezone.now()
-            match.save()
-
-            from django.contrib.auth import get_user_model
-            User = get_user_model()
-            winner = User.objects.get(pk=winner_id)
-            loser = User.objects.get(pk=loser_id)
-            winner.wins = (winner.wins or 0) + 1
-            loser.losses = (loser.losses or 0) + 1
-            winner.save()
-            loser.save()
-            print(f"Atualizados: Winner (ID: {winner_id}) wins={winner.wins}; Loser (ID: {loser_id}) losses={loser.losses}")
-        except Exception as e:
-            print(f"Erro ao atualizar partida por pontos: {e}")
-
-    def update_match_by_points(self, winner_id, loser_id, scores):
-        try:
-            match = GameMatch.objects.get(pk=self.match_id)
-            match.score_player1 = scores["left"]
-            match.score_player2 = scores["right"]
-            if str(match.player1_id) == str(winner_id):
-                match.winner_id = match.player1_id
-            else:
-                match.winner_id = match.player2_id
-            match.status = "completed"
-            from django.utils import timezone
-            match.last_updated = timezone.now()
-            match.played_at = timezone.now()
-            match.save()
-
-            from django.contrib.auth import get_user_model
-            User = get_user_model()
-            winner = User.objects.get(pk=winner_id)
-            loser = User.objects.get(pk=loser_id)
-            winner.wins = (winner.wins or 0) + 1
-            loser.losses = (loser.losses or 0) + 1
-            winner.save()
-            loser.save()
-            print(f"Atualizados: Winner (ID: {winner_id}) wins={winner.wins}; Loser (ID: {loser_id}) losses={loser.losses}")
-        except Exception as e:
-            print(f"Erro ao atualizar partida por pontos: {e}")
 
     async def send_to_group(self, message_type, data):
         try:

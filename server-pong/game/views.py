@@ -413,6 +413,13 @@ class TournamentStartAPIView(APIView):
                 )
         Match.objects.bulk_create(matches)
 
+        # Marcar a última partida cadastrada como last_tournament_match = True
+        if matches:
+            # Aqui usamos a ordenação pelo ID para identificar a última partida inserida.
+            last_match = Match.objects.filter(tournament=tournament).order_by('-id').first()
+            last_match.last_tournament_match = True
+            last_match.save()
+
         # Notifica a todos os usuários conectados à área de torneios sobre a atualização
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(

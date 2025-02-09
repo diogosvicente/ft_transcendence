@@ -96,7 +96,8 @@ class Match(models.Model):
     is_winner_by_wo = models.BooleanField(default=False)
     played_at = models.DateTimeField(null=True, blank=True)
     last_updated = models.DateTimeField(auto_now=True)
-    winner_id = models.IntegerField(null=True, blank=True)  # <-- Campo adicionado
+    winner_id = models.IntegerField(null=True, blank=True)  # Campo adicionado
+    last_tournament_match = models.BooleanField(default=False)  # Novo campo
 
     def __str__(self):
         return f"Tournament Match {self.id}: {self.player1.username} vs {self.player2.username}"
