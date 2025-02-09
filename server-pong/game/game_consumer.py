@@ -35,7 +35,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                     "paddles": {"left": 300, "right": 300},
                     "ball": {"x": 400, "y": 300, "speed_x": 0, "speed_y": 0},
                     "scores": {"left": 0, "right": 0},
-                    "initial_players": []
+                    "initial_players": [],
                 }
                 self.redis.set(self.match_id, json.dumps(initial_state))
 
@@ -159,11 +159,19 @@ class GameConsumer(AsyncWebsocketConsumer):
                     loser_id = pid
                     break
 
+            # Determina o redirect_url conforme tournament_id presente no estado.
+            # Se tournament_id não estiver presente ou for null, redireciona para "/chat/", caso contrário, para "/tournaments/"
+            tournament_id = game_state.get("tournament_id")
+            
+            print(f"[DEBUG] tournament_id: {tournament_id}")
+            redirect_url = "/tournaments/" if tournament_id else "/chat/"
+
             await self.send_to_group("walkover", {
                 "message": "Partida finalizada por WO.",
-                "redirect_url": "/chat/",
+                "redirect_url": redirect_url,
                 "winner": winner_id,
                 "loser": loser_id,
+                "tournament_id": tournament_id,
                 "final_alert": "Partida finalizada por WO! Clique em OK para sair da partida."
             })
             await sync_to_async(self.update_match_by_wo)(winner_id, loser_id)
@@ -172,6 +180,46 @@ class GameConsumer(AsyncWebsocketConsumer):
 
         self.redis.delete(self.match_id)
 
+    async def finalize_match_by_points(self):
+        game_state = json.loads(self.redis.get(self.match_id))
+        
+        if game_state["scores"]["left"] >= 5:
+            winner_side = "left"
+            loser_side = "right"
+        else:
+            winner_side = "right"
+            loser_side = "left"
+        
+        winner_id = None
+        loser_id = None
+        for uid, side in game_state["players"].items():
+            if side == winner_side:
+                winner_id = uid
+            elif side == loser_side:
+                loser_id = uid
+
+        # Consulta o match para recuperar o tournament_id (se houver)
+        try:
+            match_obj = GameMatch.objects.get(pk=self.match_id)
+            tournament_id = match_obj.tournament_id
+        except Exception as e:
+            tournament_id = None
+            print(f"Erro ao recuperar tournament_id: {e}")
+
+        redirect_url = "/tournaments/" if tournament_id else "/chat/"
+
+        await self.send_to_group("match_finished", {
+            "message": "Partida finalizada por pontuação.",
+            "redirect_url": redirect_url,
+            "winner": winner_id,
+            "loser": loser_id,
+            "tournament_id": tournament_id,
+            "final_alert": "Partida finalizada! Clique em OK para sair da partida."
+        })
+
+        await sync_to_async(self.update_match_by_points)(winner_id, loser_id, game_state["scores"])
+        self.redis.delete(self.match_id)
+    
     def update_match_by_wo(self, winner_id, loser_id):
         try:
             match = GameMatch.objects.get(pk=self.match_id)
@@ -317,34 +365,32 @@ class GameConsumer(AsyncWebsocketConsumer):
             print(f"Erro no game loop: {e}")
             await self.close()
 
-    async def finalize_match_by_points(self):
-        game_state = json.loads(self.redis.get(self.match_id))
-        
-        if game_state["scores"]["left"] >= 5:
-            winner_side = "left"
-            loser_side = "right"
-        else:
-            winner_side = "right"
-            loser_side = "left"
-        
-        winner_id = None
-        loser_id = None
-        for uid, side in game_state["players"].items():
-            if side == winner_side:
-                winner_id = uid
-            elif side == loser_side:
-                loser_id = uid
+    def update_match_by_points(self, winner_id, loser_id, scores):
+        try:
+            match = GameMatch.objects.get(pk=self.match_id)
+            match.score_player1 = scores["left"]
+            match.score_player2 = scores["right"]
+            if str(match.player1_id) == str(winner_id):
+                match.winner_id = match.player1_id
+            else:
+                match.winner_id = match.player2_id
+            match.status = "completed"
+            from django.utils import timezone
+            match.last_updated = timezone.now()
+            match.played_at = timezone.now()
+            match.save()
 
-        await self.send_to_group("match_finished", {
-            "message": "Partida finalizada por pontuação.",
-            "redirect_url": "/chat/",
-            "winner": winner_id,
-            "loser": loser_id,
-            "final_alert": "Partida finalizada! Clique em OK para sair da partida."
-        })
-
-        await sync_to_async(self.update_match_by_points)(winner_id, loser_id, game_state["scores"])
-        self.redis.delete(self.match_id)
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            winner = User.objects.get(pk=winner_id)
+            loser = User.objects.get(pk=loser_id)
+            winner.wins = (winner.wins or 0) + 1
+            loser.losses = (loser.losses or 0) + 1
+            winner.save()
+            loser.save()
+            print(f"Atualizados: Winner (ID: {winner_id}) wins={winner.wins}; Loser (ID: {loser_id}) losses={loser.losses}")
+        except Exception as e:
+            print(f"Erro ao atualizar partida por pontos: {e}")
 
     def update_match_by_points(self, winner_id, loser_id, scores):
         try:

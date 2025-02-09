@@ -487,48 +487,96 @@ class ChallengeUserAPIView(APIView):
 
     def post(self, request):
         user = request.user
-        opponent_id = request.data.get("opponent_id")
-
-        if not opponent_id:
-            return Response({"error": "O ID do oponente é obrigatório."}, status=400)
-
-        try:
-            opponent = get_user_model().objects.get(id=opponent_id)
-        except get_user_model().DoesNotExist:
-            return Response({"error": "O oponente não foi encontrado."}, status=404)
-
-        # Verifica se os jogadores são diferentes
-        if user.id == opponent.id:
-            return Response({"error": "Você não pode desafiar a si mesmo."}, status=400)
-
-        # Cria a partida
-        match = Match.objects.create(
-            player1=user,
-            player2=opponent,
-            status="pending",
-            tournament_id=None  # Torneio é nulo para desafios diretos
-        )
-
-        # Envia notificação via WebSocket
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            f"user_{opponent.id}",  # Grupo do WebSocket do oponente
-            {
-                "type": "game_challenge",
-                "message": f"{user.display_name} desafiou você para uma partida!",
-                "match_id": match.id,
-                "sender_id": user.id,
-            },
-        )
-
-        return Response(
-            {
-                "message": "Desafio enviado com sucesso.",
-                "match_id": match.id,
-                "status": match.status,
-            },
-            status=201,
-        )
+        tournament_id = request.data.get("tournament_id")
+        
+        if tournament_id:
+            # Se tournament_id foi passado, trata como desafio de torneio
+            match = Match.objects.filter(
+                tournament_id=tournament_id,
+                status="pending"
+            ).order_by("id").first()
+            
+            if not match:
+                return Response(
+                    {"error": "Nenhuma partida pendente encontrada para este torneio."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            if user.id != match.player1_id and user.id != match.player2_id:
+                return Response(
+                    {"error": "Você não está na próxima partida."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            opponent_id = match.player2_id if user.id == match.player1_id else match.player1_id
+            try:
+                opponent = get_user_model().objects.get(id=opponent_id)
+            except get_user_model().DoesNotExist:
+                return Response(
+                    {"error": "O oponente não foi encontrado."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f"user_{opponent.id}",
+                {
+                    "type": "game_challenge",
+                    "message": f"{user.display_name} desafiou você para uma partida de torneio!",
+                    "match_id": match.id,
+                    "tournament_id": tournament_id,
+                    "sender_id": user.id,
+                },
+            )
+            
+            return Response(
+                {
+                    "message": "Desafio de torneio enviado com sucesso.",
+                    "match_id": match.id,
+                    "player1_id": match.player1_id,
+                    "player2_id": match.player2_id,
+                    "status": match.status,
+                    "tournament_id": tournament_id,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+        else:
+            # Modo de desafio direto (sem torneio)
+            opponent_id = request.data.get("opponent_id")
+            if not opponent_id:
+                return Response({"error": "O ID do oponente é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                opponent = get_user_model().objects.get(id=opponent_id)
+            except get_user_model().DoesNotExist:
+                return Response({"error": "O oponente não foi encontrado."}, status=status.HTTP_404_NOT_FOUND)
+            if user.id == opponent.id:
+                return Response({"error": "Você não pode desafiar a si mesmo."}, status=status.HTTP_400_BAD_REQUEST)
+            match = Match.objects.create(
+                player1=user,
+                player2=opponent,
+                status="pending",
+                tournament_id=None  # Desafio direto, tournament_id é null.
+            )
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f"user_{opponent.id}",
+                {
+                    "type": "game_challenge",
+                    "message": f"{user.display_name} desafiou você para uma partida!",
+                    "match_id": match.id,
+                    "sender_id": user.id,
+                    "tournament_id": None,
+                },
+            )
+            return Response(
+                {
+                    "message": "Desafio enviado com sucesso.",
+                    "match_id": match.id,
+                    "status": match.status,
+                    "tournament_id": None,
+                },
+                status=status.HTTP_201_CREATED,
+            )
 
 class AcceptChallengeAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -593,7 +641,8 @@ class DeclineChallengeAPIView(APIView):
         )
 
         # Remove a partida
-        match.delete()
+        if match.tournament_id is None:
+            match.delete()
 
         return Response({"message": "Desafio recusado."}, status=200)
 
@@ -632,7 +681,7 @@ class MatchDetailView(APIView):
         user = self.request.user
         return Match.objects.filter(player1=user) | Match.objects.filter(player2=user)
 
-class MatchFinalizeAPIView(APIView):
+class MatchFinalizeAPIView(APIView): 
     """
     Finaliza a partida seja por WalkOver (WO) ou por atingimento da pontuação final.
     
@@ -646,6 +695,9 @@ class MatchFinalizeAPIView(APIView):
     
     Após a finalização, o campo winner_id é atualizado e os contadores de vitórias (wins) e derrotas (losses)
     dos usuários envolvidos são incrementados.
+    
+    OBSERVAÇÃO: Se o match pertencer a um torneio (tournament_id não for nulo),
+    o vencedor terá +3 pontos adicionados na tabela game_tournamentparticipant.
     """
     permission_classes = [IsAuthenticated]
 
@@ -653,10 +705,10 @@ class MatchFinalizeAPIView(APIView):
         try:
             match = Match.objects.get(pk=pk)
         except Match.DoesNotExist:
-            return Response({"error": "Partida não encontrada."}, status=404)
+            return Response({"error": "Partida não encontrada."}, status=status.HTTP_404_NOT_FOUND)
 
         if request.user != match.player1 and request.user != match.player2:
-            return Response({"error": "Você não participa desta partida."}, status=403)
+            return Response({"error": "Você não participa desta partida."}, status=status.HTTP_403_FORBIDDEN)
 
         finalization_type = request.data.get("finalization_type", "points")
         winner_id = None
@@ -680,13 +732,15 @@ class MatchFinalizeAPIView(APIView):
                 elif match.score_player2 > match.score_player1:
                     winner_id = match.player2.id
                 else:
-                    return Response({"error": "Empate não pode ser finalizado."}, status=400)
+                    return Response({"error": "Empate não pode ser finalizado."}, status=status.HTTP_400_BAD_REQUEST)
             else:
-                return Response({"error": "Pontuação insuficiente para finalizar a partida."}, status=400)
+                return Response({"error": "Pontuação insuficiente para finalizar a partida."}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({"error": "finalization_type inválido."}, status=400)
+            return Response({"error": "finalization_type inválido."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Define o winner_id para ambos os casos (por WO ou por pontos)
+        # Debug: imprime o tournament_id do match antes de prosseguir
+        print(f"[DEBUG] match.tournament_id (antes da transação): {match.tournament_id}")
+
         try:
             with transaction.atomic():
                 match.winner_id = winner_id
@@ -707,15 +761,38 @@ class MatchFinalizeAPIView(APIView):
                 loser.losses = (loser.losses or 0) + 1
                 winner.save()
                 loser.save()
+
+                # Se a partida pertence a um torneio, vamos usar o id do match para recuperar o tournament_id
+                if match.tournament_id:
+                    # Re-consulta o match para garantir que estamos usando o valor atual de tournament_id
+                    match_obj = Match.objects.get(pk=match.id)
+                    tournament_id = match_obj.tournament_id
+                    print(f"[DEBUG] tournament_id recuperado: {tournament_id}")
+
+                    try:
+                        participant = TournamentParticipant.objects.get(
+                            tournament_id=tournament_id,
+                            user_id=winner_id
+                        )
+                        print(f"[DEBUG] Antes: participant.points = {participant.points} para user_id {winner_id}")
+                        current_points = participant.points if participant.points is not None else 0
+                        participant.points = current_points + 3
+                        participant.save()
+                        print(f"[DEBUG] Depois: participant.points = {participant.points} para user_id {winner_id}")
+                    except TournamentParticipant.DoesNotExist:
+                        print(f"[DEBUG] TournamentParticipant não encontrado para tournament_id={tournament_id} e user_id={winner_id}")
+                        # Se o registro não existir, você pode optar por criar um ou ignorar
+                        pass
+
         except Exception as e:
-            return Response({"error": f"Erro ao atualizar estatísticas: {e}"}, status=500)
+            return Response({"error": f"Erro ao atualizar estatísticas: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response({
             "message": "Partida finalizada.",
             "match_id": match.id,
             "winner_id": winner_id,
             "finalization_type": finalization_type
-        }, status=200)
+        }, status=status.HTTP_200_OK)
 
 class OngoingMatchAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -757,3 +834,118 @@ class TournamentMatchesAPIView(APIView):
                 "played_at": match.played_at,
             })
         return Response(match_list)
+
+class TournamentNextMatchAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        tournament_id = request.data.get("tournament_id")
+        if not tournament_id:
+            return Response(
+                {"error": "O ID do torneio é obrigatório."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Busca a partida pendente de menor id para o torneio informado
+        match = Match.objects.filter(
+            tournament_id=tournament_id,
+            status="pending"
+        ).order_by("id").first()
+
+        if not match:
+            return Response(
+                {"error": "Nenhuma partida pendente encontrada para esse torneio."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Prepara a mensagem a ser enviada via WebSocket para ambos os jogadores envolvidos
+        message_text = (
+            f"Desafio de torneio: você foi desafiado para a partida {match.id} "
+            f"do torneio {tournament_id}."
+        )
+
+        channel_layer = get_channel_layer()
+
+        # Envia alerta para o player1
+        async_to_sync(channel_layer.group_send)(
+            f"user_{match.player1_id}",
+            {
+                "type": "game_challenge",
+                "message": message_text,
+                "match_id": match.id,
+                "tournament_id": tournament_id,
+                "player1_id": match.player1_id,
+                "player2_id": match.player2_id,
+            },
+        )
+
+        # Envia alerta para o player2
+        async_to_sync(channel_layer.group_send)(
+            f"user_{match.player2_id}",
+            {
+                "type": "game_challenge",
+                "message": message_text,
+                "match_id": match.id,
+                "tournament_id": tournament_id,
+                "player1_id": match.player1_id,
+                "player2_id": match.player2_id,
+            },
+        )
+
+        # Retorna os dados da partida, incluindo match_id, player1_id e player2_id
+        return Response(
+            {
+                "message": "Desafio do torneio enviado com sucesso.",
+                "match_id": match.id,
+                "player1_id": match.player1_id,
+                "player2_id": match.player2_id,
+                "status": match.status,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+class TournamentAcceptChallengeAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        match_id = request.data.get("match_id")
+
+        if not match_id:
+            return Response({"error": "O ID da partida é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Busca a partida pendente que pertença a um torneio (tournament_id não nulo)
+            match = Match.objects.get(
+                id=match_id,
+                tournament_id__isnull=False,
+                status="pending"
+            )
+            # Verifica se o usuário faz parte da partida
+            if user != match.player1 and user != match.player2:
+                return Response({"error": "Você não faz parte dessa partida."}, status=status.HTTP_403_FORBIDDEN)
+        except Match.DoesNotExist:
+            return Response({"error": "Partida não encontrada ou já iniciada."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Aqui você pode implementar uma lógica de dupla confirmação (por exemplo, salvando a confirmação de cada jogador)
+        # Se a lógica for que o primeiro aceite já inicia a partida, atualize o status para "ongoing"
+        match.status = "ongoing"
+        match.save()
+
+        # Notifica ambos os jogadores para se conectarem ao WebSocket do jogo
+        channel_layer = get_channel_layer()
+        for player in [match.player1, match.player2]:
+            async_to_sync(channel_layer.group_send)(
+                f"user_{player.id}",
+                {
+                    "type": "game_start",
+                    "message": "A partida do torneio foi aceita. Conecte-se ao jogo!",
+                    "match_id": match.id,
+                    "tournament_id": match.tournament_id,
+                },
+            )
+
+        return Response(
+            {"message": "Partida do torneio aceita. Conecte-se ao jogo.", "match_id": match.id},
+            status=status.HTTP_200_OK,
+        )

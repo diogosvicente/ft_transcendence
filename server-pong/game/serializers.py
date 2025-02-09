@@ -22,6 +22,8 @@ class TournamentParticipantSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class MatchSerializer(serializers.ModelSerializer):
+    player1_id = serializers.IntegerField(read_only=True)
+    player2_id = serializers.IntegerField(read_only=True)
     player1_display = serializers.SerializerMethodField()
     player2_display = serializers.SerializerMethodField()
     player1_avatar = serializers.SerializerMethodField()
@@ -44,7 +46,7 @@ class MatchSerializer(serializers.ModelSerializer):
             'played_at',
             'last_updated',
             'is_winner_by_wo',
-            'winner_id',  # Novo campo adicionado
+            'winner_id',
         ]
 
     def get_player1_display(self, obj):
@@ -72,11 +74,11 @@ class MatchSerializer(serializers.ModelSerializer):
         return "Desconhecido"
 
     def get_player1_avatar(self, obj):
-        if obj.player1:
-            return obj.player1.avatar.url if obj.player1.avatar else None
+        if obj.player1 and obj.player1.avatar:
+            return obj.player1.avatar.url
         return None
 
     def get_player2_avatar(self, obj):
-        if obj.player2:
-            return obj.player2.avatar.url if obj.player2.avatar else None
+        if obj.player2 and obj.player2.avatar:
+            return obj.player2.avatar.url
         return None

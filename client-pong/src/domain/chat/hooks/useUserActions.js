@@ -241,18 +241,17 @@ const useUserActions = (wsSendNotification, resetChatWindow)  => {
     }
   };
 
-  const challengeUser = async (userId) => {
+  const challengeUser = async (userId, tournamentId = null) => {
     const { accessToken, loggedID } = getAuthDetails();
   
     try {
-      // Solicitação para o backend
+      // Envia o tournament_id (se for de torneio, um valor; senão, null) junto com o opponent_id para o backend
       const response = await axios.post(
         `${API_BASE_URL}/api/game/challenge-user/`,
-        { opponent_id: userId },
+        { opponent_id: userId, tournament_id: tournamentId },
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
   
-      // Acessa o match_id da resposta
       const matchId = response.data.match_id;
   
       if (!matchId) {
@@ -268,7 +267,7 @@ const useUserActions = (wsSendNotification, resetChatWindow)  => {
         userId,
         loggedID,
         "Você enviou um desafio para uma partida!",
-        { sender_id: loggedID, receiver_id: userId, match_id: matchId }
+        { sender_id: loggedID, receiver_id: userId, match_id: matchId, tournament_id: tournamentId }
       );
   
       // Notificação para o desafiado
@@ -278,7 +277,7 @@ const useUserActions = (wsSendNotification, resetChatWindow)  => {
         loggedID, // ID do remetente (você)
         userId, // ID do destinatário (oponente)
         "Você foi desafiado para uma partida!",
-        { sender_id: userId, receiver_id: loggedID, match_id: matchId }
+        { sender_id: userId, receiver_id: loggedID, match_id: matchId, tournament_id: tournamentId }
       );
   
     } catch (err) {
@@ -286,7 +285,7 @@ const useUserActions = (wsSendNotification, resetChatWindow)  => {
       handleError(err, "Erro ao desafiar usuário.");
     }
   };
-  
+
   return {
     addFriend,
     blockUser,
