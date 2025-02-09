@@ -139,6 +139,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             "type": "game_challenge",
             "message": event["message"],
             "match_id": event["match_id"],
+            "tournament_id": event["tournament_id"],
         }))
 
     async def game_start(self, event):
@@ -146,6 +147,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             "type": "game_start",
             "message": event["message"],
             "match_id": event["match_id"],
+            "tournament_id": event["tournament_id"],
         }))
 
     async def game_challenge_declined(self, event):

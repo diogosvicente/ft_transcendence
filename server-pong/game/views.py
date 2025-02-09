@@ -606,6 +606,7 @@ class AcceptChallengeAPIView(APIView):
                     "type": "game_start",
                     "message": "A partida foi aceita. Conecte-se ao jogo!",
                     "match_id": match.id,
+                    "tournament_id": match.tournament_id,
                 },
             )
 

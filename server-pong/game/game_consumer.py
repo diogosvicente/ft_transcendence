@@ -5,6 +5,7 @@ import redis
 from datetime import datetime, timedelta
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
+from channels.db import database_sync_to_async
 from game.models import Match as GameMatch
 
 class GameConsumer(AsyncWebsocketConsumer):
@@ -16,7 +17,11 @@ class GameConsumer(AsyncWebsocketConsumer):
             
             print(f"Conexão recebida para match_id: {self.match_id}, Usuário: {self.user_id}")
             
-            # Conecta ao Redis e valida a conexão
+            # Recupera o tournament_id a partir do match no banco de dados
+            self.tournament_id = await self.get_tournament_id(self.match_id)
+            print(f"[DEBUG] tournament_id: {self.tournament_id}")
+            
+            # Conecta ao Redis
             try:
                 redis_host = os.environ.get("REDIS_HOST", "127.0.0.1")
                 redis_port = int(os.environ.get("REDIS_PORT", 6380))
@@ -28,7 +33,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                 await self.close()
                 return
 
-            # Inicializa o estado do jogo se ainda não existir
+            # Inicializa o estado do jogo se ainda não existir, incluindo o tournament_id
             if not self.redis.exists(self.match_id):
                 initial_state = {
                     "players": {},
@@ -36,13 +41,15 @@ class GameConsumer(AsyncWebsocketConsumer):
                     "ball": {"x": 400, "y": 300, "speed_x": 0, "speed_y": 0},
                     "scores": {"left": 0, "right": 0},
                     "initial_players": [],
+                    "tournament_id": self.tournament_id  # Inclui o tournament_id aqui
                 }
                 self.redis.set(self.match_id, json.dumps(initial_state))
 
             # Recupera o estado atual do jogo
             game_state = json.loads(self.redis.get(self.match_id))
 
-            # Verifica se o jogador já está na partida (reconexão)
+            # (O restante do connect() permanece igual...)
+            # Verifica se o jogador já está na partida, etc.
             if str(self.user_id) in game_state["players"]:
                 self.assigned_side = game_state["players"][str(self.user_id)]
                 print(f"Reconexão detectada para o jogador {self.user_id} no lado {self.assigned_side}.")
@@ -61,49 +68,32 @@ class GameConsumer(AsyncWebsocketConsumer):
                     await self.close()
                     return
 
-            # Se já houver dois jogadores e os dois lados estiverem definidos:
-            if len(game_state["players"]) == 2 and set(game_state["players"].values()) == {"left", "right"}:
-                if game_state.get("status") == "paused":
-                    game_state["status"] = "ongoing"
-                    self.redis.set(self.match_id, json.dumps(game_state))
-                    await self.send_to_group("resumed", {"message": "A partida foi retomada."})
-                if game_state.get("wo_pending"):
-                    game_state.pop("wo_pending", None)
-                    game_state.pop("wo_initiated_at", None)
-                    self.redis.set(self.match_id, json.dumps(game_state))
-                    await self.send_to_group("resumed", {"message": "Jogador retornou. Jogo retomado."})
-                    print("WO pendente cancelado – os dois jogadores estão conectados.")
-                await self.channel_layer.group_add(self.room_group_name, self.channel_name)
-                await self.accept()
-                await self.send(json.dumps({
-                    "type": "assigned_side",
-                    "side": self.assigned_side,
-                    "player_id": self.user_id,
-                }))
-                await self.send(json.dumps({
-                    "type": "state_update",
-                    "state": game_state,
-                }))
-                await self.send_to_group("state_update", game_state)
-                await self.start_countdown()
-                asyncio.create_task(self.game_loop())
-            else:
-                await self.channel_layer.group_add(self.room_group_name, self.channel_name)
-                await self.accept()
-                await self.send(json.dumps({
-                    "type": "assigned_side",
-                    "side": self.assigned_side,
-                    "player_id": self.user_id,
-                }))
-                await self.send(json.dumps({
-                    "type": "state_update",
-                    "state": game_state,
-                }))
-                await self.send_to_group("state_update", game_state)
+            # Adiciona o usuário ao grupo e envia o estado
+            await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+            await self.accept()
+            await self.send(json.dumps({
+                "type": "assigned_side",
+                "side": self.assigned_side,
+                "player_id": self.user_id,
+            }))
+            await self.send(json.dumps({
+                "type": "state_update",
+                "state": game_state,
+            }))
+            await self.send_to_group("state_update", game_state)
+            await self.start_countdown()
+            asyncio.create_task(self.game_loop())
         except Exception as e:
             print(f"Erro ao conectar jogador: {e}")
             await self.close()
 
+    @database_sync_to_async
+    def get_tournament_id(self, match_id):
+        try:
+            match_obj = GameMatch.objects.get(pk=match_id)
+            return match_obj.tournament_id
+        except GameMatch.DoesNotExist:
+            return None
     async def disconnect(self, close_code):
         try:
             redis_value = self.redis.get(self.match_id)
