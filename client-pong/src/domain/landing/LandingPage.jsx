@@ -173,6 +173,7 @@ const LoginAndRegisterForm = () => {
           initializeNotificationWebSocket(data.access, data.id, "handleLogin");
 
           navigate("/home");
+          window.location.reload();
         }
       } else {
         setErrorMessage(data.error || t("error_invalid_credentials"));
@@ -278,6 +279,7 @@ const LoginAndRegisterForm = () => {
         localStorage.setItem("refresh", data.refresh);
         localStorage.setItem("id", data.id);
         navigate("/home");
+        window.location.reload();
       } else {
         setErrorMessage(data.error || t("error_invalid_2fa"));
       }
