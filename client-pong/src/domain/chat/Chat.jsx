@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import Navbar from "../template/Navbar";
 import "../../assets/styles/chat.css";
 
-import useFetchUsers from "./assets/useFetchUsers";
-import useUserActions from "./assets/useUserActions";
+import useFetchUsers from "./hooks/useFetchUsers";
+import useUserActions from "./hooks/useUserActions";
 import PlayerLists from "./components/PlayerLists";
 import ChatWindow from "./components/ChatWindow";
 import { useWebSocket } from "../webSocket/WebSocketProvider.jsx";
@@ -14,6 +14,8 @@ const Chat = () => {
   const {
     wsSendNotification,
     notifications,
+    shouldResetChatWindow, // Flag para verificar se precisa resetar o ChatWindow
+    setShouldResetChatWindow, // Função para resetar a flag após o reset
   } = useWebSocket();
 
   const [friends, setFriends] = useState([]);
@@ -32,11 +34,25 @@ const Chat = () => {
   const [chatTabs, setChatTabs] = useState([{ id: "global", name: "Chat Global" }]);
   const [activeTab, setActiveTab] = useState("global"); // Aba ativa
 
+  // Função para resetar o estado do ChatWindow
+  const resetChatWindow = () => {
+    setChatTabs([{ id: "global", name: "Chat Global" }]); // Apenas Chat Global
+    setActiveTab("global"); // Aba ativa será o Chat Global
+  };
+
+  // Monitora a flag shouldResetChatWindow
+  useEffect(() => {
+    if (shouldResetChatWindow) {
+      resetChatWindow();
+      setShouldResetChatWindow(false); // Reseta a flag após o reset
+    }
+  }, [shouldResetChatWindow, setShouldResetChatWindow]);
+
   // Função para abrir um chat privado
   const openChatWithUser = (friend) => {
-  const roomId = `room_${friend.id}`;
-  const chatId = `private_${friend.id}`;
-  
+    const roomId = `room_${friend.id}`;
+    const chatId = `private_${friend.id}`;
+
     if (!chatTabs.some((tab) => tab.id === chatId)) {
       setChatTabs((prevTabs) => [
         ...prevTabs,
@@ -45,8 +61,6 @@ const Chat = () => {
     }
     setActiveTab(chatId);
   };
-  
-  
 
   // Função para fechar uma aba de chat
   const closeChatTab = (chatId) => {
@@ -72,6 +86,7 @@ const Chat = () => {
     acceptFriendRequest,
     rejectFriendRequest,
     removeFriend,
+    challengeUser
   } = useUserActions(wsSendNotification);
 
   return (
@@ -93,6 +108,7 @@ const Chat = () => {
           acceptFriendRequest={acceptFriendRequest}
           rejectFriendRequest={rejectFriendRequest}
           removeFriend={removeFriend}
+          challengeUser={challengeUser}
           openChatWithUser={openChatWithUser} // Passa a função para abrir o chat privado
           error={error}
         />

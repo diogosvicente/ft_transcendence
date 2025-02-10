@@ -5,8 +5,8 @@ from rest_framework import status
 from chat.models import Friend, BlockedUser
 from user_management.models import User
 from django.db import models
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
+from .models import BlockedUser
+from django.db.models import Q
 
 # Lista de amigos
 class FriendsListView(APIView):
@@ -176,7 +176,6 @@ class BlockUserView(APIView):
             print(f"Erro geral: {e}")
             return Response({"error": f"Erro geral: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
 # Excluir amigos
 class RemoveFriendView(APIView):
     permission_classes = [IsAuthenticated]
@@ -317,5 +316,32 @@ class UnblockUserView(APIView):
                 "blocked_id": blocked_id
             }, status=status.HTTP_200_OK)
 
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class BlockedUsersIdsView(APIView):
+    """
+    Retorna uma lista de IDs de usuários que bloquearam o usuário atual ou foram bloqueados por ele.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        try:
+            user_id = request.user.id  # ID do usuário logado
+
+            # Consulta os registros de bloqueios envolvendo o usuário atual
+            blocked_users = BlockedUser.objects.filter(
+                Q(blocked_id=user_id) | Q(blocker_id=user_id)
+            )
+
+            # Coleta os IDs exclusivos de usuários relacionados aos bloqueios
+            blocked_ids = set()
+            for blocked in blocked_users:
+                if blocked.blocked_id != user_id:
+                    blocked_ids.add(blocked.blocked_id)
+                if blocked.blocker_id != user_id:
+                    blocked_ids.add(blocked.blocker_id)
+
+            return Response({"blocked_users": list(blocked_ids)}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

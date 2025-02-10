@@ -2,10 +2,13 @@ import React, { useState, useEffect } from "react";
 import Navbar from "../template/Navbar";
 import TournamentTable from "./components/TournamentTable";
 import TournamentDetails from "./components/TournamentDetails";
-import { useTournaments } from "./hooks/useTournaments";
+import { useTournaments } from "./hooks/useTournaments.js";
 import "../../assets/styles/tournament.css";
+import { useWebSocket } from "../webSocket/WebSocketProvider.jsx";
 
 const Tournaments = () => {
+  const { wsSendNotification, notifications } = useWebSocket();
+
   const {
     tournaments,
     selectedTournament,
@@ -19,7 +22,10 @@ const Tournaments = () => {
     handleCreateTournament,
     handleRegister,
     handleStartTournament,
-  } = useTournaments();
+  } = useTournaments({
+    notifications, // Passa as notificações do WebSocket
+    wsSendNotification, // Passa a função para enviar notificações
+  });
 
   const [aliases, setAliases] = useState({});
   const [expandedTournament, setExpandedTournament] = useState(null);
@@ -34,7 +40,7 @@ const Tournaments = () => {
   }, []);
 
   const renderParticipants = () =>
-    participants.map((participant, index) => (
+    participants.map((participant) => (
       <li key={participant.id}>
         {participant.alias} - {participant.points}
       </li>
@@ -55,8 +61,8 @@ const Tournaments = () => {
 
         {!selectedTournament && (
           <TournamentTable
-            currentUserId={currentUserId}
             tournaments={tournaments}
+            currentUserId={currentUserId}
             filter={filter}
             setFilter={setFilter}
             setExpandedTournament={setExpandedTournament}

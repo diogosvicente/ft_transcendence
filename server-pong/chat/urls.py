@@ -8,7 +8,8 @@ from .views import (
     BlockUserView,
     BlockedUsersListView,
     PendingFriendRequestsView,
-    UnblockUserView
+    UnblockUserView,
+    BlockedUsersIdsView
 )
 
 urlpatterns = [
@@ -21,4 +22,5 @@ urlpatterns = [
     path('unblock-user/', UnblockUserView.as_view(), name='unblock-user'),  # Nova rota para desbloquear
     path('blocked-users/', BlockedUsersListView.as_view(), name='blocked-users'),
     path('pending-requests/', PendingFriendRequestsView.as_view(), name='pending-requests'),
+    path('blocked-users-ids-list/', BlockedUsersIdsView.as_view(), name='blocked-users-ids-list'),
 ]

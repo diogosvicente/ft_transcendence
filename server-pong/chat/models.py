@@ -33,7 +33,6 @@ class Friend(models.Model):
     class Meta:
         unique_together = ('user', 'friend')  # Garante que uma relação é única
 
-
 class Message(models.Model):
     """
     Representa uma mensagem enviada de um usuário para outro.
@@ -54,7 +53,6 @@ class Message(models.Model):
 
     def __str__(self):
         return f"From {self.sender.display_name} to {self.receiver.display_name}: {self.message[:30]}..."
-
 
 class BlockedUser(models.Model):
     """

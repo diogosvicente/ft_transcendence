@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import "../../../assets/styles/chatWindow.css";
-import useWebSocketManager from "../assets/WebSocketManager";
-import { API_BASE_URL_NO_LANGUAGE } from "../../../assets/config/config.js";
+import useWebSocketManager from "../hooks/WebSocketManager";
+import API_BASE_URL, { getWsUrl } from "../../../assets/config/config.js";
 
-const ChatWindow = ({ chatTabs, activeTab, setActiveTab, closeChatTab }) => {
+const ChatWindow = ({ chatTabs, activeTab, setActiveTab, closeChatTab, resetChatWindow  }) => {
   const [message, setMessage] = useState("");
   const privateWebSockets = useRef({});
   const { messages: globalMessages, sendMessage: sendGlobalMessage } = useWebSocketManager("global");
@@ -16,9 +16,8 @@ const ChatWindow = ({ chatTabs, activeTab, setActiveTab, closeChatTab }) => {
       if (readyState === WebSocket.OPEN || readyState === WebSocket.CONNECTING) return;
     }
 
-    const ws = new WebSocket(
-      `ws://localhost:8000/ws/chat/${roomId}/?access_token=${localStorage.getItem("access")}`
-    );
+    const accessToken = localStorage.getItem("access");
+    const ws = new WebSocket(`${getWsUrl(`/ws/chat/${roomId}/`)}?access_token=${accessToken}`);
 
     ws.onopen = () => {
       console.log(`Conectado ao WebSocket privado: ${roomId}`);
@@ -132,8 +131,8 @@ const ChatWindow = ({ chatTabs, activeTab, setActiveTab, closeChatTab }) => {
                     <img
                       src={
                         msg.avatar
-                          ? `${API_BASE_URL_NO_LANGUAGE}${msg.avatar}`
-                          : `${API_BASE_URL_NO_LANGUAGE}/media/avatars/default.png`
+                          ? `${API_BASE_URL}${msg.avatar}`
+                          : `${API_BASE_URL}/media/avatars/default.png`
                       }
                       alt="Avatar"
                       className="chat-avatar"

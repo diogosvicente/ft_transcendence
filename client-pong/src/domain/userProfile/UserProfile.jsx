@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import Navbar from "../template/Navbar";
 import "../../assets/styles/userProfile.css";
-import API_BASE_URL, { API_BASE_URL_NO_LANGUAGE } from "../../assets/config/config.js";
+import API_BASE_URL from "../../assets/config/config.js";
 
 import ProfileHeader from "./components/ProfileHeader";
 import ProfileInfo from "./components/ProfileInfo";
@@ -16,7 +16,7 @@ const UserProfile = () => {
   const [user, setUser] = useState(null);
   const [matchHistory, setMatchHistory] = useState([]);
   const [error, setError] = useState(null);
-  const defaultAvatar = `${API_BASE_URL_NO_LANGUAGE}/media/avatars/default.png`;
+  const defaultAvatar = `${API_BASE_URL}/media/avatars/default.png`;
   const [loggedUserId, setLoggedUserId] = useState(null);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
 
@@ -84,7 +84,7 @@ const UserProfile = () => {
       <div className="profile-container">
         <ProfileHeader 
           user={user} 
-          avatar={user.avatar ? `${API_BASE_URL_NO_LANGUAGE}${user.avatar}` : defaultAvatar} 
+          avatar={user.avatar ? `${API_BASE_URL}${user.avatar}` : defaultAvatar} 
         />
         <ProfileInfo
           user={user}

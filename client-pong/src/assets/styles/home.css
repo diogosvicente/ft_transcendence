@@ -1,0 +1,62 @@
+@font-face {
+    font-family: "Press Start 2P";
+    src: url("../fonts/PressStart2P-Regular.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+  }
+  
+  /* Saudação */
+  .h1-greeting {
+    font-family: "Roboto", sans-serif;
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #444;
+    margin-bottom: 1rem;
+  }
+  
+  .highlighted-name {
+    color: #0072ff;
+  }
+  
+  /* Texto FT_TRANSCENDENCE */
+  .h2-title {
+    font-family: "Press Start 2P", cursive;
+    font-size: 2rem;
+    font-weight: bold;
+    color: #0072ff;
+    text-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+    margin-top: 1rem;
+    animation: pulse 2s infinite;
+  }
+  
+  /* Animação de pulso */
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.1);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  
+  @keyframes pongBall {
+    0% {
+      transform: translate(0, 0);
+    }
+    25% {
+      transform: translate(200px, 100px);
+    }
+    50% {
+      transform: translate(0, 200px);
+    }
+    75% {
+      transform: translate(-200px, 100px);
+    }
+    100% {
+      transform: translate(0, 0);
+    }
+  }
+  

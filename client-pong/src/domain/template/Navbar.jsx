@@ -4,7 +4,7 @@ import { NavLink, Link } from "react-router-dom";
 import { Navbar, Nav, Button, Container, Image } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import API_BASE_URL, { API_BASE_URL_NO_LANGUAGE } from "../../assets/config/config.js";
+import API_BASE_URL from "../../assets/config/config.js";
 import brazilFlag from "../../assets/icons/brazil-flag-round-circle-icon.svg";
 import spainFlag from "../../assets/icons/spain-country-flag-round-icon.svg";
 import ukFlag from "../../assets/icons/uk-flag-round-circle-icon.svg";
@@ -23,7 +23,9 @@ const CustomNavbar = () => {
   useEffect(() => {
     const userId = localStorage.getItem("id");
     const accessToken = localStorage.getItem("access");
-    const defaultAvatar = `${API_BASE_URL_NO_LANGUAGE}/media/avatars/default.png`;
+    const defaultAvatar = `${API_BASE_URL}/media/avatars/default.png`;
+
+    // console.log(accessToken);
   
     if (userId && accessToken) {
       axios
@@ -34,7 +36,7 @@ const CustomNavbar = () => {
         })
         .then((response) => {
           const data = response.data;
-          const fullAvatarUrl = `${API_BASE_URL_NO_LANGUAGE}${data.avatar}`;
+          const fullAvatarUrl = `${API_BASE_URL}${data.avatar}`;
           setAvatar(fullAvatarUrl || defaultAvatar);
           setDisplayName(data.display_name || ""); // Armazena o display_name
         })
