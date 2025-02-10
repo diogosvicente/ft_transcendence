@@ -153,7 +153,8 @@ class GetUserInfo(APIView):
                     "display_name": user.display_name,
                     "losses": user.losses,
                     "wins": user.wins,
-                    "online_status": user.online_status
+                    "online_status": user.online_status,
+                    "is_2fa_verified": user.is_2fa_verified
                 },
                 status=status.HTTP_200_OK
             )
@@ -165,7 +166,8 @@ class GetUserInfo(APIView):
                     "display_name": None,
                     "losses": None,
                     "wins": None,
-                    "online_status": None
+                    "online_status": None,
+                    "is_2fa_verified": None
                 },
                 status=status.HTTP_404_NOT_FOUND
             )
@@ -269,33 +271,60 @@ class ExcludeSelfAndFriendsUserListView(APIView):
 
 class UserProfileView(APIView):
     """
-    View para obter informações do perfil de um usuário.
+    View para obter e atualizar informações do perfil de um usuário.
     """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, user_id):
         try:
-            # Busca o usuário pelo ID
             user = User.objects.get(id=user_id)
-
-            # Verifica se o usuário logado é amigo do usuário solicitado
-            is_friend = Friend.objects.filter(
-                Q(user=request.user, friend=user) | Q(user=user, friend=request.user),
-                status="accepted"
-            ).exists()
-
-            # Dados do perfil
             data = {
                 "id": user.id,
                 "display_name": user.display_name,
                 "avatar": user.avatar.url if user.avatar else None,
                 "online_status": user.online_status,
                 "wins": user.wins,
-                "losses": user.losses
+                "losses": user.losses,
+                "is_2fa_verified": user.is_2fa_verified
             }
-            return Response(data, status=200)
+            return Response(data, status=status.HTTP_200_OK)
         except User.DoesNotExist:
-            return Response({"error": "Usuário não encontrado."}, status=404)
+            return Response({"error": "Usuário não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+    def patch(self, request, user_id):
+        try:
+            user = User.objects.get(id=user_id)
+
+            # Atualiza o display_name se fornecido
+            if "display_name" in request.data:
+                user.display_name = request.data["display_name"]
+
+            # Atualiza a senha, se fornecida (usando set_password para aplicar hash e validações)
+            if "password" in request.data and request.data["password"]:
+                user.set_password(request.data["password"])
+
+            # Atualiza o campo is_2fa_verified se fornecido
+            if "is_2fa_verified" in request.data:
+                value = request.data["is_2fa_verified"]
+                user.is_2fa_verified = value.lower() == "true" if isinstance(value, str) else bool(value)
+
+            # Atualiza o avatar se um arquivo for enviado
+            if "avatar" in request.FILES:
+                user.avatar = request.FILES["avatar"]
+
+            user.save()
+
+            data = {
+                "id": user.id,
+                "display_name": user.display_name,
+                "avatar": user.avatar.url if user.avatar else None,
+                "is_2fa_verified": user.is_2fa_verified,
+            }
+            return Response(data, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({"error": "Usuário não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class MatchHistoryView(View):
     def get(self, request, user_id, *args, **kwargs):
