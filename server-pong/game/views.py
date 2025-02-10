@@ -58,27 +58,24 @@ class MatchHistoryAPIView(APIView):
 
         match_history = []
         for match in matches:
+            # Determina o adversário: se o usuário é player1, o adversário é player2, e vice-versa.
             opponent = match.player2 if match.player1 == user else match.player1
-            
-            # Determina o resultado com verificações para None
-            if match.score_player1 is not None and match.score_player2 is not None:
-                if (match.player1 == user and match.score_player1 > match.score_player2) or \
-                   (match.player2 == user and match.score_player2 > match.score_player1):
-                    result = "Vitória"
-                else:
-                    result = "Derrota"
+
+            # Define o resultado usando winner_id:
+            if match.winner_id is not None:
+                result = "Vitória" if match.winner_id == user.id else "Derrota"
             else:
                 result = "Não definido"
 
             match_history.append({
                 "id": match.id,
-                "date": match.played_at,
+                "date": match.played_at,  # Usamos played_at para representar a data da partida
                 "opponent_display_name": opponent.display_name,
                 "opponent_alias": getattr(opponent, "alias", None),
                 "result": result,
                 "score": {
-                    "player1": match.score_player1,
-                    "player2": match.score_player2,
+                    "player1": match.score_player1 if match.score_player1 is not None else "-",
+                    "player2": match.score_player2 if match.score_player2 is not None else "-",
                 },
                 "tournament_name": match.tournament.name if match.tournament else None,
             })
@@ -206,6 +203,8 @@ class TournamentDetailAPIView(APIView):
                 "score_player1": match.score_player1,
                 "score_player2": match.score_player2,
                 "status": match.status,
+                "player1_id": match.player1.id,
+                "player2_id": match.player2.id,
                 "player1_display": match.player1.display_name,
                 "player1_alias": TournamentParticipant.objects.filter(
                     tournament=tournament, user=match.player1

@@ -3,7 +3,8 @@ import { useParams } from "react-router-dom";
 import useFetchMatchHistory from "../hooks/useFetchMatchHistory";
 
 const MatchHistory = () => {
-  const { user_id } = useParams(); // Pega o user_id da URL
+  // Obtém o id do usuário a partir da URL (último parâmetro, ex: /user-profile/1)
+  const { user_id } = useParams();
   const { matchHistory, error } = useFetchMatchHistory(user_id);
 
   const formatDateTime = (dateString) => {
@@ -14,12 +15,17 @@ const MatchHistory = () => {
     return `${date.toLocaleDateString("pt-BR", optionsDate)} às ${date.toLocaleTimeString("pt-BR", optionsTime)}`;
   };
 
+  // Cria uma cópia do array e ordena por data (do mais recente para o mais antigo)
+  const sortedMatches = [...matchHistory].sort(
+    (a, b) => new Date(b.date) - new Date(a.date)
+  );
+
   return (
     <div className="match-history">
       <h2>Histórico de Partidas</h2>
       {error ? (
         <p className="text-danger">Erro: {error}</p>
-      ) : matchHistory.length > 0 ? (
+      ) : sortedMatches.length > 0 ? (
         <table className="table table-striped match-history-table">
           <thead>
             <tr>
@@ -31,15 +37,15 @@ const MatchHistory = () => {
             </tr>
           </thead>
           <tbody>
-            {matchHistory.map((match) => (
+            {sortedMatches.map((match) => (
               <tr
                 key={match.id}
                 className={match.result === "Vitória" ? "table-success" : "table-danger"}
               >
                 <td>{formatDateTime(match.date)}</td>
                 <td>
-                  {`${match.opponent_display_name} ${
-                    match.opponent_alias ? `como ${match.opponent_alias}` : ""
+                  {`${match.opponent_display_name}${
+                    match.opponent_alias ? ` como ${match.opponent_alias}` : ""
                   }`}
                 </td>
                 <td>{match.result}</td>

@@ -41,12 +41,39 @@ const TournamentDetails = ({
   const { loggedID, accessToken } = getAuthDetails();
 
   // O próximo match pendente é aquele cujo status seja "pending"
-  const nextMatch = matches.find((match) => match.status === "pending");
+  const pendingMatches = sortedMatches.filter((match) => match.status === "pending");
+  const nextMatch = pendingMatches.length > 0 ? pendingMatches[0] : null;
+  console.log(tournament);
+
+  // Caso o torneio esteja concluído, procuramos o campeão
+  let championBanner = null;
+  if (tournament.status === "completed" && tournament.winner) {
+    // Procura no array de participantes aquele cujo user.id seja o winner_id
+    const championParticipant = participants.find(
+      (participant) => participant.user && participant.user.id === tournament.winner
+    );
+    if (championParticipant) {
+      championBanner = (
+        <div
+          className="alert alert-success text-center"
+          style={{ fontSize: "1.5em", fontWeight: "bold" }}
+        >
+          Campeão: {championParticipant.user.display_name}
+        </div>
+      );
+    }
+  }
 
   // Função que chama o endpoint 'challenge-user/' para iniciar o desafio do torneio.
   const handleChallengeClick = async () => {
     if (!nextMatch) {
       alert("Não há partida pendente.");
+      return;
+    }
+    // Verifica se o usuário logado faz parte da próxima partida.
+    // Assume-se que nextMatch.player1 e nextMatch.player2 contenham os IDs dos participantes.
+    if (nextMatch.player1_id !== loggedID && nextMatch.player2_id !== loggedID) {
+      alert("Você não está na próxima partida.");
       return;
     }
     try {
@@ -82,15 +109,19 @@ const TournamentDetails = ({
         </div>
       </div>
       <div className="card-body">
+        {/* Se o torneio estiver concluído, exibe o banner do campeão */}
+        {championBanner}
         {/* O botão "Desafiar" aparece para todos; caso o usuário não esteja na próxima partida,
             o endpoint retornará o erro "Você não está na próxima partida." */}
-        <button
-          title="Desafiar"
-          style={{ margin: "5px" }}
-          onClick={handleChallengeClick}
-        >
-          🎮 Iniciar Próxima Partida
-        </button>
+        {!tournament.winner && (
+          <button
+            title="Desafiar"
+            style={{ margin: "5px" }}
+            onClick={handleChallengeClick}
+          >
+            🎮 Iniciar Próxima Partida
+          </button>
+        )}
         <p>
           <strong>Nome:</strong> {tournament?.name || "Não disponível"}
         </p>
