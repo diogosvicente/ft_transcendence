@@ -3,13 +3,15 @@ import Navbar from "../template/Navbar";
 import useFetchRankings from "./hooks/useFetchRankings";
 import "../../assets/styles/ranking.css";
 import API_BASE_URL from "../../assets/config/config";
+import { useTranslation } from "react-i18next";
 
 const Ranking = () => {
+  const { t } = useTranslation();
   const { tournamentRanking, victoriesRanking, error } = useFetchRankings();
 
   const renderRankingList = (ranking, title, type) => (
     <div className={`ranking-section ${type}`}>
-      <h2 className="ranking-title">{title}</h2>
+      <h2 className="ranking-title">{t(title)}</h2>
       {ranking.length > 0 ? (
         <ul className="ranking-list">
           {ranking.map((user, index) => {
@@ -41,13 +43,19 @@ const Ranking = () => {
                   <div className="ranking-stats">
                     {type === "tournament" ? (
                       <>
-                        <span>{user.tournaments_won} torneio{user.tournaments_won > 1 ? "s " : " "}</span>
-                        <span>vencido{user.tournaments_won > 1 ? "s" : ""}</span>
+                        <span>
+                          {user.tournaments_won}{" "}
+                          {t("ranking.tournament", { count: user.tournaments_won })}
+                        </span>
                       </>
                     ) : (
                       <>
-                        <span>{user.wins} vitória{user.wins > 1 ? "s" : ""}</span>
-                        <span>({user.losses} derrota{user.losses > 1 ? "s" : ""})</span>
+                        <span>
+                          {user.wins} {t("ranking.victory", { count: user.wins })}
+                        </span>
+                        <span>
+                          ({user.losses} {t("ranking.defeat", { count: user.losses })})
+                        </span>
                       </>
                     )}
                   </div>
@@ -57,7 +65,7 @@ const Ranking = () => {
           })}
         </ul>
       ) : (
-        <p className="no-data">Nenhum dado disponível.</p>
+        <p className="no-data">{t("ranking.no_data")}</p>
       )}
     </div>
   );
@@ -72,12 +80,12 @@ const Ranking = () => {
           <div className="ranking-content">
             {renderRankingList(
               tournamentRanking,
-              "Mais Torneios Vencidos",
+              "ranking.most_tournaments_won",
               "tournament"
             )}
             {renderRankingList(
               victoriesRanking,
-              "Mais Vitórias",
+              "ranking.most_victories",
               "victories"
             )}
           </div>

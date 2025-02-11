@@ -1,19 +1,20 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 
-const ProfileActions = ({
-  isOwnProfile,
-}) => {
+const ProfileActions = ({ isOwnProfile }) => {
+  const { t } = useTranslation();
+
   return (
     <div className="profile-actions">
       {isOwnProfile ? (
         <button
-          title="Editar Minhas Informações"
+          title={t("profile.edit_info")}
           onClick={() => (window.location.href = "/edit-profile")}
           style={{ marginBottom: "10px" }}
         >
-          ✏️ Editar Minhas Informações
+          ✏️ {t("profile.edit_info")}
         </button>
-      ) : "" }
+      ) : null}
     </div>
   );
 };

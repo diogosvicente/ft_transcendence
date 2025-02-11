@@ -388,3 +388,12 @@ class VictoryRankingAPIView(APIView):
             for user in ranking
         ]
         return Response(data, status=200)
+
+class CheckDisplayNameAPIView(APIView):
+    def get(self, request, display_name):
+        """
+        Verifica se o display_name já existe no banco de dados.
+        """
+        exists = User.objects.filter(display_name=display_name).exists()
+        return Response({"exists": exists}, status=status.HTTP_200_OK)
+    

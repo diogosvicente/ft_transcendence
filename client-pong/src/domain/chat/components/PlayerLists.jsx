@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import "../../../assets/styles/friendList.css";
 
 const PlayerLists = ({
@@ -15,6 +16,11 @@ const PlayerLists = ({
   acceptFriendRequest,
   rejectFriendRequest,
 }) => {
+  const { t, i18n } = useTranslation();
+  const handleLanguageChange = (language) => {
+    i18n.changeLanguage(language);
+  };
+
   const [expandedSections, setExpandedSections] = useState({
     friends: true,
     pendingRequests: true,
@@ -31,12 +37,12 @@ const PlayerLists = ({
 
   return (
     <div className="players-list">
-      <h3>Lista de Jogadores</h3>
+      <h3>{t("chat.players_list_title")}</h3>
 
       {/* Amigos */}
       <div className="accordion-section">
         <h4 onClick={() => toggleSection("friends")} className="accordion-header">
-          Amigos {expandedSections.friends ? "▼" : "▶"}
+          {t("chat.friends")} {expandedSections.friends ? "▼" : "▶"}
         </h4>
         {expandedSections.friends && (
           <div className="accordion-content">
@@ -58,20 +64,20 @@ const PlayerLists = ({
                               friend.online_status ? "online" : "offline"
                             }`}
                           ></span>
-                          {friend.online_status ? "Online" : "Offline"}
+                          {friend.online_status ? t("chat.online") : t("chat.offline")}
                         </p>
                       </div>
                     </div>
                     <div className="player-actions">
                       <button
-                        title="Abrir Chat Privado"
+                        title={t("chat.open_private_chat")}
                         onClick={() => openChatWithUser(friend)}
                         style={{ margin: "5px" }}
                       >
                         💬
                       </button>
                       <button
-                        title="Ver Perfil"
+                        title={t("chat.view_profile")}
                         onClick={() =>
                           window.open(`/user-profile/${friend.user_id}`, "_blank")
                         }
@@ -80,21 +86,21 @@ const PlayerLists = ({
                         👤
                       </button>
                       <button
-                        title="Desafiar"
+                        title={t("chat.challenge")}
                         style={{ margin: "5px" }}
                         onClick={() => challengeUser(friend.user_id)}
                       >
                         🎮
                       </button>
                       <button
-                        title="Bloquear"
+                        title={t("chat.block")}
                         onClick={() => blockUser(friend.user_id)}
                         style={{ margin: "5px" }}
                       >
                         🚫
                       </button>
                       <button
-                        title="Excluir"
+                        title={t("chat.remove_friend")}
                         onClick={() => removeFriend(friend.id)}
                         style={{ margin: "5px" }}
                       >
@@ -105,7 +111,7 @@ const PlayerLists = ({
                 ))}
               </ul>
             ) : (
-              <p>Sem amigos adicionados.</p>
+              <p>{t("chat.no_friends")}</p>
             )}
           </div>
         )}
@@ -117,7 +123,7 @@ const PlayerLists = ({
           onClick={() => toggleSection("pendingRequests")}
           className="accordion-header"
         >
-          Solicitações Pendentes {expandedSections.pendingRequests ? "▼" : "▶"}
+          {t("chat.pending_requests")} {expandedSections.pendingRequests ? "▼" : "▶"}
         </h4>
         {expandedSections.pendingRequests && (
           <div className="accordion-content">
@@ -134,7 +140,9 @@ const PlayerLists = ({
                       <div className="player-details">
                         <p className="player-name">{request.display_name}</p>
                         <p className="player-status">
-                          {request.direction === "received" ? "Recebida" : "Enviada"}
+                          {request.direction === "received"
+                            ? t("chat.request_received")
+                            : t("chat.request_sent")}
                         </p>
                       </div>
                     </div>
@@ -142,13 +150,13 @@ const PlayerLists = ({
                       {request.direction === "received" ? (
                         <>
                           <button
-                            title="Aceitar"
+                            title={t("chat.accept_request")}
                             onClick={() => acceptFriendRequest(request.id)}
                           >
                             ✔
                           </button>
                           <button
-                            title="Rejeitar"
+                            title={t("chat.reject_request")}
                             onClick={() => rejectFriendRequest(request.id)}
                           >
                             ❌
@@ -156,7 +164,7 @@ const PlayerLists = ({
                         </>
                       ) : (
                         <button
-                          title="Cancelar Solicitação"
+                          title={t("chat.cancel_request")}
                           onClick={() => rejectFriendRequest(request.id)}
                         >
                           ❌
@@ -167,7 +175,7 @@ const PlayerLists = ({
                 ))}
               </ul>
             ) : (
-              <p>Sem solicitações pendentes.</p>
+              <p>{t("chat.no_pending_requests")}</p>
             )}
           </div>
         )}
@@ -179,7 +187,7 @@ const PlayerLists = ({
           onClick={() => toggleSection("blockedUsers")}
           className="accordion-header"
         >
-          Usuários Bloqueados {expandedSections.blockedUsers ? "▼" : "▶"}
+          {t("chat.blocked_users")} {expandedSections.blockedUsers ? "▼" : "▶"}
         </h4>
         {expandedSections.blockedUsers && (
           <div className="accordion-content">
@@ -195,12 +203,12 @@ const PlayerLists = ({
                       />
                       <div className="player-details">
                         <p className="player-name">{user.display_name}</p>
-                        <p className="player-status">Bloqueado</p>
+                        <p className="player-status">{t("chat.blocked")}</p>
                       </div>
                     </div>
                     <div className="player-actions">
                       <button
-                        title="Desbloquear"
+                        title={t("chat.unblock_user")}
                         onClick={() => unblockUser(user.blocked_record_id)}
                       >
                         🔓
@@ -210,7 +218,7 @@ const PlayerLists = ({
                 ))}
               </ul>
             ) : (
-              <p>Nenhum usuário bloqueado.</p>
+              <p>{t("chat.no_blocked_users")}</p>
             )}
           </div>
         )}
@@ -222,7 +230,7 @@ const PlayerLists = ({
           onClick={() => toggleSection("nonFriends")}
           className="accordion-header"
         >
-          Não Amigos {expandedSections.nonFriends ? "▼" : "▶"}
+          {t("chat.non_friends")} {expandedSections.nonFriends ? "▼" : "▶"}
         </h4>
         {expandedSections.nonFriends && (
           <div className="accordion-content">
@@ -244,13 +252,13 @@ const PlayerLists = ({
                               user.online_status ? "online" : "offline"
                             }`}
                           ></span>
-                          {user.online_status ? "Online" : "Offline"}
+                          {user.online_status ? t("chat.online") : t("chat.offline")}
                         </p>
                       </div>
                     </div>
                     <div className="player-actions">
                       <button
-                        title="Ver Perfil"
+                        title={t("chat.view_profile")}
                         onClick={() =>
                           window.open(`/user-profile/${user.id}`, "_blank")
                         }
@@ -258,13 +266,13 @@ const PlayerLists = ({
                         👤
                       </button>
                       <button
-                        title="Adicionar como amigo"
+                        title={t("chat.add_friend")}
                         onClick={() => addFriend(user.id)}
                       >
                         ➕
                       </button>
                       <button
-                        title="Bloquear"
+                        title={t("chat.block")}
                         onClick={() => blockUser(user.id)}
                       >
                         🚫
@@ -274,7 +282,7 @@ const PlayerLists = ({
                 ))}
               </ul>
             ) : (
-              <p>Não há usuários disponíveis para adicionar.</p>
+              <p>{t("chat.no_non_friends")}</p>
             )}
           </div>
         )}
