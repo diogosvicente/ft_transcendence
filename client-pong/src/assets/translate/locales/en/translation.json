@@ -155,5 +155,29 @@
     "no_participants_registered": "No participants registered.",
     "matches": "Matches",
     "no_matches_registered": "No matches registered."
+  },
+  "profile": {
+    "statistics": "Statistics",
+    "total_matches": "Total Matches",
+    "wins": "Wins",
+    "losses": "Losses",
+    "win_rate": "Win Rate",
+    "edit_info": "Edit My Information"
+  },
+  "match_history": {
+    "title": "Match History",
+    "error": "Error",
+    "date": "Date",
+    "opponent": "Opponent",
+    "result": "Result",
+    "score": "Score",
+    "type": "Type",
+    "victory": "Victory",
+    "defeat": "Defeat",
+    "not_played": "Not played",
+    "as": "as",
+    "tournament": "Tournament",
+    "at": "at",
+    "no_matches": "No match history found."
   }
 }

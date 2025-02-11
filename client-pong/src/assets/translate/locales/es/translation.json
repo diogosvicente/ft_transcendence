@@ -151,5 +151,29 @@
     "no_participants_registered": "Ningún participante registrado.",
     "matches": "Partidos",
     "no_matches_registered": "Ningún partido registrado."
+  },
+  "profile": {
+    "statistics": "Estadísticas",
+    "total_matches": "Partidas Jugadas",
+    "wins": "Victorias",
+    "losses": "Derrotas",
+    "win_rate": "Tasa de Victoria",
+    "edit_info": "Editar Mi Información"
+  },
+  "match_history": {
+    "title": "Historial de Partidas",
+    "error": "Error",
+    "date": "Fecha",
+    "opponent": "Oponente",
+    "result": "Resultado",
+    "score": "Marcador",
+    "type": "Tipo",
+    "victory": "Victoria",
+    "defeat": "Derrota",
+    "not_played": "No jugado",
+    "as": "como",
+    "tournament": "Torneo",
+    "at": "a las",
+    "no_matches": "No se encontró historial de partidas."
   }
 }
