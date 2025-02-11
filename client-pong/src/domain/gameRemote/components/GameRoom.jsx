@@ -4,8 +4,10 @@ import { gameCore } from "../core/gameCore";
 import { useNavigate } from "react-router-dom";
 import "../../../assets/styles/gameRoom.css";
 import API_BASE_URL, { getWsUrl } from "../../../assets/config/config";
+import { useTranslation } from "react-i18next";
 
 const GameRoom = ({ matchId, userId, matchData, isPlayer1 }) => {
+  const { t } = useTranslation();
   const canvasRef = useRef(null);
   const gameRef = useRef(null);
   const navigate = useNavigate();
@@ -180,7 +182,7 @@ const GameRoom = ({ matchId, userId, matchData, isPlayer1 }) => {
   };
 
   if (!matchData || assignedSide === null) {
-    return <div>Carregando informações da partida...</div>;
+    return <div>{t("gameroom.loading")}</div>;
   }
 
   return (
@@ -188,9 +190,9 @@ const GameRoom = ({ matchId, userId, matchData, isPlayer1 }) => {
       <Navbar />
       <div className="game-room">
         <div className="game-info">
-          <h1>Partida Remota</h1>
+          <h1>{t("gameroom.remote_match")}</h1>
           <button className="pause-button" onClick={togglePause}>
-            {isPaused ? "Retomar Partida" : "Pausar Partida"}
+            {isPaused ? t("gameroom.resume_game") : t("gameroom.pause_game")}
           </button>
           <div className="players-info">
             <div className="player">
@@ -200,7 +202,7 @@ const GameRoom = ({ matchId, userId, matchData, isPlayer1 }) => {
                 className="avatar"
               />
               <p>{matchData.player1_display}</p>
-              {isPlayer1 && <p>(você)</p>}
+              {isPlayer1 && <p>({(t("gameroom.you"))})</p>}
             </div>
             <span>VS</span>
             <div className="player">
@@ -210,14 +212,14 @@ const GameRoom = ({ matchId, userId, matchData, isPlayer1 }) => {
                 className="avatar"
               />
               <p>{matchData.player2_display}</p>
-              {!isPlayer1 && <p>(você)</p>}
+              {!isPlayer1 && <p>({(t("gameroom.you"))})</p>}
             </div>
           </div>
         </div>
         <div className="game-board">
           {isPaused && (
             <div className="overlay">
-              <p className="overlay-text">A partida está pausada.</p>
+              <p className="overlay-text">{t("gameroom.paused")}</p>
             </div>
           )}
           <canvas ref={canvasRef} width="800" height="600"></canvas>
@@ -228,7 +230,7 @@ const GameRoom = ({ matchId, userId, matchData, isPlayer1 }) => {
           )}
           {assignedSide && (
             <p className="paddle-info">
-              Você controla o paddle: <strong>{assignedSide === "left" ? "Esquerda" : "Direita"}</strong>
+              {t("gameroom.you_control_paddle")} <strong>{t(`gameroom.side_${assignedSide}`)}</strong>
             </p>
           )}
         </div>

@@ -80,10 +80,23 @@
     "no_non_friends": "No available users to add.",
     "blocked": "Blocked",
     "request_sent": "Request sent",
+    "request_received": "Request received",
     "view_profile": "User Profile",
     "block": "Block friend",
     "cancel_request": "Cancel request",
     "open_private_chat": "Open private chat",
     "challenge": "Challenge friend"
+  },
+  "gameroom": {
+    "loading": "Loading match information...",
+    "remote_match": "Remote Match",
+    "pause_game": "Pause Match",
+    "resume_game": "Resume Match",
+    "versus": "VS",
+    "paused": "The match is paused.",
+    "you_control_paddle": "You control the paddle:",
+    "side_left": "Left",
+    "side_right": "Right",
+    "you": "You"
   }
 }

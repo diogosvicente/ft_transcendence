@@ -76,10 +76,23 @@
     "no_non_friends": "Não há usuários disponíveis para adicionar.",
     "blocked": "Bloqueado",
     "request_sent": "Solicitação enviada",
+    "request_received": "Solicitação recebida",
     "view_profile": "Perfil do usuário",
     "block": "Bloquear amigo",
     "cancel_request": "Cancelar requisição",
     "open_private_chat": "Abrir conversa privada",
     "challenge": "Desafiar amigo"
+  },
+  "gameroom": {
+    "loading": "Carregando informações da partida...",
+    "remote_match": "Partida Remota",
+    "pause_game": "Pausar Partida",
+    "resume_game": "Retomar Partida",
+    "versus": "VS",
+    "paused": "A partida está pausada.",
+    "you_control_paddle": "Você controla o paddle:",
+    "side_left": "Esquerda",
+    "side_right": "Direita",
+    "you": "Você"
   }
 }
