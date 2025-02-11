@@ -3,6 +3,7 @@ import Navbar from "../template/Navbar";
 import useUserInfo from "./hooks/useUserInfo";
 import "../../assets/styles/home.css"
 import { useTranslation } from "react-i18next";
+
 const Home = () => {
   const { t } = useTranslation();
   const displayName = useUserInfo(); // Hook para obter o display_name do usuário

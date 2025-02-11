@@ -101,5 +101,59 @@
   },
   "homepage": {
     "welcome_message": "Welcome to the game"
+  },
+  "tournament": {
+    "fill_all_fields": "Please fill in all fields!",
+    "new_tournament": "New Tournament",
+    "tournament_name_placeholder": "Tournament Name",
+    "tournament_alias_placeholder": "Your Alias in the Tournament",
+    "create_tournament": "Create Tournament",
+    "registered_as": "Registered as",
+    "join": "Join",
+    "alias_placeholder": "Enter your alias",
+    "confirm_placeholder": "Confirm Registration",
+    "start_tournament": "Start Tournament",
+    "confirm_registration": "Confirm registration",
+    "no_pending_match": "No game pending",
+    "filter": {
+      "all": "All",
+      "planned": "Planned",
+      "ongoing": "Ongoing",
+      "completed": "Completed"
+    },
+    "table": {
+      "header": {
+        "index": "#",
+        "name": "Name",
+        "creator": "Created by",
+        "created_at": "Creation Date",
+        "participants": "Participants",
+        "status": "Status",
+        "details": "Details",
+        "actions": "Actions"
+      },
+      "index": "#",
+      "participant": "Participant",
+      "alias": "Alias",
+      "points": "Points",
+      "registration_date": "Registration Date"
+    },
+    "details_header": "Tournament Information",
+    "back_to_list": "Back to List",
+    "champion": "Champion",
+    "challenge": "Challenge",
+    "start_next_match": "Start Next Match",
+    "name": "Name",
+    "status": "Status",
+    "creation_date": "Creation Date",
+    "at": "at",
+    "total_participants": "Total Participants",
+    "not_available": "Not available",
+    "participants": "Participants",
+    "unknown": "Unknown",
+    "points": "points",
+    "no_participants_registered": "No participants registered.",
+    "matches": "Matches",
+    "no_matches_registered": "No matches registered."
   }
 }

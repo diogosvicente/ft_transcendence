@@ -97,5 +97,59 @@
   },
   "homepage": {
     "welcome_message": "Bem-vindo ao jogo"
+  },
+  "tournament": {
+    "fill_all_fields": "Preencha todos os campos!",
+    "new_tournament": "Novo Torneio",
+    "tournament_name_placeholder": "Nome do Torneio",
+    "tournament_alias_placeholder": "Seu Alias no Torneio",
+    "create_tournament": "Criar Torneio",
+    "registered_as": "Registrado como",
+    "join": "Entrar",
+    "alias_placeholder": "Digite seu alias",
+    "confirm_placeholder": "Confirmar Inscrição",
+    "start_tournament": "Iniciar Torneio",
+    "confirm_registration": "Confirmar registro",
+    "no_pending_match": "Sem partida pendente",
+    "filter": {
+      "all": "Todos",
+      "planned": "Planejado",
+      "ongoing": "Em andamento",
+      "completed": "Concluído"
+    },
+    "table": {
+      "header": {
+        "index": "#",
+        "name": "Nome",
+        "creator": "Criado por",
+        "created_at": "Data de Criação",
+        "participants": "Participantes",
+        "status": "Status",
+        "details": "Detalhes",
+        "actions": "Ações"
+      },
+      "index": "#",
+      "participant": "Participante",
+      "alias": "Alias",
+      "points": "Pontos",
+      "registration_date": "Data de Inscrição"
+    },
+    "details_header": "Informações do Torneio",
+    "back_to_list": "Voltar à Lista",
+    "champion": "Campeão",
+    "challenge": "Desafiar",
+    "start_next_match": "Iniciar Próxima Partida",
+    "name": "Nome",
+    "status": "Status",
+    "creation_date": "Data de Criação",
+    "at": "às",
+    "total_participants": "Total de Participantes",
+    "not_available": "Não disponível",
+    "participants": "Participantes",
+    "unknown": "Desconhecido",
+    "points": "pontos",
+    "no_participants_registered": "Nenhum participante registrado.",
+    "matches": "Partidas",
+    "no_matches_registered": "Nenhuma partida registrada."
   }
 }

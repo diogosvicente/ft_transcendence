@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faDoorOpen, faPlus, faEye, faPlay } from "@fortawesome/free-solid-svg-icons";
+import { useTranslation } from "react-i18next";
 
 const TournamentTable = ({
   tournaments,
@@ -14,21 +15,22 @@ const TournamentTable = ({
   handleViewTournament,
   handleStartTournament,
   currentUserId,
-  setSelectedTournament,
   handleCreateTournament,
 }) => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newTournamentName, setNewTournamentName] = useState("");
   const [newTournamentAlias, setNewTournamentAlias] = useState("");
 
-  // Atualiza console e monitora mudanças no estado de torneios
+  const { t } = useTranslation();
+
+  // Log de atualização (para depuração)
   useEffect(() => {
     console.log("Torneios atualizados:", tournaments);
   }, [tournaments]);
 
   const handleFormSubmit = () => {
     if (!newTournamentName || !newTournamentAlias) {
-      alert("Preencha todos os campos!");
+      alert(t("tournament.fill_all_fields"));
       return;
     }
     handleCreateTournament(newTournamentName, newTournamentAlias);
@@ -49,7 +51,7 @@ const TournamentTable = ({
               }`}
               onClick={() => setFilter(status)}
             >
-              {status.charAt(0).toUpperCase() + status.slice(1)}
+              {t(`tournament.filter.${status}`)}
             </button>
           ))}
         </div>
@@ -57,7 +59,7 @@ const TournamentTable = ({
           className="btn btn-success d-flex align-items-center"
           onClick={() => setShowCreateForm(!showCreateForm)}
         >
-          <FontAwesomeIcon icon={faPlus} className="me-2" /> Novo Torneio
+          <FontAwesomeIcon icon={faPlus} className="me-2" /> {t("tournament.new_tournament")}
         </button>
       </div>
 
@@ -67,34 +69,35 @@ const TournamentTable = ({
             <input
               type="text"
               className="form-control mb-2"
-              placeholder="Nome do Torneio"
+              placeholder={t("tournament.tournament_name_placeholder")}
               value={newTournamentName}
               onChange={(e) => setNewTournamentName(e.target.value)}
             />
             <input
               type="text"
               className="form-control mb-2"
-              placeholder="Seu Alias no Torneio"
+              placeholder={t("tournament.tournament_alias_placeholder")}
               value={newTournamentAlias}
               onChange={(e) => setNewTournamentAlias(e.target.value)}
             />
             <button className="btn btn-primary w-100" onClick={handleFormSubmit}>
-              Criar Torneio
+              {t("tournament.create_tournament")}
             </button>
           </div>
         </div>
       )}
+
       <table className="table table-striped">
         <thead>
           <tr>
-            <th>#</th>
-            <th>Nome</th>
-            <th>Criado por</th>
-            <th>Data de Criação</th>
-            <th>Participantes</th>
-            <th>Status</th>
-            <th>Detalhes</th>
-            <th>Ações</th>
+            <th>{t("tournament.table.header.index")}</th>
+            <th>{t("tournament.table.header.name")}</th>
+            <th>{t("tournament.table.header.creator")}</th>
+            <th>{t("tournament.table.header.created_at")}</th>
+            <th>{t("tournament.table.header.participants")}</th>
+            <th>{t("tournament.table.header.status")}</th>
+            <th>{t("tournament.table.header.details")}</th>
+            <th>{t("tournament.table.header.actions")}</th>
           </tr>
         </thead>
         <tbody>
@@ -107,7 +110,7 @@ const TournamentTable = ({
                 <tr>
                   <td>{index + 1}</td>
                   <td>{tournament.name}</td>
-                  <td>{tournament.creator_display_name || "Desconhecido"}</td>
+                  <td>{tournament.creator_display_name || t("tournament.unknown_creator")}</td>
                   <td>{tournament.created_at}</td>
                   <td>{tournament.total_participants}</td>
                   <td>{tournament.status}</td>
@@ -115,7 +118,7 @@ const TournamentTable = ({
                     <button
                       className="btn btn-link text-decoration-none p-0"
                       onClick={() => handleViewTournament(tournament.id)}
-                      title="Ver Detalhes"
+                      title={t("tournament.view_details")}
                     >
                       <FontAwesomeIcon icon={faEye} className="text-primary" />
                     </button>
@@ -128,23 +131,24 @@ const TournamentTable = ({
                           onClick={() => setExpandedTournament(tournament.id)}
                         >
                           <FontAwesomeIcon icon={faDoorOpen} className="me-1" />
-                          Entrar
+                          {t("tournament.join")}
                         </button>
                       )}
                       {tournament.user_registered && (
                         <span className="badge bg-success text-light">
-                          Inscrito como {tournament.user_alias}
+                          {t("tournament.registered_as")} {tournament.user_alias}
                         </span>
                       )}
-                      {tournament.status === "planned" && currentUserId === tournament.creator_id && 
-                      tournament.total_participants >= 3 && (
-                        <button
-                          className="btn btn-warning btn-sm d-flex align-items-center"
-                          onClick={() => handleStartTournament(tournament.id)}
-                        >
-                          <FontAwesomeIcon icon={faPlay} className="me-1" />
-                          Iniciar Torneio
-                        </button>
+                      {tournament.status === "planned" &&
+                        currentUserId === tournament.creator_id &&
+                        tournament.total_participants >= 3 && (
+                          <button
+                            className="btn btn-warning btn-sm d-flex align-items-center"
+                            onClick={() => handleStartTournament(tournament.id)}
+                          >
+                            <FontAwesomeIcon icon={faPlay} className="me-1" />
+                            {t("tournament.start_tournament")}
+                          </button>
                       )}
                     </div>
                   </td>
@@ -155,18 +159,15 @@ const TournamentTable = ({
                       <div className="p-3 bg-light">
                         <input
                           type="text"
-                          placeholder="Digite seu alias"
+                          placeholder={t("tournament.alias_placeholder")}
                           className="form-control mb-2"
                           value={aliases[tournament.id] || ""}
-                          onChange={(e) => {
-                            setAliases((prevAliases) => {
-                              const updatedAliases = {
-                                ...prevAliases,
-                                [tournament.id]: e.target.value,
-                              };
-                              return updatedAliases;
-                            });
-                          }}
+                          onChange={(e) =>
+                            setAliases((prevAliases) => ({
+                              ...prevAliases,
+                              [tournament.id]: e.target.value,
+                            }))
+                          }
                         />
                         <button
                           className="btn btn-success"
@@ -175,7 +176,7 @@ const TournamentTable = ({
                             setExpandedTournament(null);
                           }}
                         >
-                          Confirmar Inscrição
+                          {t("tournament.confirm_registration")}
                         </button>
                       </div>
                     </td>
@@ -185,7 +186,6 @@ const TournamentTable = ({
             ))}
         </tbody>
       </table>
-
     </div>
   );
 };
