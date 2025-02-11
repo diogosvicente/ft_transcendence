@@ -175,5 +175,19 @@
     "tournament": "Torneo",
     "at": "a las",
     "no_matches": "No se encontró historial de partidas."
+  },
+  "update_userprofile": {
+    "title": "Actualizar información de mi perfil",
+    "display_name": "Nombre para mostrar",
+    "change_password_label": "Cambiar contraseña",
+    "avatar": "Avatar",
+    "choose_file": "Elegir archivo",
+    "no_file_chosen": "Ningún archivo elegido",
+    "2fa_label": "Verificación 2FA",
+    "update_button": "Actualizar perfil",
+    "error": "Actualización de perfil fallida",
+    "profile_update_success": "Actualización de perfil exitosa",
+    "display_name_required": "El nombre para mostrar es obligatorio",
+    "display_name_exists": "Este nombre de usuario ya existe"
   }
 }

@@ -179,5 +179,19 @@
     "tournament": "Tournament",
     "at": "at",
     "no_matches": "No match history found."
+  },
+  "update_userprofile": {
+    "title": "Update My Profile Information",
+    "display_name": "Display Name",
+    "change_password_label": "Change Password",
+    "avatar": "Avatar",
+    "choose_file": "Choose File",
+    "no_file_chosen": "No file chosen",
+    "2fa_label": "2FA Verification",
+    "update_button": "Update Profile",
+    "profile_update_error": "Failed profile update",
+    "profile_update_success": "Successful profile update",
+    "display_name_required": "Display name is required",
+    "display_name_exists": "This display name already exists"
   }
 }
