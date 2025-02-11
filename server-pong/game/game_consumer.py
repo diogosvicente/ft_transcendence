@@ -23,8 +23,8 @@ class GameConsumer(AsyncWebsocketConsumer):
             
             # Conecta ao Redis
             try:
-                redis_host = os.environ.get("REDIS_HOST", "127.0.0.1")
-                redis_port = int(os.environ.get("REDIS_PORT", 6380))
+                redis_host = os.environ.get("REDIS_HOST", "redis")
+                redis_port = int(os.environ.get("REDIS_PORT", 6379))
                 self.redis = redis.StrictRedis(host=redis_host, port=redis_port, db=0, decode_responses=True)
                 self.redis.ping()
                 print("Conexão com Redis estabelecida.")
@@ -410,10 +410,21 @@ class GameConsumer(AsyncWebsocketConsumer):
                 if ball["y"] <= 0 or ball["y"] >= 600:
                     ball["speed_y"] = -ball["speed_y"]
 
+                # left paddle
                 if ball["x"] <= 20 and game_state["paddles"]["left"] <= ball["y"] <= game_state["paddles"]["left"] + 100:
                     ball["speed_x"] = -ball["speed_x"]
+
+                    delta_y = ball["y"] - (game_state["paddles"]["left"] + 50)
+                    normalized_delta_y = delta_y / 50
+                    ball["speed_y"] += normalized_delta_y * 8
+
+                # right paddle
                 if ball["x"] >= 780 and game_state["paddles"]["right"] <= ball["y"] <= game_state["paddles"]["right"] + 100:
                     ball["speed_x"] = -ball["speed_x"]
+
+                    delta_y = ball["y"] - (game_state["paddles"]["right"] + 50)
+                    normalized_delta_y = delta_y / 50
+                    ball["speed_y"] += normalized_delta_y * 8
 
                 if ball["x"] < 0:
                     game_state["scores"]["right"] += 1
