@@ -2,12 +2,15 @@ import React, { useState, useEffect, useRef } from "react";
 import "../../../assets/styles/chatWindow.css";
 import useWebSocketManager from "../hooks/WebSocketManager";
 import API_BASE_URL, { getWsUrl } from "../../../assets/config/config.js";
+import { useTranslation } from "react-i18next";
 
-const ChatWindow = ({ chatTabs, activeTab, setActiveTab, closeChatTab, resetChatWindow  }) => {
+const ChatWindow = ({ chatTabs, activeTab, setActiveTab, closeChatTab, resetChatWindow }) => {
   const [message, setMessage] = useState("");
   const privateWebSockets = useRef({});
   const { messages: globalMessages, sendMessage: sendGlobalMessage } = useWebSocketManager("global");
   const [privateMessages, setPrivateMessages] = useState({});
+
+  const { t } = useTranslation();
 
   // Inicializa um WebSocket privado
   const initializePrivateWebSocket = (roomId) => {
@@ -148,20 +151,20 @@ const ChatWindow = ({ chatTabs, activeTab, setActiveTab, closeChatTab, resetChat
             );
           })
         ) : (
-          <p>Sem mensagens neste chat.</p>
+          <p>{t("chat.no_messages")}</p>
         )}
       </div>
 
       <div className="chat-input">
         <textarea
-          placeholder="Digite sua mensagem"
+          placeholder={t("chat.message_placeholder")}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={(e) =>
             e.key === "Enter" && !e.shiftKey && (e.preventDefault(), handleSendMessage())
           }
         ></textarea>
-        <button onClick={handleSendMessage}>Enviar</button>
+        <button onClick={handleSendMessage}>{t("chat.send")}</button>
       </div>
     </div>
   );
