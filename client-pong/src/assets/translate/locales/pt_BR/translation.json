@@ -189,5 +189,13 @@
     "profile_update_success": "Sucesso na atualização do perfil",
     "display_name_required": "Nome de exibição é obrigatório",
     "display_name_exists": "Este nome de exibição já existe"
+  },
+  "ranking": {
+    "most_tournaments_won": "Mais Torneios Vencidos",
+    "most_victories": "Mais Vitórias",
+    "tournament": "torneios",
+    "victory": "vitórias",
+    "defeat": "derrotas",
+    "no_data": "Nenhum dado disponível."
   }
 }

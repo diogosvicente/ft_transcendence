@@ -193,5 +193,13 @@
     "profile_update_success": "Successful profile update",
     "display_name_required": "Display name is required",
     "display_name_exists": "This display name already exists"
+  },
+  "ranking": {
+    "most_tournaments_won": "Most Tournaments Won",
+    "most_victories": "Most Victories",
+    "tournament": "tournaments",
+    "victory": "victories",
+    "defeat": "defeats",
+    "no_data": "No data available."
   }
 }
