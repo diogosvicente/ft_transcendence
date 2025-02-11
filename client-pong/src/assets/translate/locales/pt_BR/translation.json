@@ -94,5 +94,8 @@
     "side_left": "Esquerda",
     "side_right": "Direita",
     "you": "Você"
+  },
+  "homepage": {
+    "welcome_message": "Bem-vindo ao jogo"
   }
 }

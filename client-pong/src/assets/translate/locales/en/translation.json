@@ -98,5 +98,8 @@
     "side_left": "Left",
     "side_right": "Right",
     "you": "You"
+  },
+  "homepage": {
+    "welcome_message": "Welcome to the game"
   }
 }

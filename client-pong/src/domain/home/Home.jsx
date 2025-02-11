@@ -2,8 +2,9 @@ import React from "react";
 import Navbar from "../template/Navbar";
 import useUserInfo from "./hooks/useUserInfo";
 import "../../assets/styles/home.css"
-
+import { useTranslation } from "react-i18next";
 const Home = () => {
+  const { t } = useTranslation();
   const displayName = useUserInfo(); // Hook para obter o display_name do usuário
 
   return (
@@ -12,7 +13,7 @@ const Home = () => {
       <div className="container mt-5 text-center">
         {/* Saudação ao jogador */}
         <h1 className="h1-greeting">
-          Bem-vindo ao jogo, <span className="highlighted-name">{displayName}</span>!
+        {t("homepage.welcome_message")}, <span className="highlighted-name">{displayName}</span>!
         </h1>
 
         {/* Texto FT_TRANSCENDENCE estilizado */}
