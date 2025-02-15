@@ -375,7 +375,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                 await self.send_to_group("countdown", {"message": str(i)})
                 await asyncio.sleep(1)
             game_state = json.loads(self.redis.get(self.match_id))
-            game_state["ball"]["speed_x"] = 100
+            game_state["ball"]["speed_x"] = 200
             game_state["ball"]["speed_y"] = 100
             self.redis.set(self.match_id, json.dumps(game_state))
             print("Contagem regressiva concluída. Jogo iniciado.")
@@ -411,27 +411,33 @@ class GameConsumer(AsyncWebsocketConsumer):
                     ball["speed_y"] = -ball["speed_y"]
 
                 # left paddle
-                if ball["x"] <= 20 and game_state["paddles"]["left"] <= ball["y"] <= game_state["paddles"]["left"] + 100:
+                if (
+                    ball["x"] - 10 <= 20
+                    and game_state["paddles"]["left"] <= ball["y"] <= game_state["paddles"]["left"] + 100
+                    and ball["speed_x"] < 0
+                ):
                     ball["speed_x"] = -ball["speed_x"]
 
                     delta_y = ball["y"] - (game_state["paddles"]["left"] + 50)
-                    normalized_delta_y = delta_y / 50
-                    ball["speed_y"] += normalized_delta_y * 8
+                    ball["speed_y"] = delta_y * 4
 
                 # right paddle
-                if ball["x"] >= 780 and game_state["paddles"]["right"] <= ball["y"] <= game_state["paddles"]["right"] + 100:
+                if (
+                    ball["x"] + 10 >= 780
+                    and game_state["paddles"]["right"] <= ball["y"] <= game_state["paddles"]["right"] + 100
+                    and ball["speed_x"] > 0
+                ):
                     ball["speed_x"] = -ball["speed_x"]
 
                     delta_y = ball["y"] - (game_state["paddles"]["right"] + 50)
-                    normalized_delta_y = delta_y / 50
-                    ball["speed_y"] += normalized_delta_y * 8
+                    ball["speed_y"] = delta_y * 4
 
-                if ball["x"] < 0:
+                if ball["x"] - 10 < 0:
                     game_state["scores"]["right"] += 1
-                    ball.update({"x": 400, "y": 300, "speed_x": 200, "speed_y": 200})
-                elif ball["x"] > 800:
+                    ball.update({"x": 400, "y": 300, "speed_x": 300, "speed_y": 100})
+                elif ball["x"] + 10 > 800:
                     game_state["scores"]["left"] += 1
-                    ball.update({"x": 400, "y": 300, "speed_x": -200, "speed_y": -200})
+                    ball.update({"x": 400, "y": 300, "speed_x": -300, "speed_y": -100})
 
                 self.redis.set(self.match_id, json.dumps(game_state))
                 await self.send_to_group("state_update", game_state)
