@@ -268,10 +268,6 @@ const useUserActions = (wsSendNotification, resetChatWindow)  => {
         console.log("user_id = " + user_id);
         console.log("friend_id = " + friend_id);
         console.log("loggedID = " + loggedID);
-        
-        // if (receiverId == loggedID) {
-        //   receiverId = user_id;
-        // }
 
         const [messageForReceiver, messageForSender] = await Promise.all([
           getTranslatedMessage("notification.friend_removed", friend_id),
@@ -288,6 +284,12 @@ const useUserActions = (wsSendNotification, resetChatWindow)  => {
               { sender_id: loggedID, receiver_id: friend_id }
           );
         } else {
+
+          const [messageForReceiver, messageForSender] = await Promise.all([
+            getTranslatedMessage("notification.friend_removed", user_id),
+            getTranslatedMessage("notification.friend_removed_by_you", loggedID)
+          ]);
+
           sendNotification(
               "notification",
               "removeFriend",
