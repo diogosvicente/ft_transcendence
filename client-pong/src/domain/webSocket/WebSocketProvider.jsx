@@ -88,7 +88,7 @@ export const WebSocketProvider = ({ children }) => {
       } else if (data.type === "notification") {
         // Adiciona a notificação ao estado e exibe o toast
         setNotifications((prev) => [...prev, data]);
-        toast.info(`Notificação: ${data.message}`);
+        toast.info(data.message);
   
         // Verifica mensagens relacionadas a bloqueios para resetar o ChatWindow, se necessário
         if (

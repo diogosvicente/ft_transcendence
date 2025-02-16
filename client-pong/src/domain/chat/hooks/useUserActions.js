@@ -1,12 +1,32 @@
 import axios from "axios";
 import API_BASE_URL from "../../../assets/config/config.js";
+import { useTranslation } from "react-i18next";
 
 const useUserActions = (wsSendNotification, resetChatWindow)  => {
+
+  const { t } = useTranslation();
 
   const getAuthDetails = () => ({
     accessToken: localStorage.getItem("access"),
     loggedID: localStorage.getItem("id"),
   });
+
+  const getUserLanguage = async (userId) => {
+    const { accessToken } = getAuthDetails();
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/api/user-management/user/${userId}/language/`,
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+      // Retorna o idioma salvo no campo current_language
+      return response.data.current_language;
+    } catch (err) {
+      console.error("Erro ao obter o idioma do usuário:", err);
+      throw err;
+    }
+  };
 
   const sendNotification = (type, action, sender_id, receiver_id, message, payload) => {
     wsSendNotification({
@@ -34,13 +54,16 @@ const useUserActions = (wsSendNotification, resetChatWindow)  => {
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
 
+      const destinationUserLanguage = await getUserLanguage(userId);
+      const loggedUserLanguage = await getUserLanguage(loggedID);
+
       // Enviar notificação para o destinatário (userId) e remetente (loggedID)
       sendNotification(
         "notification",
         "addFriend",
         loggedID,
         userId,
-        "Você recebeu uma solicitação de amizade.",
+        t("notification.friend_request_received", { lng: destinationUserLanguage }),
         { sender_id: loggedID, receiver_id: userId }
       );
   
@@ -49,7 +72,7 @@ const useUserActions = (wsSendNotification, resetChatWindow)  => {
         "addFriend",
         userId,
         loggedID,
-        "Você enviou uma solicitação de amizade.",
+        t("notification.friend_request_sent", { lng: loggedUserLanguage }),
         { sender_id: userId, receiver_id: loggedID }
       );
   
