@@ -5,7 +5,7 @@ import "react-toastify/dist/ReactToastify.css";
 const ChallengeToast = ({ sender, matchId, onAccept, onDecline }) => {
   return (
     <div>
-      <p>{sender} desafiou você para uma partida!</p>
+      <p>{sender}</p>  {/*desafiou você para uma partida! [REMOVIDO] */}
       <div>
         <button
           onClick={() => {

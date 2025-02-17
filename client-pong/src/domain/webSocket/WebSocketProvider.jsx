@@ -5,6 +5,7 @@ import axios from "axios";
 import "react-toastify/dist/ReactToastify.css";
 import ChallengeToast from "./components/ChallengeToast";
 import API_BASE_URL, { getWsUrl } from "../../assets/config/config.js";
+import { useTranslation } from "react-i18next";
 
 const WebSocketContext = createContext();
 
@@ -18,6 +19,7 @@ export const WebSocketProvider = ({ children }) => {
   const [tournaments, setTournaments] = useState([]);
   const [shouldResetChatWindow, setShouldResetChatWindow] = useState(false); // Flag para resetar ChatWindow
   const notificationSocketRef = useRef(null);
+  const { t } = useTranslation();
 
   const WS_NOTIFICATION_URL = getWsUrl("/ws/notifications/");
   
@@ -105,7 +107,8 @@ export const WebSocketProvider = ({ children }) => {
         // No caso do torneio, o payload vem dentro de data.state com match_id.
         const message = data.state?.message || data.message;
         const matchId = data.state?.match_id || data.match_id;
-        toast.success(`Partida iniciada: ${message}`);
+        // toast.success(`Partida iniciada: ${message}`);
+        toast.success(message);
         navigate(`/game/${matchId}`);
       } else if (data.type === "game_challenge_declined") {
         toast.info(data.message);
@@ -133,7 +136,7 @@ export const WebSocketProvider = ({ children }) => {
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
   
-      toast.success("Você aceitou o desafio!");
+      // toast.success("Você aceitou o desafio!");
       // Redireciona para o jogo
       navigate(`/game/${matchId}`);
     } catch (err) {
@@ -152,10 +155,12 @@ export const WebSocketProvider = ({ children }) => {
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
   
-      toast.info("Você recusou o desafio.");
+      // Utiliza a tradução para notificar que o desafio foi recusado
+      toast.info(t("toast.challenge_declined"));
     } catch (err) {
       console.error("Erro ao recusar desafio:", err);
-      toast.error("Erro ao recusar o desafio.");
+      // Utiliza a tradução para notificar que houve erro ao recusar o desafio
+      toast.error(t("toast.challenge_decline_error"));
     }
   };
   

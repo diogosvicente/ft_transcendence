@@ -300,7 +300,6 @@ const useUserActions = (wsSendNotification, resetChatWindow)  => {
           );
         }
 
-
         sendNotification(
             "notification",
             "removeFriend",
@@ -343,8 +342,8 @@ const useUserActions = (wsSendNotification, resetChatWindow)  => {
       }
 
       const [messageForReceiver, messageForSender] = await Promise.all([
-        getTranslatedMessage("notification.challenge_sent", userId),
-        getTranslatedMessage("notification.challenge_received", loggedID)
+        getTranslatedMessage("notification.challenge_sent", loggedID),
+        getTranslatedMessage("notification.challenge_received", userId)
       ]);
   
       // Notificação para o desafiante
@@ -363,7 +362,7 @@ const useUserActions = (wsSendNotification, resetChatWindow)  => {
         "challengeUser",
         loggedID, // ID do remetente (você)
         userId, // ID do destinatário (oponente)
-        messageForSender,
+        null,
         { sender_id: userId, receiver_id: loggedID, match_id: matchId, tournament_id: tournamentId }
       );
   

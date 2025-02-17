@@ -217,6 +217,8 @@
     "friend_removed_by_you": "You removed a friend from your list.",
     "challenge_error": "Error registering the challenge. Please try again.",
     "challenge_sent": "You sent a challenge for a match!",
-    "challenge_received": "You were challenged to a match!"
+    "challenge_received": "You were challenged to a match!",
+    "challenge_declined": "You declined the challenge.",
+    "challenge_decline_error": "Error declining the challenge."
   }
 }

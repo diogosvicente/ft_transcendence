@@ -154,13 +154,37 @@ class GameConsumer(AsyncWebsocketConsumer):
             print(f"[DEBUG] tournament_id: {tournament_id}")
             redirect_url = "/tournaments/" if tournament_id else "/chat/"
 
+            # Obtenha o idioma do vencedor para personalizar as mensagens.
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            from asgiref.sync import sync_to_async
+            winner = await sync_to_async(User.objects.get)(id=winner_id)
+            user_language = winner.current_language or "pt_BR"
+
+            # Dicionário de traduções para as mensagens
+            messages = {
+                "pt_BR": {
+                    "message": "Partida finalizada por WO.",
+                    "final_alert": "Partida finalizada por WO! Clique em OK para sair da partida."
+                },
+                "en": {
+                    "message": "Match ended by walkover.",
+                    "final_alert": "Match ended by walkover! Click OK to exit the match."
+                },
+                "es": {
+                    "message": "Partido finalizado por WO.",
+                    "final_alert": "Partido finalizado por WO! Haga clic en OK para salir del partido."
+                }
+            }
+            msg_data = messages.get(user_language, messages["pt_BR"])
+
             await self.send_to_group("walkover", {
-                "message": "Partida finalizada por WO.",
+                "message": msg_data["message"],
                 "redirect_url": redirect_url,
                 "winner": winner_id,
                 "loser": loser_id,
                 "tournament_id": tournament_id,
-                "final_alert": "Partida finalizada por WO! Clique em OK para sair da partida."
+                "final_alert": msg_data["final_alert"]
             })
             await sync_to_async(self.update_match_by_wo)(winner_id, loser_id)
 
