@@ -221,6 +221,8 @@
   },
   "toast": {
     "challenge_declined": "You declined the challenge.",
-    "challenge_decline_error": "Error declining the challenge."
+    "challenge_decline_error": "Error declining the challenge.",
+    "accept": "Accept",
+    "decline": "Decline"
   }
 }

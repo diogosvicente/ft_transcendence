@@ -216,6 +216,8 @@
   },
   "toast": {
       "challenge_declined": "Você recusou o desafio.",
-      "challenge_decline_error": "Erro ao recusar o desafio."
+      "challenge_decline_error": "Erro ao recusar o desafio.",
+      "accept": "Aceitar",
+      "decline": "Recusar"
   }
 }
