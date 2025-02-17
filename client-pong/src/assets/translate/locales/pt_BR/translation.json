@@ -218,6 +218,9 @@
       "challenge_declined": "Você recusou o desafio.",
       "challenge_decline_error": "Erro ao recusar o desafio.",
       "accept": "Aceitar",
-      "decline": "Recusar"
+      "decline": "Recusar",
+      "new_tournament": "Novo torneio criado: ",
+      "tournament_updated": "Torneio atualizado: {{name}} agora tem {{totalParticipants}} participantes.",
+      "tournament_started": "O torneio '{{name}}' foi iniciado!"
   }
 }

@@ -106,7 +106,7 @@
     "create_tournament": "Crear Torneo",
     "registered_as": "Registrado como",
     "confirm_registration": "Confirmar registro",
-    "join": "Unirse",
+    "join": "ingresar",
     "alias_placeholder": "Escribe tu alias",
     "confirm_placeholder": "Confirmar Inscripción",
     "start_tournament": "Iniciar Torneo",
@@ -219,6 +219,9 @@
     "challenge_declined": "Has rechazado el desafío.",
     "challenge_decline_error": "Error al rechazar el desafío.",
     "accept": "Aceptar",
-    "decline": "Rechazar"
+    "decline": "Rechazar",
+    "new_tournament": "Nuevo torneo creado: ",
+    "tournament_updated": "Torneo actualizado: {{name}} ahora tiene {{totalParticipants}} participantes.",
+    "tournament_started": "¡El torneo '{{name}}' ha comenzado!"
   }
 }

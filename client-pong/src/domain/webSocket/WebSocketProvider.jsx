@@ -167,7 +167,7 @@ export const WebSocketProvider = ({ children }) => {
   const handleNewTournament = (data) => {
     console.log("Torneio recebido via WebSocket:", data.tournament);
     setNotifications((prev) => [...prev, data]);
-    toast.success(`Novo torneio criado: ${data.tournament.name}`);
+    toast.success(`${t("toast.new_tournament")} ${data.tournament.name}`);
   };
 
   const handleTournamentUpdate = (data) => {
@@ -186,11 +186,9 @@ export const WebSocketProvider = ({ children }) => {
     setNotifications((prev) => [...prev, data]);
 
     if (status === "ongoing") {
-      toast.success(tournament.message || `O torneio '${name}' foi iniciado!`);
+      toast.success(tournament.message || t("toast.tournament_started", { name }));
     } else {
-      toast.info(
-        `Torneio atualizado: ${name} agora tem ${totalParticipants} participantes.`
-      );
+      toast.info(t("toast.tournament_updated", { name, totalParticipants }));
     }
 
     setTournaments((prevTournaments) =>
