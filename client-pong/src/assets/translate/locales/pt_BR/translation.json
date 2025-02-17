@@ -212,7 +212,9 @@
       "friend_removed": "Você foi removido da lista de amigos.",
       "friend_removed_by_you": "Você removeu um amigo da sua lista.",
       "challenge_sent": "Você enviou um desafio para uma partida!",
-      "challenge_received": "Você foi desafiado para uma partida!",
+      "challenge_received": "Você foi desafiado para uma partida!"
+  },
+  "toast": {
       "challenge_declined": "Você recusou o desafio.",
       "challenge_decline_error": "Erro ao recusar o desafio."
   }

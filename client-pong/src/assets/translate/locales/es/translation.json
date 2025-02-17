@@ -213,7 +213,9 @@
     "friend_removed_by_you": "Eliminaste a un amigo de tu lista.",
     "challenge_error": "Error al registrar el desafío. Inténtalo de nuevo.",
     "challenge_sent": "¡Enviaste un desafío para un partido!",
-    "challenge_received": "¡Has sido desafiado para un partido!",
+    "challenge_received": "¡Has sido desafiado para un partido!"
+  },
+  "toast": {
     "challenge_declined": "Has rechazado el desafío.",
     "challenge_decline_error": "Error al rechazar el desafío."
   }

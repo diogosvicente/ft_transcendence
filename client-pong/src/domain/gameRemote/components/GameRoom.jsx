@@ -107,8 +107,13 @@ const GameRoom = ({ matchId, userId, matchData, isPlayer1 }) => {
           break;
 
         case "match_finished":
-          // Exibe um alerta com a mensagem final e um botão "OK" para sair da partida
-          if (window.confirm(data.state.final_alert)) {
+          // Obtém o ID do usuário atual (salvo no localStorage)
+          const currentUserId = localStorage.getItem("id");
+          // Extrai a mensagem apropriada do objeto final_alert, usando o ID como chave
+          const finalAlertMessage = data.state.final_alert[currentUserId] || "";
+          
+          // Exibe o alerta com a mensagem apropriada
+          if (window.confirm(finalAlertMessage)) {
             console.log("Partida finalizada por pontos. Redirecionando...");
             navigate(data.state.redirect_url);
           }

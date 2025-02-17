@@ -200,6 +200,7 @@ class GameConsumer(AsyncWebsocketConsumer):
     async def finalize_match_by_points(self):
         game_state = json.loads(self.redis.get(self.match_id))
         
+        # Determina o vencedor e o perdedor com base na pontuação
         if game_state["scores"]["left"] >= 5:
             winner_side = "left"
             loser_side = "right"
@@ -218,15 +219,65 @@ class GameConsumer(AsyncWebsocketConsumer):
         tournament_id = game_state.get("tournament_id")
         redirect_url = "/tournaments/" if tournament_id else "/chat/"
 
+        # Recupera os objetos dos usuários para obter seus idiomas
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        from asgiref.sync import sync_to_async
+        winner = await sync_to_async(User.objects.get)(id=winner_id)
+        loser = await sync_to_async(User.objects.get)(id=loser_id)
+        
+        # Debug: imprime os idiomas dos usuários
+        print(f"Winner (ID: {winner_id}) language: {winner.current_language}")
+        print(f"Loser (ID: {loser_id}) language: {loser.current_language}")
+        
+        # Dicionário de traduções para a mensagem comum (match finished)
+        message_translations = {
+            "pt_BR": "Partida finalizada por pontuação.",
+            "en": "Match finished by points.",
+            "es": "Partido finalizado por puntuación."
+        }
+        winner_language = winner.current_language or "pt_BR"
+        common_message = message_translations.get(winner_language, message_translations["pt_BR"])
+        
+        # Dicionário de traduções para o campo "final_alert" com mensagens distintas para vencedor e perdedor
+        final_alert_translations = {
+            "pt_BR": {
+                "winner": "VENCEU!!! Partida finalizada! Clique em OK para sair da partida.",
+                "loser": "PERDEU!!! Partida finalizada! Clique em OK para sair da partida."
+            },
+            "en": {
+                "winner": "WON!!! Match finished! Click OK to exit the match.",
+                "loser": "LOST!!! Match finished! Click OK to exit the match."
+            },
+            "es": {
+                "winner": "¡¡¡GANADO!!! ¡Partido terminado! Haz clic en OK para salir del partido.",
+                "loser": "¡¡¡PERDIDO!!! ¡Partido terminado! Haz clic en OK para salir del partido"
+            }
+        }
+        loser_language = loser.current_language or "pt_BR"
+        winner_final_alert = final_alert_translations.get(winner_language, final_alert_translations["pt_BR"])["winner"]
+        loser_final_alert = final_alert_translations.get(loser_language, final_alert_translations["pt_BR"])["loser"]
+
+        # Cria um objeto mapeando o ID de cada usuário à sua mensagem específica
+        final_alert = {
+            str(winner_id): winner_final_alert,
+            str(loser_id): loser_final_alert,
+        }
+
+        # Envia uma única notificação para "match_finished"
+        from channels.layers import get_channel_layer
+        channel_layer = get_channel_layer()
+        from asgiref.sync import async_to_sync
         await self.send_to_group("match_finished", {
-            "message": "Partida finalizada por pontuação.",
+            "message": common_message,
             "redirect_url": redirect_url,
             "winner": winner_id,
             "loser": loser_id,
             "tournament_id": tournament_id,
-            "final_alert": "Partida finalizada! Clique em OK para sair da partida."
+            "final_alert": final_alert  # Objeto contendo as mensagens para cada usuário
         })
 
+        from asgiref.sync import sync_to_async
         await sync_to_async(self.update_match_by_points)(winner_id, loser_id, game_state["scores"])
 
         # Se for partida de torneio e for a última, atualiza o vencedor do torneio
