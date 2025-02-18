@@ -523,8 +523,14 @@ class ChallengeUserAPIView(APIView):
                     status=status.HTTP_404_NOT_FOUND
                 )
             
-            # Mensagem de desafio de torneio (pode ser adaptada para tradução se necessário)
-            challenge_message = f"{user.display_name} desafiou você para uma partida de torneio!"
+            # Define o idioma do oponente e a mensagem traduzida para o desafio de torneio
+            opponent_language = opponent.current_language or "pt_BR"
+            challenge_messages = {
+                "pt_BR": f"{user.display_name} desafiou você para uma partida de torneio!",
+                "en": f"{user.display_name} challenged you for a tournament match!",
+                "es": f"{user.display_name} te desafió a un partido de torneo!"
+            }
+            challenge_message = challenge_messages.get(opponent_language, challenge_messages["pt_BR"])
             
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
@@ -538,9 +544,18 @@ class ChallengeUserAPIView(APIView):
                 },
             )
             
+            # Define a mensagem de resposta traduzida, de acordo com o idioma do usuário que faz a requisição
+            user_language = user.current_language or "pt_BR"
+            response_message_translations = {
+                "pt_BR": "Desafio de torneio enviado com sucesso.",
+                "en": "Tournament challenge sent successfully.",
+                "es": "¡Desafío de torneo enviado con éxito!"
+            }
+            response_message = response_message_translations.get(user_language, response_message_translations["pt_BR"])
+            
             return Response(
                 {
-                    "message": "Desafio de torneio enviado com sucesso.",
+                    "message": response_message,
                     "match_id": match.id,
                     "player1_id": match.player1_id,
                     "player2_id": match.player2_id,
@@ -566,12 +581,11 @@ class ChallengeUserAPIView(APIView):
                 player1=user,
                 player2=opponent,
                 status="pending",
-                tournament_id=None  # Desafio direto, tournament_id é null.
+                tournament_id=None,  # Desafio direto, tournament_id é null.
             )
             
-            # Aqui pegamos o idioma do oponente, que foi salvo em current_language (mesmo que esse valor venha do endpoint)
+            # Define o idioma do oponente e a mensagem traduzida para o desafio direto
             opponent_language = opponent.current_language or "pt_BR"
-            # Define as mensagens de desafio conforme o idioma do oponente
             challenge_messages = {
                 "pt_BR": f"{user.display_name} desafiou você para uma partida!",
                 "en": f"{user.display_name} challenged you for a match!",
@@ -591,9 +605,18 @@ class ChallengeUserAPIView(APIView):
                 },
             )
             
+            # Para o desafio direto, a mensagem de resposta também pode ser traduzida conforme o idioma do usuário
+            user_language = user.current_language or "pt_BR"
+            response_message_translations = {
+                "pt_BR": "Desafio enviado com sucesso.",
+                "en": "Challenge sent successfully.",
+                "es": "¡Desafío enviado con éxito!"
+            }
+            response_message = response_message_translations.get(user_language, response_message_translations["pt_BR"])
+            
             return Response(
                 {
-                    "message": "Desafio enviado com sucesso.",
+                    "message": response_message,
                     "match_id": match.id,
                     "status": match.status,
                     "tournament_id": None,
@@ -706,9 +729,6 @@ class DeclineChallengeAPIView(APIView):
         # Se a partida não for de torneio, remove a partida; caso contrário, atualiza o status para "declined"
         if match.tournament_id is None:
             match.delete()
-        else:
-            match.status = "declined"
-            match.save()
         
         return Response({"message": "Desafio recusado."}, status=status.HTTP_200_OK)
 

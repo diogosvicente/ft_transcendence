@@ -222,6 +222,7 @@
     "decline": "Rechazar",
     "new_tournament": "Nuevo torneo creado: ",
     "tournament_updated": "Torneo actualizado: {{name}} ahora tiene {{totalParticipants}} participantes.",
-    "tournament_started": "¡El torneo '{{name}}' ha comenzado!"
+    "tournament_started": "¡El torneo '{{name}}' ha comenzado!",
+    "not_in_next_match": "No estás en el próximo partido."
   }
 }

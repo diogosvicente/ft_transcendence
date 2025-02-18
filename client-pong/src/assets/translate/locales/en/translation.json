@@ -226,6 +226,7 @@
     "decline": "Decline",
     "new_tournament": "New tournament created: ",
     "tournament_updated": "Tournament updated: {{name}} now has {{totalParticipants}} participants.",
-    "tournament_started": "Tournament '{{name}}' has started!"
+    "tournament_started": "Tournament '{{name}}' has started!",
+    "not_in_next_match": "You are not in the next match."
   }
 }

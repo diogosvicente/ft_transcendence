@@ -65,7 +65,7 @@ const TournamentDetails = ({
       return;
     }
     if (nextMatch.player1_id !== loggedID && nextMatch.player2_id !== loggedID) {
-      alert(t("tournament.not_in_next_match"));
+      alert(t("toast.not_in_next_match"));
       return;
     }
     try {
