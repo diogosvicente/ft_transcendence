@@ -157,7 +157,7 @@ export const useTournaments = ({ notifications, wsSendNotification }) => {
       // Notificação via WebSocket para todos os usuários
       wsSendNotification({
         type: "tournament",
-        message: `Novo torneio criado: ${createdTournament.name}`,
+        message: null,
         tournament: {
           ...createdTournament,
           user_registered: false, // Quem recebe a notificação não está registrado inicialmente

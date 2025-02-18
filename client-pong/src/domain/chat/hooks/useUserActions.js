@@ -1,12 +1,40 @@
 import axios from "axios";
 import API_BASE_URL from "../../../assets/config/config.js";
+import { useTranslation } from "react-i18next";
 
 const useUserActions = (wsSendNotification, resetChatWindow)  => {
+
+  const { t } = useTranslation();
 
   const getAuthDetails = () => ({
     accessToken: localStorage.getItem("access"),
     loggedID: localStorage.getItem("id"),
   });
+
+  const getUserLanguage = async (userId) => {
+    const { accessToken } = getAuthDetails();
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/api/user-management/user/${userId}/language/`,
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+      // Retorna o idioma salvo no campo current_language
+      return response.data.current_language;
+    } catch (err) {
+      console.error("Erro ao obter o idioma do usuário:", err);
+      throw err;
+    }
+  };
+
+  const getTranslatedMessage = async (key, userId) => {
+    // Obtém o idioma do usuário a partir do backend
+    const userLanguage = await getUserLanguage(userId);
+    // Retorna a tradução usando o idioma específico
+    return t(key, { lng: userLanguage });
+  };
+  
 
   const sendNotification = (type, action, sender_id, receiver_id, message, payload) => {
     wsSendNotification({
@@ -34,13 +62,19 @@ const useUserActions = (wsSendNotification, resetChatWindow)  => {
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
 
+      // Executa as chamadas de tradução de forma concorrente
+      const [messageForReceiver, messageForSender] = await Promise.all([
+        getTranslatedMessage("notification.friend_request_received", userId),
+        getTranslatedMessage("notification.friend_request_sent", loggedID)
+      ]);
+
       // Enviar notificação para o destinatário (userId) e remetente (loggedID)
       sendNotification(
         "notification",
         "addFriend",
         loggedID,
         userId,
-        "Você recebeu uma solicitação de amizade.",
+        messageForReceiver,
         { sender_id: loggedID, receiver_id: userId }
       );
   
@@ -49,7 +83,7 @@ const useUserActions = (wsSendNotification, resetChatWindow)  => {
         "addFriend",
         userId,
         loggedID,
-        "Você enviou uma solicitação de amizade.",
+        messageForSender,
         { sender_id: userId, receiver_id: loggedID }
       );
   
@@ -67,13 +101,18 @@ const useUserActions = (wsSendNotification, resetChatWindow)  => {
         { user_id: userId },
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
+
+      const [messageForReceiver, messageForSender] = await Promise.all([
+        getTranslatedMessage("notification.blocked_you", userId),
+        getTranslatedMessage("notification.blocked_user", loggedID)
+      ]);
   
       sendNotification(
         "notification",
         "blockUser",
         loggedID,
         userId,
-        "Você foi bloqueado.",
+        messageForReceiver,
         { sender_id: loggedID, receiver_id: userId }
       );
   
@@ -82,7 +121,7 @@ const useUserActions = (wsSendNotification, resetChatWindow)  => {
         "blockUser",
         userId,
         loggedID,
-        "Você bloqueou o usuário.",
+        messageForSender,
         { sender_id: userId, receiver_id: loggedID }
       );
   
@@ -108,12 +147,17 @@ const useUserActions = (wsSendNotification, resetChatWindow)  => {
 
       const { blocked_id } = response.data;
 
+      const [messageForReceiver, messageForSender] = await Promise.all([
+        getTranslatedMessage("notification.unblocked_you", blocked_id),
+        getTranslatedMessage("notification.unblocked_user", loggedID)
+      ]);
+
       sendNotification(
         "notification",
         "unblockUser",
         loggedID,
         blocked_id,
-        "Você foi desbloqueado.",
+        messageForReceiver,
         { sender_id: loggedID, receiver_id: blocked_id }
       );
 
@@ -122,7 +166,7 @@ const useUserActions = (wsSendNotification, resetChatWindow)  => {
         "unblockUser",
         blocked_id,
         loggedID,
-        "Você desbloqueou o usuário.",
+        messageForSender,
         { sender_id: blocked_id, receiver_id: loggedID }
       );
     } catch (err) {
@@ -142,12 +186,17 @@ const useUserActions = (wsSendNotification, resetChatWindow)  => {
 
       const { friend_id, user_id } = response.data;
 
+      const [messageForReceiver, messageForSender] = await Promise.all([
+        getTranslatedMessage("notification.friend_request_accepted_receiver", user_id),
+        getTranslatedMessage("notification.friend_request_accepted_sender", loggedID)
+      ]);
+
       sendNotification(
         "notification",
         "acceptFriend",
         loggedID,
         user_id,
-        "Sua solicitação de amizade foi aceita.",
+        messageForReceiver,
         { sender_id: loggedID, receiver_id: user_id }
       );
 
@@ -156,7 +205,7 @@ const useUserActions = (wsSendNotification, resetChatWindow)  => {
         "acceptFriend",
         user_id,
         loggedID,
-        "Você aceitou a solicitação de amizade.",
+        messageForSender,
         { sender_id: user_id, receiver_id: loggedID }
       );
     } catch (err) {
@@ -177,21 +226,26 @@ const useUserActions = (wsSendNotification, resetChatWindow)  => {
       const { user_id, friend_id } = response.data;
       const receiver_id = user_id === loggedID ? friend_id : user_id;
 
-      sendNotification(
-        "notification",
-        "rejectFriend",
-        user_id,
-        friend_id,
-        "Sua solicitação de amizade foi rejeitada.",
-        { sender_id: loggedID, receiver_id }
-      );
+      const [messageForReceiver, messageForSender] = await Promise.all([
+        getTranslatedMessage("notification.friend_request_rejected_receiver", user_id),
+        getTranslatedMessage("notification.friend_request_rejected_sender", friend_id)
+      ]);
 
       sendNotification(
         "notification",
         "rejectFriend",
         friend_id,
         user_id,
-        "Você rejeitou a solicitação de amizade.",
+        messageForReceiver,
+        { sender_id: loggedID, receiver_id }
+      );
+
+      sendNotification(
+        "notification",
+        "rejectFriend",
+        user_id,
+        friend_id,
+        messageForSender,
         { sender_id: receiver_id, receiver_id: loggedID }
       );
     } catch (err) {
@@ -211,21 +265,47 @@ const useUserActions = (wsSendNotification, resetChatWindow)  => {
         const { user_id, friend_id } = response.data;
         const receiverId = user_id === loggedID ? friend_id : user_id;
 
-        sendNotification(
-            "notification",
-            "removeFriend",
-            loggedID,
-            receiverId,
-            "Você foi removido da lista de amigos.",
-            { sender_id: loggedID, receiver_id: receiverId }
-        );
+        console.log("user_id = " + user_id);
+        console.log("friend_id = " + friend_id);
+        console.log("loggedID = " + loggedID);
+
+        const [messageForReceiver, messageForSender] = await Promise.all([
+          getTranslatedMessage("notification.friend_removed", friend_id),
+          getTranslatedMessage("notification.friend_removed_by_you", loggedID)
+        ]);
+
+        if (user_id == loggedID) {
+            sendNotification(
+              "notification",
+              "removeFriend",
+              loggedID,
+              friend_id,
+              messageForReceiver,
+              { sender_id: loggedID, receiver_id: friend_id }
+          );
+        } else {
+
+          const [messageForReceiver, messageForSender] = await Promise.all([
+            getTranslatedMessage("notification.friend_removed", user_id),
+            getTranslatedMessage("notification.friend_removed_by_you", loggedID)
+          ]);
+
+          sendNotification(
+              "notification",
+              "removeFriend",
+              loggedID,
+              receiverId,
+              messageForReceiver,
+              { sender_id: loggedID, receiver_id: receiverId }
+          );
+        }
 
         sendNotification(
             "notification",
             "removeFriend",
             receiverId,
             loggedID,
-            "Você removeu um amigo da sua lista.",
+            messageForSender,
             { sender_id: receiverId, receiver_id: loggedID }
         );
 
@@ -256,9 +336,15 @@ const useUserActions = (wsSendNotification, resetChatWindow)  => {
   
       if (!matchId) {
         console.error("match_id não está definido na resposta do backend.");
-        alert("Erro ao registrar o desafio. Tente novamente.");
+        // alert("Erro ao registrar o desafio. Tente novamente.");
+        alert("Err.");
         return;
       }
+
+      const [messageForReceiver, messageForSender] = await Promise.all([
+        getTranslatedMessage("notification.challenge_sent", loggedID),
+        getTranslatedMessage("notification.challenge_received", userId)
+      ]);
   
       // Notificação para o desafiante
       sendNotification(
@@ -266,7 +352,7 @@ const useUserActions = (wsSendNotification, resetChatWindow)  => {
         "challengeUser",
         userId,
         loggedID,
-        "Você enviou um desafio para uma partida!",
+        messageForReceiver,
         { sender_id: loggedID, receiver_id: userId, match_id: matchId, tournament_id: tournamentId }
       );
   
@@ -276,7 +362,7 @@ const useUserActions = (wsSendNotification, resetChatWindow)  => {
         "challengeUser",
         loggedID, // ID do remetente (você)
         userId, // ID do destinatário (oponente)
-        "Você foi desafiado para uma partida!",
+        null,
         { sender_id: userId, receiver_id: loggedID, match_id: matchId, tournament_id: tournamentId }
       );
   

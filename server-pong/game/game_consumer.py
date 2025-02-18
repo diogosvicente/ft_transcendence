@@ -23,8 +23,8 @@ class GameConsumer(AsyncWebsocketConsumer):
             
             # Conecta ao Redis
             try:
-                redis_host = os.environ.get("REDIS_HOST", "127.0.0.1")
-                redis_port = int(os.environ.get("REDIS_PORT", 6380))
+                redis_host = os.environ.get("REDIS_HOST", "redis")
+                redis_port = int(os.environ.get("REDIS_PORT", 6379))
                 self.redis = redis.StrictRedis(host=redis_host, port=redis_port, db=0, decode_responses=True)
                 self.redis.ping()
                 print("Conexão com Redis estabelecida.")
@@ -154,13 +154,37 @@ class GameConsumer(AsyncWebsocketConsumer):
             print(f"[DEBUG] tournament_id: {tournament_id}")
             redirect_url = "/tournaments/" if tournament_id else "/chat/"
 
+            # Obtenha o idioma do vencedor para personalizar as mensagens.
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            from asgiref.sync import sync_to_async
+            winner = await sync_to_async(User.objects.get)(id=winner_id)
+            user_language = winner.current_language or "pt_BR"
+
+            # Dicionário de traduções para as mensagens
+            messages = {
+                "pt_BR": {
+                    "message": "Partida finalizada por WO.",
+                    "final_alert": "Partida finalizada por WO! Clique em OK para sair da partida."
+                },
+                "en": {
+                    "message": "Match ended by walkover.",
+                    "final_alert": "Match ended by walkover! Click OK to exit the match."
+                },
+                "es": {
+                    "message": "Partido finalizado por WO.",
+                    "final_alert": "Partido finalizado por WO! Haga clic en OK para salir del partido."
+                }
+            }
+            msg_data = messages.get(user_language, messages["pt_BR"])
+
             await self.send_to_group("walkover", {
-                "message": "Partida finalizada por WO.",
+                "message": msg_data["message"],
                 "redirect_url": redirect_url,
                 "winner": winner_id,
                 "loser": loser_id,
                 "tournament_id": tournament_id,
-                "final_alert": "Partida finalizada por WO! Clique em OK para sair da partida."
+                "final_alert": msg_data["final_alert"]
             })
             await sync_to_async(self.update_match_by_wo)(winner_id, loser_id)
 
@@ -176,6 +200,7 @@ class GameConsumer(AsyncWebsocketConsumer):
     async def finalize_match_by_points(self):
         game_state = json.loads(self.redis.get(self.match_id))
         
+        # Determina o vencedor e o perdedor com base na pontuação
         if game_state["scores"]["left"] >= 5:
             winner_side = "left"
             loser_side = "right"
@@ -194,15 +219,65 @@ class GameConsumer(AsyncWebsocketConsumer):
         tournament_id = game_state.get("tournament_id")
         redirect_url = "/tournaments/" if tournament_id else "/chat/"
 
+        # Recupera os objetos dos usuários para obter seus idiomas
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        from asgiref.sync import sync_to_async
+        winner = await sync_to_async(User.objects.get)(id=winner_id)
+        loser = await sync_to_async(User.objects.get)(id=loser_id)
+        
+        # Debug: imprime os idiomas dos usuários
+        print(f"Winner (ID: {winner_id}) language: {winner.current_language}")
+        print(f"Loser (ID: {loser_id}) language: {loser.current_language}")
+        
+        # Dicionário de traduções para a mensagem comum (match finished)
+        message_translations = {
+            "pt_BR": "Partida finalizada por pontuação.",
+            "en": "Match finished by points.",
+            "es": "Partido finalizado por puntuación."
+        }
+        winner_language = winner.current_language or "pt_BR"
+        common_message = message_translations.get(winner_language, message_translations["pt_BR"])
+        
+        # Dicionário de traduções para o campo "final_alert" com mensagens distintas para vencedor e perdedor
+        final_alert_translations = {
+            "pt_BR": {
+                "winner": "VENCEU!!! Partida finalizada! Clique em OK para sair da partida.",
+                "loser": "PERDEU!!! Partida finalizada! Clique em OK para sair da partida."
+            },
+            "en": {
+                "winner": "WON!!! Match finished! Click OK to exit the match.",
+                "loser": "LOST!!! Match finished! Click OK to exit the match."
+            },
+            "es": {
+                "winner": "¡¡¡GANADO!!! ¡Partido terminado! Haz clic en OK para salir del partido.",
+                "loser": "¡¡¡PERDIDO!!! ¡Partido terminado! Haz clic en OK para salir del partido"
+            }
+        }
+        loser_language = loser.current_language or "pt_BR"
+        winner_final_alert = final_alert_translations.get(winner_language, final_alert_translations["pt_BR"])["winner"]
+        loser_final_alert = final_alert_translations.get(loser_language, final_alert_translations["pt_BR"])["loser"]
+
+        # Cria um objeto mapeando o ID de cada usuário à sua mensagem específica
+        final_alert = {
+            str(winner_id): winner_final_alert,
+            str(loser_id): loser_final_alert,
+        }
+
+        # Envia uma única notificação para "match_finished"
+        from channels.layers import get_channel_layer
+        channel_layer = get_channel_layer()
+        from asgiref.sync import async_to_sync
         await self.send_to_group("match_finished", {
-            "message": "Partida finalizada por pontuação.",
+            "message": common_message,
             "redirect_url": redirect_url,
             "winner": winner_id,
             "loser": loser_id,
             "tournament_id": tournament_id,
-            "final_alert": "Partida finalizada! Clique em OK para sair da partida."
+            "final_alert": final_alert  # Objeto contendo as mensagens para cada usuário
         })
 
+        from asgiref.sync import sync_to_async
         await sync_to_async(self.update_match_by_points)(winner_id, loser_id, game_state["scores"])
 
         # Se for partida de torneio e for a última, atualiza o vencedor do torneio
@@ -375,7 +450,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                 await self.send_to_group("countdown", {"message": str(i)})
                 await asyncio.sleep(1)
             game_state = json.loads(self.redis.get(self.match_id))
-            game_state["ball"]["speed_x"] = 100
+            game_state["ball"]["speed_x"] = 200
             game_state["ball"]["speed_y"] = 100
             self.redis.set(self.match_id, json.dumps(game_state))
             print("Contagem regressiva concluída. Jogo iniciado.")
@@ -410,17 +485,34 @@ class GameConsumer(AsyncWebsocketConsumer):
                 if ball["y"] <= 0 or ball["y"] >= 600:
                     ball["speed_y"] = -ball["speed_y"]
 
-                if ball["x"] <= 20 and game_state["paddles"]["left"] <= ball["y"] <= game_state["paddles"]["left"] + 100:
-                    ball["speed_x"] = -ball["speed_x"]
-                if ball["x"] >= 780 and game_state["paddles"]["right"] <= ball["y"] <= game_state["paddles"]["right"] + 100:
+                # left paddle
+                if (
+                    ball["x"] - 10 <= 20
+                    and game_state["paddles"]["left"] <= ball["y"] <= game_state["paddles"]["left"] + 100
+                    and ball["speed_x"] < 0
+                ):
                     ball["speed_x"] = -ball["speed_x"]
 
-                if ball["x"] < 0:
+                    delta_y = ball["y"] - (game_state["paddles"]["left"] + 50)
+                    ball["speed_y"] = delta_y * 4
+
+                # right paddle
+                if (
+                    ball["x"] + 10 >= 780
+                    and game_state["paddles"]["right"] <= ball["y"] <= game_state["paddles"]["right"] + 100
+                    and ball["speed_x"] > 0
+                ):
+                    ball["speed_x"] = -ball["speed_x"]
+
+                    delta_y = ball["y"] - (game_state["paddles"]["right"] + 50)
+                    ball["speed_y"] = delta_y * 4
+
+                if ball["x"] - 10 < 0:
                     game_state["scores"]["right"] += 1
-                    ball.update({"x": 400, "y": 300, "speed_x": 200, "speed_y": 200})
-                elif ball["x"] > 800:
+                    ball.update({"x": 400, "y": 300, "speed_x": 300, "speed_y": 100})
+                elif ball["x"] + 10 > 800:
                     game_state["scores"]["left"] += 1
-                    ball.update({"x": 400, "y": 300, "speed_x": -200, "speed_y": -200})
+                    ball.update({"x": 400, "y": 300, "speed_x": -300, "speed_y": -100})
 
                 self.redis.set(self.match_id, json.dumps(game_state))
                 await self.send_to_group("state_update", game_state)

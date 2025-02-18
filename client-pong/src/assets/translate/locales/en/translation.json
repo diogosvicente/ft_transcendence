@@ -201,5 +201,32 @@
     "victory": "victories",
     "defeat": "defeats",
     "no_data": "No data available."
+  },
+  "notification": {
+    "friend_request_received": "You received a friend request.",
+    "friend_request_sent": "You sent a friend request.",
+    "blocked_you": "You were blocked.",
+    "blocked_user": "You blocked the user.",
+    "unblocked_you": "You were unblocked.",
+    "unblocked_user": "You unblocked the user.",
+    "friend_request_accepted_receiver": "Your friend request was accepted.",
+    "friend_request_accepted_sender": "You accepted the friend request.",
+    "friend_request_rejected_receiver": "Your friend request was rejected.",
+    "friend_request_rejected_sender": "You rejected the friend request.",
+    "friend_removed": "You have been removed from the friends list.",
+    "friend_removed_by_you": "You removed a friend from your list.",
+    "challenge_error": "Error registering the challenge. Please try again.",
+    "challenge_sent": "You sent a challenge for a match!",
+    "challenge_received": "You were challenged to a match!"
+  },
+  "toast": {
+    "challenge_declined": "You declined the challenge.",
+    "challenge_decline_error": "Error declining the challenge.",
+    "accept": "Accept",
+    "decline": "Decline",
+    "new_tournament": "New tournament created: ",
+    "tournament_updated": "Tournament updated: {{name}} now has {{totalParticipants}} participants.",
+    "tournament_started": "Tournament '{{name}}' has started!",
+    "not_in_next_match": "You are not in the next match."
   }
 }

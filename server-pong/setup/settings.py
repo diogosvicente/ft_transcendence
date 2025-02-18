@@ -121,7 +121,7 @@ DATABASES = {
         'NAME': os.getenv('DB_NAME', 'ft_transcendence'),
         'USER': os.getenv('DB_USER', 'postgres'),
         'PASSWORD': os.getenv('DB_PASSWORD', '123456'),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'HOST': 'db',
         'PORT': os.getenv('DB_PORT', '5432'),  # Porta padrão do PostgreSQL
     }
 }
@@ -172,11 +172,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 ASGI_APPLICATION = 'setup.asgi.application'
+
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            'hosts': [('127.0.0.1', 6380)],
+            'hosts': [('redis', 6379)],
         }
     }
 }
@@ -188,11 +189,25 @@ AUTH_USER_MODEL = 'user_management.User'
 
 CORS_ALLOW_ALL_ORIGINS = True  # Permite todas as origens (apenas para testes!)
 
+# Se precisar de autenticação via cookies/tokens:
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
 # COLOQUE DO JEITO ABAIXO QUANDO ESTIVER EM PRODUÇÃO
-# CORS_ALLOWED_ORIGINS = [
-#     "http://localhost:5173",  # Origem do seu frontend React
-#     "https://example.com",    # Substitua pelo domínio em produção
-# ]
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # Origem do seu frontend React
+    "http://127.0.0.1:3000",    # Substitua pelo domínio em produção
+]
 
 AUTHENTICATION_BACKENDS = [
     'axes.backends.AxesStandaloneBackend',  # Backend do django-axes

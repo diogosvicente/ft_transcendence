@@ -430,7 +430,7 @@ class TournamentStartAPIView(APIView):
                     "name": tournament.name,
                     "total_participants": participant_count,
                     "status": "ongoing",
-                    "message": f"O torneio '{tournament.name}' foi iniciado!",
+                    "message": {"key": "toast.tournament_started", "name": tournament.name},
                 },
             },
         )
@@ -496,7 +496,7 @@ class ChallengeUserAPIView(APIView):
         tournament_id = request.data.get("tournament_id")
         
         if tournament_id:
-            # Se tournament_id foi passado, trata como desafio de torneio
+            # Desafio de torneio
             match = Match.objects.filter(
                 tournament_id=tournament_id,
                 status="pending"
@@ -523,21 +523,39 @@ class ChallengeUserAPIView(APIView):
                     status=status.HTTP_404_NOT_FOUND
                 )
             
+            # Define o idioma do oponente e a mensagem traduzida para o desafio de torneio
+            opponent_language = opponent.current_language or "pt_BR"
+            challenge_messages = {
+                "pt_BR": f"{user.display_name} desafiou você para uma partida de torneio!",
+                "en": f"{user.display_name} challenged you for a tournament match!",
+                "es": f"{user.display_name} te desafió a un partido de torneo!"
+            }
+            challenge_message = challenge_messages.get(opponent_language, challenge_messages["pt_BR"])
+            
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
                 f"user_{opponent.id}",
                 {
                     "type": "game_challenge",
-                    "message": f"{user.display_name} desafiou você para uma partida de torneio!",
+                    "message": challenge_message,
                     "match_id": match.id,
                     "tournament_id": tournament_id,
                     "sender_id": user.id,
                 },
             )
             
+            # Define a mensagem de resposta traduzida, de acordo com o idioma do usuário que faz a requisição
+            user_language = user.current_language or "pt_BR"
+            response_message_translations = {
+                "pt_BR": "Desafio de torneio enviado com sucesso.",
+                "en": "Tournament challenge sent successfully.",
+                "es": "¡Desafío de torneo enviado con éxito!"
+            }
+            response_message = response_message_translations.get(user_language, response_message_translations["pt_BR"])
+            
             return Response(
                 {
-                    "message": "Desafio de torneio enviado com sucesso.",
+                    "message": response_message,
                     "match_id": match.id,
                     "player1_id": match.player1_id,
                     "player2_id": match.player2_id,
@@ -547,7 +565,7 @@ class ChallengeUserAPIView(APIView):
                 status=status.HTTP_201_CREATED,
             )
         else:
-            # Modo de desafio direto (sem torneio)
+            # Desafio direto (sem torneio)
             opponent_id = request.data.get("opponent_id")
             if not opponent_id:
                 return Response({"error": "O ID do oponente é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
@@ -555,28 +573,50 @@ class ChallengeUserAPIView(APIView):
                 opponent = get_user_model().objects.get(id=opponent_id)
             except get_user_model().DoesNotExist:
                 return Response({"error": "O oponente não foi encontrado."}, status=status.HTTP_404_NOT_FOUND)
+            
             if user.id == opponent.id:
                 return Response({"error": "Você não pode desafiar a si mesmo."}, status=status.HTTP_400_BAD_REQUEST)
+            
             match = Match.objects.create(
                 player1=user,
                 player2=opponent,
                 status="pending",
-                tournament_id=None  # Desafio direto, tournament_id é null.
+                tournament_id=None,  # Desafio direto, tournament_id é null.
             )
+            
+            # Define o idioma do oponente e a mensagem traduzida para o desafio direto
+            opponent_language = opponent.current_language or "pt_BR"
+            challenge_messages = {
+                "pt_BR": f"{user.display_name} desafiou você para uma partida!",
+                "en": f"{user.display_name} challenged you for a match!",
+                "es": f"{user.display_name} te desafió a un partido!"
+            }
+            challenge_message = challenge_messages.get(opponent_language, challenge_messages["pt_BR"])
+            
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
                 f"user_{opponent.id}",
                 {
                     "type": "game_challenge",
-                    "message": f"{user.display_name} desafiou você para uma partida!",
+                    "message": challenge_message,
                     "match_id": match.id,
                     "sender_id": user.id,
                     "tournament_id": None,
                 },
             )
+            
+            # Para o desafio direto, a mensagem de resposta também pode ser traduzida conforme o idioma do usuário
+            user_language = user.current_language or "pt_BR"
+            response_message_translations = {
+                "pt_BR": "Desafio enviado com sucesso.",
+                "en": "Challenge sent successfully.",
+                "es": "¡Desafío enviado con éxito!"
+            }
+            response_message = response_message_translations.get(user_language, response_message_translations["pt_BR"])
+            
             return Response(
                 {
-                    "message": "Desafio enviado com sucesso.",
+                    "message": response_message,
                     "match_id": match.id,
                     "status": match.status,
                     "tournament_id": None,
@@ -592,30 +632,40 @@ class AcceptChallengeAPIView(APIView):
         match_id = request.data.get("match_id")
         
         if not match_id:
-            return Response({"error": "O ID da partida é obrigatório."}, status=400)
+            return Response({"error": "O ID da partida é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
-            # Busca a partida pendente independentemente de qual jogador seja
+            # Busca a partida pendente, independentemente de qual jogador seja
             match = Match.objects.get(id=match_id, status="pending")
         except Match.DoesNotExist:
-            return Response({"error": "Partida não encontrada ou já iniciada."}, status=404)
+            return Response({"error": "Partida não encontrada ou já iniciada."}, status=status.HTTP_404_NOT_FOUND)
         
         # Verifica se o usuário faz parte da partida
         if user != match.player1 and user != match.player2:
-            return Response({"error": "Você não faz parte desta partida."}, status=403)
+            return Response({"error": "Você não faz parte desta partida."}, status=status.HTTP_403_FORBIDDEN)
         
-        # Atualiza o status da partida para "ongoing"
+        # Atualiza o status da partida para "ongoing" e salva
         match.status = "ongoing"
         match.save()
         
-        # Notifica ambos os jogadores para se conectarem ao WebSocket do jogo
+        # Define as mensagens de início de partida conforme o idioma
+        messages = {
+            "pt_BR": "A partida foi aceita. Boa Partida!",
+            "en": "The match has been accepted. Good Game!",
+            "es": "¡El partido ha sido aceptado. Buen partido!"
+        }
+        
         channel_layer = get_channel_layer()
+        # Notifica ambos os jogadores usando o idioma preferido de cada um
         for player in [match.player1, match.player2]:
+            # Se o campo current_language não estiver definido, usa "pt_BR" como padrão
+            player_language = getattr(player, "current_language", "pt_BR")
+            message = messages.get(player_language, messages["pt_BR"])
             async_to_sync(channel_layer.group_send)(
                 f"user_{player.id}",
                 {
                     "type": "game_start",
-                    "message": "A partida foi aceita. Conecte-se ao jogo!",
+                    "message": message,
                     "match_id": match.id,
                     "tournament_id": match.tournament_id,
                 },
@@ -623,7 +673,7 @@ class AcceptChallengeAPIView(APIView):
         
         return Response(
             {"message": "Partida aceita. Conecte-se ao jogo.", "match_id": match.id},
-            status=200,
+            status=status.HTTP_200_OK,
         )
 
 class DeclineChallengeAPIView(APIView):
@@ -637,34 +687,50 @@ class DeclineChallengeAPIView(APIView):
             return Response({"error": "O ID da partida é obrigatório."}, status=400)
         
         try:
-            # Busca a partida pendente independentemente de qual jogador seja
+            # Busca a partida pendente (independente de qual jogador seja)
             match = Match.objects.get(id=match_id, status="pending")
         except Match.DoesNotExist:
             return Response({"error": "Partida não encontrada ou já iniciada."}, status=404)
         
         # Verifica se o usuário faz parte da partida
-        if user != match.player1 and user != match.player2:
+        if user not in [match.player1, match.player2]:
             return Response({"error": "Você não faz parte desta partida."}, status=403)
         
-        # Determina qual jogador será notificado: o outro participante
+        # Determina o ID do outro participante (destinatário da notificação)
         notify_id = match.player2.id if user == match.player1 else match.player1.id
         
-        # Notifica o outro jogador de que o desafio foi recusado
+        # Obtém o usuário destinatário para acessar seu idioma salvo
+        try:
+            notify_user = get_user_model().objects.get(id=notify_id)
+        except get_user_model().DoesNotExist:
+            return Response({"error": "O oponente não foi encontrado."}, status=404)
+        
+        notify_language = notify_user.current_language or "pt_BR"
+        
+        # Define as mensagens de desafio recusado de acordo com o idioma do oponente
+        challenge_declined_messages = {
+            "pt_BR": f"{user.display_name} recusou o seu desafio.",
+            "en": f"{user.display_name} declined your challenge.",
+            "es": f"{user.display_name} rechazó tu desafío."
+        }
+        message = challenge_declined_messages.get(notify_language, challenge_declined_messages["pt_BR"])
+        
+        # Envia a notificação usando o ID do usuário destinatário
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
             f"user_{notify_id}",
             {
                 "type": "game_challenge_declined",
-                "message": f"{user.display_name} recusou o seu desafio.",
+                "message": message,
                 "match_id": match.id,
             },
         )
         
-        # Se não for parte de um torneio, remove a partida; caso contrário, atualiza o status para "declined"
+        # Se a partida não for de torneio, remove a partida; caso contrário, atualiza o status para "declined"
         if match.tournament_id is None:
             match.delete()
         
-        return Response({"message": "Desafio recusado."}, status=200)
+        return Response({"message": "Desafio recusado."}, status=status.HTTP_200_OK)
 
 class MatchDetailView(APIView):
     """

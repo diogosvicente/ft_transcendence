@@ -396,4 +396,46 @@ class CheckDisplayNameAPIView(APIView):
         """
         exists = User.objects.filter(display_name=display_name).exists()
         return Response({"exists": exists}, status=status.HTTP_200_OK)
-    
+
+class UserLanguageDetailAPIView(APIView):
+    """
+    API view para recuperar e atualizar o idioma atual (current_language) do usuário.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id, *args, **kwargs):
+        """
+        Retorna o idioma atual selecionado pelo usuário.
+        """
+        try:
+            user = User.objects.get(id=id)
+        except User.DoesNotExist:
+            return Response({"detail": "Usuário não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+        
+        return Response({"current_language": user.current_language}, status=status.HTTP_200_OK)
+
+    def put(self, request, id, *args, **kwargs):
+        """
+        Atualiza o idioma atual do usuário com o valor enviado no corpo da requisição.
+        O campo 'language' deve ser um dos seguintes: pt_BR, en ou es.
+        """
+        try:
+            user = User.objects.get(id=id)
+        except User.DoesNotExist:
+            return Response({"detail": "Usuário não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+        
+        language = request.data.get("language")
+        if not language:
+            return Response({"detail": "O campo 'language' é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        allowed_languages = ["pt_BR", "en", "es"]
+        if language not in allowed_languages:
+            return Response({"detail": f"O idioma deve ser um dos seguintes: {allowed_languages}."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        user.current_language = language
+        user.save()
+
+        return Response(
+            {"detail": "Idioma atualizado com sucesso.", "current_language": user.current_language},
+            status=status.HTTP_200_OK
+        )

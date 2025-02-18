@@ -197,5 +197,31 @@
     "victory": "vitórias",
     "defeat": "derrotas",
     "no_data": "Nenhum dado disponível."
+  },
+  "notification": {
+      "friend_request_received": "Você recebeu uma solicitação de amizade.",
+      "friend_request_sent": "Você enviou uma solicitação de amizade.",
+      "blocked_you": "Você foi bloqueado.",
+      "blocked_user": "Você bloqueou o usuário.",
+      "unblocked_you": "Você foi desbloqueado.",
+      "unblocked_user": "Você desbloqueou o usuário.",
+      "friend_request_accepted_receiver": "Sua solicitação de amizade foi aceita.",
+      "friend_request_accepted_sender": "Você aceitou a solicitação de amizade.",
+      "friend_request_rejected_receiver": "Sua solicitação de amizade foi rejeitada.",
+      "friend_request_rejected_sender": "Você rejeitou a solicitação de amizade.",
+      "friend_removed": "Você foi removido da lista de amigos.",
+      "friend_removed_by_you": "Você removeu um amigo da sua lista.",
+      "challenge_sent": "Você enviou um desafio para uma partida!",
+      "challenge_received": "Você foi desafiado para uma partida!"
+  },
+  "toast": {
+      "challenge_declined": "Você recusou o desafio.",
+      "challenge_decline_error": "Erro ao recusar o desafio.",
+      "accept": "Aceitar",
+      "decline": "Recusar",
+      "new_tournament": "Novo torneio criado: ",
+      "tournament_updated": "Torneio atualizado: {{name}} agora tem {{totalParticipants}} participantes.",
+      "tournament_started": "O torneio '{{name}}' foi iniciado!",
+      "not_in_next_match": "Você não está na próxima partida."
   }
 }

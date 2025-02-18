@@ -11,7 +11,8 @@ from .views import (
     MatchHistoryView,
     UserRelationshipView,
     VictoryRankingAPIView,
-    CheckDisplayNameAPIView
+    CheckDisplayNameAPIView,
+    UserLanguageDetailAPIView
 )
 
 urlpatterns = [
@@ -27,4 +28,5 @@ urlpatterns = [
     path("relationship/<int:user_id>/", UserRelationshipView.as_view(), name="user-relationship"),
     path("ranking/victories/", VictoryRankingAPIView.as_view(), name="victory-ranking"),
     path('check-display-name/<str:display_name>/', CheckDisplayNameAPIView.as_view(), name='check-display-name'),
+    path('user/<int:id>/language/', UserLanguageDetailAPIView.as_view(), name='user-language-update'),
 ]

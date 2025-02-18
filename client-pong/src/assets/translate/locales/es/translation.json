@@ -106,7 +106,7 @@
     "create_tournament": "Crear Torneo",
     "registered_as": "Registrado como",
     "confirm_registration": "Confirmar registro",
-    "join": "Unirse",
+    "join": "ingresar",
     "alias_placeholder": "Escribe tu alias",
     "confirm_placeholder": "Confirmar Inscripción",
     "start_tournament": "Iniciar Torneo",
@@ -197,5 +197,32 @@
     "victory": "victorias",
     "defeat": "derrotas",
     "no_data": "No hay datos disponibles."
+  },
+  "notification": {
+    "friend_request_received": "Has recibido una solicitud de amistad.",
+    "friend_request_sent": "Has enviado una solicitud de amistad.",
+    "blocked_you": "Has sido bloqueado.",
+    "blocked_user": "Has bloqueado al usuario.",
+    "unblocked_you": "Has sido desbloqueado.",
+    "unblocked_user": "Has desbloqueado al usuario.",
+    "friend_request_accepted_receiver": "Tu solicitud de amistad fue aceptada.",
+    "friend_request_accepted_sender": "Aceptaste la solicitud de amistad.",
+    "friend_request_rejected_receiver": "Tu solicitud de amistad fue rechazada.",
+    "friend_request_rejected_sender": "Rechazaste la solicitud de amistad.",
+    "friend_removed": "Has sido eliminado de la lista de amigos.",
+    "friend_removed_by_you": "Eliminaste a un amigo de tu lista.",
+    "challenge_error": "Error al registrar el desafío. Inténtalo de nuevo.",
+    "challenge_sent": "¡Enviaste un desafío para un partido!",
+    "challenge_received": "¡Has sido desafiado para un partido!"
+  },
+  "toast": {
+    "challenge_declined": "Has rechazado el desafío.",
+    "challenge_decline_error": "Error al rechazar el desafío.",
+    "accept": "Aceptar",
+    "decline": "Rechazar",
+    "new_tournament": "Nuevo torneo creado: ",
+    "tournament_updated": "Torneo actualizado: {{name}} ahora tiene {{totalParticipants}} participantes.",
+    "tournament_started": "¡El torneo '{{name}}' ha comenzado!",
+    "not_in_next_match": "No estás en el próximo partido."
   }
 }

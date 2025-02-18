@@ -1,11 +1,14 @@
 import React from "react";
 import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next";
 import "react-toastify/dist/ReactToastify.css";
 
 const ChallengeToast = ({ sender, matchId, onAccept, onDecline }) => {
+  const { t } = useTranslation();
+
   return (
     <div>
-      <p>{sender} desafiou você para uma partida!</p>
+      <p>{sender}</p>  {/*desafiou você para uma partida! [REMOVIDO] */}
       <div>
         <button
           onClick={() => {
@@ -14,7 +17,7 @@ const ChallengeToast = ({ sender, matchId, onAccept, onDecline }) => {
           }}
           style={{ marginRight: "10px" }}
         >
-          Aceitar
+          {t("toast.accept")}
         </button>
         <button
           onClick={() => {
@@ -22,7 +25,7 @@ const ChallengeToast = ({ sender, matchId, onAccept, onDecline }) => {
             toast.dismiss();
           }}
         >
-          Recusar
+          {t("toast.decline")}
         </button>
       </div>
     </div>

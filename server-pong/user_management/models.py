@@ -52,6 +52,18 @@ class User(AbstractBaseUser):
     losses = models.IntegerField(default=0)  # Quantidade de derrotas
     online_status = models.BooleanField(default=False)  # Status online
 
+    CURRENT_LANGUAGE_CHOICES = [
+        ('pt_BR', 'Português (Brasil)'),
+        ('en', 'English'),
+        ('es', 'Español'),
+    ]
+    current_language = models.CharField(
+        max_length=5,
+        choices=CURRENT_LANGUAGE_CHOICES,
+        default='pt_BR',
+        verbose_name=_("Idioma atual")
+    )
+
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
