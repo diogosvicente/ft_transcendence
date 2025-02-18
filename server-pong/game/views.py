@@ -430,7 +430,7 @@ class TournamentStartAPIView(APIView):
                     "name": tournament.name,
                     "total_participants": participant_count,
                     "status": "ongoing",
-                    "message": f"O torneio '{tournament.name}' foi iniciado!",
+                    "message": {"key": "toast.tournament_started", "name": tournament.name},
                 },
             },
         )
@@ -487,17 +487,6 @@ class TournamentSetWinnerAPIView(APIView):
             },
             status=200,
         )
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
-from django.contrib.auth import get_user_model
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
-
-# Supondo que o model Match esteja importado, por exemplo:
-from game.models import Match
 
 class ChallengeUserAPIView(APIView):
     permission_classes = [IsAuthenticated]

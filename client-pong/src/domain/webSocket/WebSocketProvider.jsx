@@ -186,7 +186,10 @@ export const WebSocketProvider = ({ children }) => {
     setNotifications((prev) => [...prev, data]);
 
     if (status === "ongoing") {
-      toast.success(tournament.message || t("toast.tournament_started", { name }));
+      const message = tournament.message
+        ? t(tournament.message.key, { name: tournament.message.name })
+        : t("toast.tournament_started", { name });
+      toast.success(message);
     } else {
       toast.info(t("toast.tournament_updated", { name, totalParticipants }));
     }
