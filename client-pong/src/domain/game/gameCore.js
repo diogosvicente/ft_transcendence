@@ -4,15 +4,11 @@ import { drawPaddle, PADDLE_HEIGHT, PADDLE_THICKNESS } from "./paddle.js";
 let ballX = 300;
 let ballY = 300;
 
-// Speed target in pixels/second
 let ballSpeedX = 300;
 let ballSpeedY = 300;
 
-// Left player controls
 let qPressed = false;
 let aPressed = false;
-
-// Right player controls
 let upPressed = false;
 let downPressed = false;
 
@@ -22,13 +18,20 @@ let player2Score = 0;
 const WINNING_SCORE = 5;
 
 export const gameCore = function (canvas, options = {}) {
+  // Desestruturamos as novas props:
+  const {
+    leftPlayerName = "PLAYER1",
+    rightPlayerName = "PLAYER2",
+    onMatchEnd, // callback opcional
+  } = options;
+
   const ctx = canvas.getContext("2d");
 
   let leftPaddleY = canvas.height / 2 - PADDLE_HEIGHT / 2;
   let rightPaddleY = canvas.height / 2 - PADDLE_HEIGHT / 2;
 
   let prevTime;
-  let animationId = null; // Armazena o ID do requestAnimationFrame
+  let animationId = null;
 
   const mainLoop = (currTime) => {
     animationId = requestAnimationFrame(mainLoop);
@@ -46,7 +49,6 @@ export const gameCore = function (canvas, options = {}) {
   };
 
   const start = () => {
-    // Zera o placar ao iniciar
     player1Score = 0;
     player2Score = 0;
 
@@ -56,9 +58,6 @@ export const gameCore = function (canvas, options = {}) {
     animationId = requestAnimationFrame(mainLoop);
   };
 
-  /**
-   * Para o jogo: remove listeners e cancela o requestAnimationFrame
-   */
   const stop = () => {
     if (animationId) {
       cancelAnimationFrame(animationId);
@@ -68,50 +67,43 @@ export const gameCore = function (canvas, options = {}) {
     window.removeEventListener("keyup", keyUpHandler);
   };
 
-  const calcDistToMove = (speed, deltaTime) => {
-    return (speed * deltaTime) / 1000;
-  };
-
   const update = (deltaTime) => {
-    // Ball MOVEMENT
-    ballX += calcDistToMove(ballSpeedX, deltaTime);
-    ballY += calcDistToMove(ballSpeedY, deltaTime);
+    ballX += (ballSpeedX * deltaTime) / 1000;
+    ballY += (ballSpeedY * deltaTime) / 1000;
 
-    // Left Paddle MOVEMENT
     if (qPressed) leftPaddleY -= 5;
     if (aPressed) leftPaddleY += 5;
 
-    // Right Paddle MOVEMENT
     if (upPressed) rightPaddleY -= 5;
     if (downPressed) rightPaddleY += 5;
 
-    // COLLISION for PADDLES - lado direito
+    // Bate na parede direita
     if (ballX + 20 >= canvas.width) {
       if (ballY > rightPaddleY && ballY < rightPaddleY + PADDLE_HEIGHT) {
-        ballX -= calcDistToMove(ballSpeedX, deltaTime);
+        ballX -= (ballSpeedX * deltaTime) / 1000;
         ballSpeedX = -ballSpeedX;
         let deltaY = ballY - (rightPaddleY + PADDLE_HEIGHT / 2);
         ballSpeedY = deltaY * 4;
       } else {
         player1Score++;
-        ballReset();
+        checkWinner();
       }
     }
 
-    // COLLISION for PADDLES - lado esquerdo
+    // Bate na parede esquerda
     if (ballX <= 0) {
       if (ballY > leftPaddleY && ballY < leftPaddleY + PADDLE_HEIGHT) {
-        ballX -= calcDistToMove(ballSpeedX, deltaTime);
+        ballX -= (ballSpeedX * deltaTime) / 1000;
         ballSpeedX = -ballSpeedX;
         let deltaY = ballY - (leftPaddleY + PADDLE_HEIGHT / 2);
         ballSpeedY = deltaY * 4;
       } else {
         player2Score++;
-        ballReset();
+        checkWinner();
       }
     }
 
-    // COLLISION for vertical boundaries
+    // Bate no topo/fundo
     if (ballY + 20 > canvas.height) {
       ballSpeedY = -ballSpeedY;
     }
@@ -120,21 +112,35 @@ export const gameCore = function (canvas, options = {}) {
     }
   };
 
+  const checkWinner = () => {
+    if (player1Score >= WINNING_SCORE) {
+      // Vencedor é o jogador da esquerda
+      if (onMatchEnd) onMatchEnd(leftPlayerName);
+      return; // Para de atualizar (não reseta a bola)
+    }
+    if (player2Score >= WINNING_SCORE) {
+      // Vencedor é o jogador da direita
+      if (onMatchEnd) onMatchEnd(rightPlayerName);
+      return;
+    }
+
+    // Se ninguém chegou a 5 ainda, reposiciona a bola
+    ballX = canvas.width / 2;
+    ballY = canvas.height / 2;
+    ballSpeedX = -ballSpeedX;
+    ballSpeedY = 300;
+  };
+
   const draw = (ctx) => {
     ctx.save();
 
-    // Field
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Ball
     ctx.fillStyle = "white";
     ctx.fillRect(ballX, ballY, 20, 20);
 
-    // Left paddle
     drawPaddle(ctx, 0, leftPaddleY);
-
-    // Right paddle
     drawPaddle(ctx, canvas.width - PADDLE_THICKNESS, rightPaddleY);
 
     ctx.fillStyle = "white";
@@ -145,32 +151,8 @@ export const gameCore = function (canvas, options = {}) {
     ctx.restore();
   };
 
-  const ballReset = () => {
-    // Se alguém chegou a 5 pontos, avisa e para
-    if (player1Score >= WINNING_SCORE) {
-      if (options.onMatchEnd) {
-        options.onMatchEnd("PLAYER1");
-      }
-      return;
-    }
-    if (player2Score >= WINNING_SCORE) {
-      if (options.onMatchEnd) {
-        options.onMatchEnd("PLAYER2");
-      }
-      return;
-    }
-
-    // Caso contrário, apenas reposiciona a bola
-    ballX = canvas.width / 2;
-    ballY = canvas.height / 2;
-
-    ballSpeedX = -ballSpeedX;
-    ballSpeedY = 300;
-  };
-
-  // Captura de teclas
   function keyDownHandler(e) {
-    // Impede a rolagem da página
+    // Evita scroll
     if (e.code === "ArrowUp" || e.code === "ArrowDown") {
       e.preventDefault();
     }

@@ -79,40 +79,56 @@ export function GameCanvas() {
   };
 
   // Sempre que currentMatch mudar, iniciamos a próxima partida
-  useEffect(() => {
-    if (tournamentActive && !champion) {
-      // Para qualquer jogo anterior
-      if (tournamentGameRef.current) {
-        tournamentGameRef.current.stop();
-      }
+  // ...
+useEffect(() => {
+  if (tournamentActive && !champion) {
+    // Se já havia um jogo anterior, paramos
+    if (tournamentGameRef.current) {
+      tournamentGameRef.current.stop();
+    }
 
-      // Se passamos da Final, não inicia nada
-      if (currentMatch > 3) return;
-
-      // Inicia a partida do "currentMatch"
-      const canvas = tournamentCanvasRef.current;
-      const game = gameCore(canvas, {
+    if (currentMatch === 1) {
+      // Partida 1: PLAYER1 vs PLAYER2
+      const game = gameCore(tournamentCanvasRef.current, {
+        leftPlayerName: "PLAYER1",
+        rightPlayerName: "PLAYER2",
         onMatchEnd: (winner) => {
-          // Para o jogo
           game.stop();
-
-          if (currentMatch === 1) {
-            setWinnerMatch1(winner);
-            setCurrentMatch(2);
-          } else if (currentMatch === 2) {
-            setWinnerMatch2(winner);
-            setCurrentMatch(3);
-          } else {
-            // Final
-            setChampion(winner);
-          }
+          setWinnerMatch1(winner);
+          setCurrentMatch(2);
+        },
+      });
+      game.start();
+      tournamentGameRef.current = game;
+    } else if (currentMatch === 2) {
+      // Partida 2: PLAYER3 vs PLAYER4
+      const game = gameCore(tournamentCanvasRef.current, {
+        leftPlayerName: "PLAYER3",
+        rightPlayerName: "PLAYER4",
+        onMatchEnd: (winner) => {
+          game.stop();
+          setWinnerMatch2(winner);
+          setCurrentMatch(3);
+        },
+      });
+      game.start();
+      tournamentGameRef.current = game;
+    } else if (currentMatch === 3) {
+      // Partida 3: Final -> winnerMatch1 vs winnerMatch2
+      const game = gameCore(tournamentCanvasRef.current, {
+        leftPlayerName: winnerMatch1 || "Vencedor P1",
+        rightPlayerName: winnerMatch2 || "Vencedor P2",
+        onMatchEnd: (winner) => {
+          game.stop();
+          setChampion(winner);
         },
       });
       game.start();
       tournamentGameRef.current = game;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentMatch, tournamentActive, champion]);
+  }
+}, [tournamentActive, currentMatch, champion]);
+
 
   // Quando definimos "champion", paramos o jogo final
   useEffect(() => {
