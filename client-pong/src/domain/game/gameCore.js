@@ -1,3 +1,4 @@
+// client-pong/src/domain/game/gameCore.js
 import { drawPaddle, PADDLE_HEIGHT, PADDLE_THICKNESS } from "./paddle.js";
 
 let ballX = 300;
@@ -18,89 +19,90 @@ let downPressed = false;
 let player1Score = 0;
 let player2Score = 0;
 
-const WINNING_SCORE = 3;
+const WINNING_SCORE = 5;
 
-export const gameCore = function (canvas) {
+export const gameCore = function (canvas, options = {}) {
   const ctx = canvas.getContext("2d");
 
   let leftPaddleY = canvas.height / 2 - PADDLE_HEIGHT / 2;
   let rightPaddleY = canvas.height / 2 - PADDLE_HEIGHT / 2;
 
-//   let frameCount = 0;
-//   let fps;
-  let prevTimeFpsMeasure;
-
   let prevTime;
+  let animationId = null; // Armazena o ID do requestAnimationFrame
 
-  const mainLoop = function (currTime) {
-    requestAnimationFrame(mainLoop);
+  const mainLoop = (currTime) => {
+    animationId = requestAnimationFrame(mainLoop);
 
-    measureFps(currTime);
-
-    // Calc delta time for time-based animation
     if (prevTime === undefined) {
       prevTime = currTime;
     }
     const deltaTime = currTime - prevTime;
 
     update(deltaTime);
-
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     draw(ctx);
 
     prevTime = currTime;
   };
 
-  const start = function () {
+  const start = () => {
+    // Zera o placar ao iniciar
+    player1Score = 0;
+    player2Score = 0;
+
     window.addEventListener("keydown", keyDownHandler, false);
     window.addEventListener("keyup", keyUpHandler, false);
 
-    requestAnimationFrame(mainLoop);
+    animationId = requestAnimationFrame(mainLoop);
   };
 
-  const calcDistToMove = function (deltaTime, speed) {
+  /**
+   * Para o jogo: remove listeners e cancela o requestAnimationFrame
+   */
+  const stop = () => {
+    if (animationId) {
+      cancelAnimationFrame(animationId);
+      animationId = null;
+    }
+    window.removeEventListener("keydown", keyDownHandler);
+    window.removeEventListener("keyup", keyUpHandler);
+  };
+
+  const calcDistToMove = (speed, deltaTime) => {
     return (speed * deltaTime) / 1000;
   };
 
-  const update = function (deltaTime) {
+  const update = (deltaTime) => {
     // Ball MOVEMENT
     ballX += calcDistToMove(ballSpeedX, deltaTime);
     ballY += calcDistToMove(ballSpeedY, deltaTime);
 
     // Left Paddle MOVEMENT
-    if (qPressed) {
-      leftPaddleY -= 5;
-    }
-    if (aPressed) {
-      leftPaddleY += 5;
-    }
+    if (qPressed) leftPaddleY -= 5;
+    if (aPressed) leftPaddleY += 5;
 
     // Right Paddle MOVEMENT
-    if (upPressed) {
-      rightPaddleY -= 5;
-    }
-    if (downPressed) {
-      rightPaddleY += 5;
-    }
+    if (upPressed) rightPaddleY -= 5;
+    if (downPressed) rightPaddleY += 5;
 
-    // COLLISION for PADDLES
+    // COLLISION for PADDLES - lado direito
     if (ballX + 20 >= canvas.width) {
       if (ballY > rightPaddleY && ballY < rightPaddleY + PADDLE_HEIGHT) {
-        ballX -= (ballSpeedX * deltaTime) / 1000;
+        ballX -= calcDistToMove(ballSpeedX, deltaTime);
         ballSpeedX = -ballSpeedX;
-
         let deltaY = ballY - (rightPaddleY + PADDLE_HEIGHT / 2);
-        ballSpeedY = deltaY * 4; // Normalized deltaY
+        ballSpeedY = deltaY * 4;
       } else {
         player1Score++;
         ballReset();
       }
     }
+
+    // COLLISION for PADDLES - lado esquerdo
     if (ballX <= 0) {
       if (ballY > leftPaddleY && ballY < leftPaddleY + PADDLE_HEIGHT) {
-        ballX -= (ballSpeedX * deltaTime) / 1000;
+        ballX -= calcDistToMove(ballSpeedX, deltaTime);
         ballSpeedX = -ballSpeedX;
-
         let deltaY = ballY - (leftPaddleY + PADDLE_HEIGHT / 2);
         ballSpeedY = deltaY * 4;
       } else {
@@ -118,7 +120,7 @@ export const gameCore = function (canvas) {
     }
   };
 
-  const draw = function (ctx) {
+  const draw = (ctx) => {
     ctx.save();
 
     // Field
@@ -135,52 +137,30 @@ export const gameCore = function (canvas) {
     // Right paddle
     drawPaddle(ctx, canvas.width - PADDLE_THICKNESS, rightPaddleY);
 
-    ctx.fillText(player1Score, 100, 100);
-    ctx.fillText(player2Score, canvas.width - 100, 100);
+    ctx.fillStyle = "white";
+    ctx.font = "20px Arial";
+    ctx.fillText(player1Score, 100, 50);
+    ctx.fillText(player2Score, canvas.width - 100, 50);
 
     ctx.restore();
   };
 
-  const measureFps = function (currTime) {
-    if (prevTimeFpsMeasure === undefined) {
-      prevTimeFpsMeasure = currTime;
+  const ballReset = () => {
+    // Se alguém chegou a 5 pontos, avisa e para
+    if (player1Score >= WINNING_SCORE) {
+      if (options.onMatchEnd) {
+        options.onMatchEnd("PLAYER1");
+      }
+      return;
+    }
+    if (player2Score >= WINNING_SCORE) {
+      if (options.onMatchEnd) {
+        options.onMatchEnd("PLAYER2");
+      }
+      return;
     }
 
-    const deltaTime = currTime - prevTimeFpsMeasure;
-    if (deltaTime >= 1000) {
-    //   fps = frameCount;
-    //   frameCount = 0;
-      prevTimeFpsMeasure = currTime;
-    }
-    // frameCount++;
-  };
-
-  // NOTE: Disabled for now
-//   const handleAIMovement = function () {
-//     const rightPaddleCenter = rightPaddleY + PADDLE_HEIGHT / 2;
-//     if (ballSpeedX > 0) {
-//       if (ballY > rightPaddleCenter + 35) {
-//         rightPaddleY += 5;
-//       }
-//       if (ballY < rightPaddleCenter - 35) {
-//         rightPaddleY -= 5;
-//       }
-//     } else {
-//       if (rightPaddleCenter > canvas.height / 2) {
-//         rightPaddleY -= 5;
-//       }
-//       if (rightPaddleCenter < canvas.height / 2) {
-//         rightPaddleY += 5;
-//       }
-//     }
-//   };
-
-  const ballReset = function () {
-    if (player1Score >= WINNING_SCORE || player2Score >= WINNING_SCORE) {
-      player1Score = 0;
-      player2Score = 0;
-    }
-
+    // Caso contrário, apenas reposiciona a bola
     ballX = canvas.width / 2;
     ballY = canvas.height / 2;
 
@@ -188,39 +168,28 @@ export const gameCore = function (canvas) {
     ballSpeedY = 300;
   };
 
+  // Captura de teclas
+  function keyDownHandler(e) {
+    // Impede a rolagem da página
+    if (e.code === "ArrowUp" || e.code === "ArrowDown") {
+      e.preventDefault();
+    }
+
+    if (e.code === "ArrowUp") upPressed = true;
+    if (e.code === "ArrowDown") downPressed = true;
+    if (e.code === "KeyW") qPressed = true;
+    if (e.code === "KeyS") aPressed = true;
+  }
+
+  function keyUpHandler(e) {
+    if (e.code === "ArrowUp") upPressed = false;
+    if (e.code === "ArrowDown") downPressed = false;
+    if (e.code === "KeyW") qPressed = false;
+    if (e.code === "KeyS") aPressed = false;
+  }
+
   return {
-    start: start,
+    start,
+    stop,
   };
 };
-
-function keyDownHandler(e) {
-  if (e.code === "ArrowUp") {
-    upPressed = true;
-  }
-  if (e.code === "ArrowDown") {
-    downPressed = true;
-  }
-
-  if (e.code === "KeyW") {
-    qPressed = true;
-  }
-  if (e.code === "KeyS") {
-    aPressed = true;
-  }
-}
-
-function keyUpHandler(e) {
-  if (e.code === "ArrowUp") {
-    upPressed = false;
-  }
-  if (e.code === "ArrowDown") {
-    downPressed = false;
-  }
-
-  if (e.code === "KeyW") {
-    qPressed = false;
-  }
-  if (e.code === "KeyS") {
-    aPressed = false;
-  }
-}

@@ -1,0 +1,77 @@
+/* Exemplo de CSS básico para exibir um bracket */
+
+.main-container {
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+.tournament-bracket {
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  max-width: 800px;
+  margin: 20px auto;
+  position: relative;
+  flex-wrap: wrap; /* Caso a tela seja pequena, permitir quebra */
+}
+
+.round {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  margin: 0 20px;
+}
+
+.match {
+  background-color: #fff;
+  border: 2px solid #ccc;
+  margin: 20px 0;
+  width: 150px;
+  text-align: center;
+  position: relative;
+  padding: 10px 0;
+  border-radius: 8px;
+}
+
+.match.current {
+  border-color: #007bff;
+  box-shadow: 0 0 8px rgba(0, 123, 255, 0.5);
+}
+
+.team {
+  padding: 5px;
+  font-weight: bold;
+}
+
+.champion {
+  margin-top: 10px;
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+/* Se quiser desenhar linhas horizontais ligando as partidas
+   (isso é apenas ilustrativo, você pode customizar) */
+
+/* Linhas da Round 1 para Round 2 */
+.round1 .match::after {
+  content: "";
+  position: absolute;
+  width: 40px;
+  height: 2px;
+  background: #999;
+  right: -40px;
+  top: 50%;
+}
+.round2 .match::before {
+  content: "";
+  position: absolute;
+  width: 40px;
+  height: 2px;
+  background: #999;
+  left: -40px;
+  top: 50%;
+}
