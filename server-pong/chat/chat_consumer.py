@@ -5,8 +5,6 @@ from django.conf import settings
 from asgiref.sync import sync_to_async
 from django.core.cache import cache
 
-User = get_user_model()
-
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['room']  # Room dinâmico
@@ -61,6 +59,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
         """
         Busca os dados do usuário do banco de dados. Usa cache para melhorar o desempenho.
         """
+        from django.contrib.auth import get_user_model
+        User = get_user_model()  # Define o modelo de usuário localmente
+
         cache_key = f"user_data_{user_id}"
         cached_data = cache.get(cache_key)
 

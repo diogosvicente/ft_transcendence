@@ -27,19 +27,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY')
+# SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY= "django-insecure-rn9_4g7hoi_0xkvglm0f^3on+qs*m-sln5ucwp1*7vv_7(6pz0)"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 #DEBUG = True
-DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+# DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
 #ALLOWED_HOSTS = []
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
+ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
 # Application definition
 
 INSTALLED_APPS = [
     # Apps de terceiros
+    'django_extensions',
     'daphne',
 
     # Apps integrados do Django
@@ -163,7 +165,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -205,8 +208,8 @@ CORS_ALLOW_HEADERS = [
 
 # COLOQUE DO JEITO ABAIXO QUANDO ESTIVER EM PRODUÇÃO
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # Origem do seu frontend React
-    "http://127.0.0.1:3000",    # Substitua pelo domínio em produção
+    "https://localhost:3000",  # Origem do seu frontend React
+    "https://127.0.0.1:3000",    # Substitua pelo domínio em produção
 ]
 
 AUTHENTICATION_BACKENDS = [
@@ -236,3 +239,13 @@ LANGUAGES = [
 LOCALE_PATHS = [
     os.path.join(BASE_DIR, 'locale'),
 ]
+
+# Redireciona HTTP para HTTPS
+SECURE_SSL_REDIRECT = True
+
+# Configura o cabeçalho correto para proxies reversos (caso esteja usando Nginx ou similar)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Cookies seguros
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True

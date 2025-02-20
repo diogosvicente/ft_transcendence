@@ -1,17 +1,28 @@
+version: "3.8"
+
 services:
+  #
+  # Django + Channels (Daphne) - Porta 8000 interna
+  #
   web:
     build: ./server-pong
-    command: python manage.py runserver 0.0.0.0:8000
+    command: daphne -b 0.0.0.0 -p 8000 setup.asgi:application
+    environment:
+      - DJANGO_SETTINGS_MODULE=setup.settings
     volumes:
       - ./server-pong:/app
-    ports:
-      - "8000:8000"
-    env_file:
-      - .env
+      - ./server-pong/staticfiles:/app/staticfiles
+      - ./server-pong/certs:/app/certs
+      - ./server-pong/media:/app/media
+    expose:
+      - "8000"
     depends_on:
       - db
       - redis
 
+  #
+  # React (Vite) - Porta 3000 interna
+  #
   frontend:
     build:
       context: ./client-pong
@@ -19,13 +30,29 @@ services:
     volumes:
       - ./client-pong:/app
       - /app/node_modules
-    ports:
-      - "3000:3000"
-    env_file:
-      - .env
+    expose:
+      - "3000"
     depends_on:
       - web
 
+  #
+  # Nginx - Porta 443 com SSL
+  #
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./server-pong/certs:/etc/nginx/certs
+      - ./server-pong/staticfiles:/app/staticfiles
+      - ./server-pong/media:/app/media
+    ports:
+      - "443:443"
+    depends_on:
+      - web
+
+  #
+  # Banco de Dados PostgreSQL
+  #
   db:
     image: postgres:13
     volumes:
@@ -35,12 +62,20 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
 
+  #
+  # Redis para Channels
+  #
   redis:
     image: redis:7-alpine
     ports:
-      - "6380:6379"
+      - "6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:

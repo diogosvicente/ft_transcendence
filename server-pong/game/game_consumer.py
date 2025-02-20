@@ -3,10 +3,10 @@ import asyncio
 import os
 import redis
 from datetime import datetime
+
 from channels.generic.websocket import AsyncWebsocketConsumer
-from asgiref.sync import sync_to_async
 from channels.db import database_sync_to_async
-from game.models import Match as GameMatch
+from asgiref.sync import sync_to_async
 
 class GameConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -14,18 +14,23 @@ class GameConsumer(AsyncWebsocketConsumer):
             self.user_id = self.scope["user"].id
             self.match_id = self.scope["url_route"]["kwargs"]["match_id"]
             self.room_group_name = f"match_{self.match_id}"
-            
+
             print(f"Conexão recebida para match_id: {self.match_id}, Usuário: {self.user_id}")
-            
+
             # Recupera o tournament_id a partir do match no banco de dados
             self.tournament_id = await self.get_tournament_id(self.match_id)
             print(f"[DEBUG] tournament_id: {self.tournament_id}")
-            
+
             # Conecta ao Redis
             try:
                 redis_host = os.environ.get("REDIS_HOST", "redis")
                 redis_port = int(os.environ.get("REDIS_PORT", 6379))
-                self.redis = redis.StrictRedis(host=redis_host, port=redis_port, db=0, decode_responses=True)
+                self.redis = redis.StrictRedis(
+                    host=redis_host,
+                    port=redis_port,
+                    db=0,
+                    decode_responses=True
+                )
                 self.redis.ping()
                 print("Conexão com Redis estabelecida.")
             except redis.ConnectionError as e:
@@ -80,7 +85,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                 "state": game_state,
             }))
             await self.send_to_group("state_update", game_state)
-            
+
             # Apenas o host (lado "left") inicia a contagem regressiva e o loop do jogo.
             if self.assigned_side == "left":
                 await self.start_countdown()
@@ -91,6 +96,12 @@ class GameConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def get_tournament_id(self, match_id):
+        """
+        Carrega o modelo GameMatch dentro da função,
+        evitando o import global.
+        """
+        from django.apps import apps
+        GameMatch = apps.get_model("game", "Match")
         try:
             match_obj = GameMatch.objects.get(pk=match_id)
             return match_obj.tournament_id
@@ -118,7 +129,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                 print(f"Jogador {self.user_id} removido do estado da partida {self.match_id}.")
 
             num_players = len(game_state["players"])
-            
+
             if num_players == 1 and game_state.get("status", "ongoing") == "ongoing":
                 game_state["status"] = "paused"
                 game_state["wo_pending"] = True
@@ -129,7 +140,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             elif num_players == 0:
                 self.redis.delete(self.match_id)
                 print(f"Partida {self.match_id} finalizada e removida – nenhum jogador conectado.")
-            
+
             await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
             print(f"Jogador {self.user_id} desconectado do grupo {self.room_group_name} (Código: {close_code})")
         except Exception as e:
@@ -140,6 +151,13 @@ class GameConsumer(AsyncWebsocketConsumer):
         pass
 
     async def finalize_match_by_wo(self):
+        """
+        Finaliza a partida por WO (walkover).
+        Carrega modelos (GameMatch, User) somente dentro desta função.
+        """
+        from django.apps import apps
+        from django.contrib.auth import get_user_model
+
         game_state = json.loads(self.redis.get(self.match_id))
         if len(game_state["players"]) == 1:
             winner_id = list(game_state["players"].keys())[0]
@@ -154,14 +172,9 @@ class GameConsumer(AsyncWebsocketConsumer):
             print(f"[DEBUG] tournament_id: {tournament_id}")
             redirect_url = "/tournaments/" if tournament_id else "/chat/"
 
-            # Obtenha o idioma do vencedor para personalizar as mensagens.
-            from django.contrib.auth import get_user_model
             User = get_user_model()
-            from asgiref.sync import sync_to_async
-            winner = await sync_to_async(User.objects.get)(id=winner_id)
-            user_language = winner.current_language or "pt_BR"
 
-            # Dicionário de traduções para as mensagens
+            # Dicionário de traduções
             messages = {
                 "pt_BR": {
                     "message": "Partida finalizada por WO.",
@@ -176,6 +189,9 @@ class GameConsumer(AsyncWebsocketConsumer):
                     "final_alert": "Partido finalizado por WO! Haga clic en OK para salir del partido."
                 }
             }
+
+            winner_user = await sync_to_async(User.objects.get)(id=winner_id)
+            user_language = winner_user.current_language or "pt_BR"
             msg_data = messages.get(user_language, messages["pt_BR"])
 
             await self.send_to_group("walkover", {
@@ -186,9 +202,11 @@ class GameConsumer(AsyncWebsocketConsumer):
                 "tournament_id": tournament_id,
                 "final_alert": msg_data["final_alert"]
             })
+
+            # Atualiza o banco de dados (match, stats)
             await sync_to_async(self.update_match_by_wo)(winner_id, loser_id)
 
-            # Se for partida de torneio e for a última, atualiza o vencedor do torneio
+            # Se for torneio e for a última partida, define o vencedor
             if tournament_id:
                 if await self.is_last_tournament_match():
                     await self.update_tournament_winner()
@@ -198,16 +216,23 @@ class GameConsumer(AsyncWebsocketConsumer):
         self.redis.delete(self.match_id)
 
     async def finalize_match_by_points(self):
+        """
+        Finaliza a partida por pontuação.
+        Carrega modelos (GameMatch, User) somente dentro desta função.
+        """
+        from django.apps import apps
+        from django.contrib.auth import get_user_model
+
         game_state = json.loads(self.redis.get(self.match_id))
-        
-        # Determina o vencedor e o perdedor com base na pontuação
+
+        # Determina vencedor e perdedor
         if game_state["scores"]["left"] >= 5:
             winner_side = "left"
             loser_side = "right"
         else:
             winner_side = "right"
             loser_side = "left"
-        
+
         winner_id = None
         loser_id = None
         for uid, side in game_state["players"].items():
@@ -219,18 +244,13 @@ class GameConsumer(AsyncWebsocketConsumer):
         tournament_id = game_state.get("tournament_id")
         redirect_url = "/tournaments/" if tournament_id else "/chat/"
 
-        # Recupera os objetos dos usuários para obter seus idiomas
-        from django.contrib.auth import get_user_model
         User = get_user_model()
-        from asgiref.sync import sync_to_async
         winner = await sync_to_async(User.objects.get)(id=winner_id)
         loser = await sync_to_async(User.objects.get)(id=loser_id)
-        
-        # Debug: imprime os idiomas dos usuários
+
         print(f"Winner (ID: {winner_id}) language: {winner.current_language}")
         print(f"Loser (ID: {loser_id}) language: {loser.current_language}")
-        
-        # Dicionário de traduções para a mensagem comum (match finished)
+
         message_translations = {
             "pt_BR": "Partida finalizada por pontuação.",
             "en": "Match finished by points.",
@@ -238,8 +258,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         }
         winner_language = winner.current_language or "pt_BR"
         common_message = message_translations.get(winner_language, message_translations["pt_BR"])
-        
-        # Dicionário de traduções para o campo "final_alert" com mensagens distintas para vencedor e perdedor
+
         final_alert_translations = {
             "pt_BR": {
                 "winner": "VENCEU!!! Partida finalizada! Clique em OK para sair da partida.",
@@ -258,36 +277,37 @@ class GameConsumer(AsyncWebsocketConsumer):
         winner_final_alert = final_alert_translations.get(winner_language, final_alert_translations["pt_BR"])["winner"]
         loser_final_alert = final_alert_translations.get(loser_language, final_alert_translations["pt_BR"])["loser"]
 
-        # Cria um objeto mapeando o ID de cada usuário à sua mensagem específica
         final_alert = {
             str(winner_id): winner_final_alert,
             str(loser_id): loser_final_alert,
         }
 
-        # Envia uma única notificação para "match_finished"
-        from channels.layers import get_channel_layer
-        channel_layer = get_channel_layer()
-        from asgiref.sync import async_to_sync
         await self.send_to_group("match_finished", {
             "message": common_message,
             "redirect_url": redirect_url,
             "winner": winner_id,
             "loser": loser_id,
             "tournament_id": tournament_id,
-            "final_alert": final_alert  # Objeto contendo as mensagens para cada usuário
+            "final_alert": final_alert
         })
 
-        from asgiref.sync import sync_to_async
         await sync_to_async(self.update_match_by_points)(winner_id, loser_id, game_state["scores"])
 
-        # Se for partida de torneio e for a última, atualiza o vencedor do torneio
         if tournament_id:
             if await self.is_last_tournament_match():
                 await self.update_tournament_winner()
 
         self.redis.delete(self.match_id)
-    
+
     def update_match_by_wo(self, winner_id, loser_id):
+        """
+        Carrega o modelo GameMatch e atualiza o banco.
+        """
+        from django.apps import apps
+        GameMatch = apps.get_model("game", "Match")
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+
         try:
             match = GameMatch.objects.get(pk=self.match_id)
             if str(match.player1_id) == str(winner_id):
@@ -299,13 +319,12 @@ class GameConsumer(AsyncWebsocketConsumer):
             match.is_winner_by_wo = True
             match.winner_id = winner_id
             match.status = "completed"
+
             from django.utils import timezone
             match.last_updated = timezone.now()
             match.played_at = timezone.now()
             match.save()
 
-            from django.contrib.auth import get_user_model
-            User = get_user_model()
             winner = User.objects.get(pk=winner_id)
             loser = User.objects.get(pk=loser_id)
             winner.wins = (winner.wins or 0) + 1
@@ -315,8 +334,9 @@ class GameConsumer(AsyncWebsocketConsumer):
 
             # Se a partida pertence a um torneio, atualize os pontos do participante vencedor
             if match.tournament:
+                from django.apps import apps
+                TournamentParticipant = apps.get_model("game", "TournamentParticipant")
                 try:
-                    from game.models import TournamentParticipant
                     participant = TournamentParticipant.objects.get(
                         tournament_id=match.tournament.id,
                         user_id=winner_id
@@ -331,6 +351,14 @@ class GameConsumer(AsyncWebsocketConsumer):
             print(f"Erro ao atualizar partida por WO no banco: {e}")
 
     def update_match_by_points(self, winner_id, loser_id, scores):
+        """
+        Carrega o modelo GameMatch e atualiza o banco.
+        """
+        from django.apps import apps
+        GameMatch = apps.get_model("game", "Match")
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+
         try:
             match = GameMatch.objects.get(pk=self.match_id)
             match.score_player1 = scores["left"]
@@ -340,13 +368,12 @@ class GameConsumer(AsyncWebsocketConsumer):
             else:
                 match.winner_id = match.player2_id
             match.status = "completed"
+
             from django.utils import timezone
             match.last_updated = timezone.now()
             match.played_at = timezone.now()
             match.save()
 
-            from django.contrib.auth import get_user_model
-            User = get_user_model()
             winner = User.objects.get(pk=winner_id)
             loser = User.objects.get(pk=loser_id)
             winner.wins = (winner.wins or 0) + 1
@@ -355,10 +382,9 @@ class GameConsumer(AsyncWebsocketConsumer):
             loser.save()
             print(f"[DEBUG] Atualizados: Winner (ID: {winner_id}) wins={winner.wins}; Loser (ID: {loser_id}) losses={loser.losses}")
 
-            # Se a partida pertence a um torneio, atualize os pontos do participante vencedor
             if match.tournament:
+                TournamentParticipant = apps.get_model("game", "TournamentParticipant")
                 try:
-                    from game.models import TournamentParticipant
                     participant = TournamentParticipant.objects.get(
                         tournament_id=match.tournament.id,
                         user_id=winner_id
@@ -374,6 +400,8 @@ class GameConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def is_last_tournament_match(self):
+        from django.apps import apps
+        GameMatch = apps.get_model("game", "Match")
         try:
             match = GameMatch.objects.get(pk=self.match_id)
             return match.last_tournament_match
@@ -383,14 +411,20 @@ class GameConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def update_tournament_winner(self):
+        """
+        Carrega Tournament e TournamentParticipant e define o vencedor do torneio.
+        """
+        from django.apps import apps
+        Tournament = apps.get_model("game", "Tournament")
+        TournamentParticipant = apps.get_model("game", "TournamentParticipant")
+
         try:
-            from game.models import TournamentParticipant, Tournament
             participants = TournamentParticipant.objects.filter(tournament_id=self.tournament_id)
             if participants.exists():
                 winner_participant = participants.order_by("-points").first()
                 tournament = Tournament.objects.get(pk=self.tournament_id)
                 tournament.winner_id = winner_participant.user_id
-                tournament.status = "completed"  # ou outra lógica de finalização
+                tournament.status = "completed"
                 tournament.save()
                 print(f"[DEBUG] Torneio {self.tournament_id} atualizado com o vencedor {winner_participant.user_id}")
         except Exception as e:
@@ -463,6 +497,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             while True:
                 game_state = json.loads(self.redis.get(self.match_id))
                 num_players = len(game_state["players"])
+
                 if num_players < 2:
                     if game_state.get("status", "ongoing") == "ongoing":
                         game_state["status"] = "paused"
@@ -473,7 +508,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                         print(f"Finalizando e removendo partida {self.match_id} por falta de jogadores.")
                         self.redis.delete(self.match_id)
                         break
-                
+
                 if game_state.get("status") == "paused":
                     await asyncio.sleep(1)
                     continue
@@ -492,7 +527,6 @@ class GameConsumer(AsyncWebsocketConsumer):
                     and ball["speed_x"] < 0
                 ):
                     ball["speed_x"] = -ball["speed_x"]
-
                     delta_y = ball["y"] - (game_state["paddles"]["left"] + 50)
                     ball["speed_y"] = delta_y * 4
 
@@ -503,7 +537,6 @@ class GameConsumer(AsyncWebsocketConsumer):
                     and ball["speed_x"] > 0
                 ):
                     ball["speed_x"] = -ball["speed_x"]
-
                     delta_y = ball["y"] - (game_state["paddles"]["right"] + 50)
                     ball["speed_y"] = delta_y * 4
 
@@ -534,7 +567,11 @@ class GameConsumer(AsyncWebsocketConsumer):
         try:
             await self.channel_layer.group_send(
                 self.room_group_name,
-                {"type": "game_update", "message_type": message_type, "state": data}
+                {
+                    "type": "game_update",
+                    "message_type": message_type,
+                    "state": data
+                }
             )
         except Exception as e:
             print(f"Erro ao enviar mensagem para o grupo {self.room_group_name}: {e}")
