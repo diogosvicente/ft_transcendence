@@ -1,7 +1,11 @@
 {
   "app_title": "Jogo Pong",
   "start_match": "Iniciar Partida Local Casual",
+  "winner": "Vencedor",
+  "champion": "Campeão",
   "back_to_home": "Voltar à Página Inicial",
+  "start_simple_game": "Iniciar Partida Simples",
+  "simple_game_title": "Partida Simples (W|S vs ↑|↓) - Até 5 pontos",
   "email_label": "E-mail",
   "email_placeholder": "Digite seu e-mail",
   "display_name_label": "Nome de Exibição",
@@ -109,6 +113,7 @@
     "alias_placeholder": "Digite seu alias",
     "confirm_placeholder": "Confirmar Inscrição",
     "start_tournament": "Iniciar Torneio",
+    "local_tournament": "Torneio Local",
     "confirm_registration": "Confirmar registro",
     "no_pending_match": "Sem partida pendente",
     "filter": {

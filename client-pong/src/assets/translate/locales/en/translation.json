@@ -1,7 +1,11 @@
 {
   "app_title": "Pong Game",
   "start_match": "Start Local Casual Match",
+  "winner": "Winner",
+  "champion": "Champion",
   "back_to_home": "Return to Home Page",
+  "start_simple_game": "Start Simple Game",
+  "simple_game_title": "Single Match (W|S vs ↑|↓) - Up to 5 points",
   "email_label": "Email",
   "email_placeholder": "Enter your email",
   "display_name_label": "Display Name",
@@ -113,6 +117,7 @@
     "alias_placeholder": "Enter your alias",
     "confirm_placeholder": "Confirm Registration",
     "start_tournament": "Start Tournament",
+    "local_tournament": "Local Tournament",
     "confirm_registration": "Confirm registration",
     "no_pending_match": "No game pending",
     "filter": {
