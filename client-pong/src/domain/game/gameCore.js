@@ -1,9 +1,9 @@
 // client-pong/src/domain/game/gameCore.js
 import { drawPaddle, PADDLE_HEIGHT, PADDLE_THICKNESS } from "./paddle.js";
 
+const BALL_SIZE = 10;        // Bola menor
 let ballX = 300;
 let ballY = 300;
-
 let ballSpeedX = 300;
 let ballSpeedY = 300;
 
@@ -18,11 +18,10 @@ let player2Score = 0;
 const WINNING_SCORE = 5;
 
 export const gameCore = function (canvas, options = {}) {
-  // Desestruturamos as novas props:
   const {
     leftPlayerName = "PLAYER1",
     rightPlayerName = "PLAYER2",
-    onMatchEnd, // callback opcional
+    onMatchEnd,
   } = options;
 
   const ctx = canvas.getContext("2d");
@@ -68,17 +67,29 @@ export const gameCore = function (canvas, options = {}) {
   };
 
   const update = (deltaTime) => {
+    // Movimentação da bola
     ballX += (ballSpeedX * deltaTime) / 1000;
     ballY += (ballSpeedY * deltaTime) / 1000;
 
+    // Movimentação dos paddles
     if (qPressed) leftPaddleY -= 5;
     if (aPressed) leftPaddleY += 5;
 
     if (upPressed) rightPaddleY -= 5;
     if (downPressed) rightPaddleY += 5;
 
-    // Bate na parede direita
-    if (ballX + 20 >= canvas.width) {
+    // Impedir que os paddles saiam da tela
+    if (leftPaddleY < 0) leftPaddleY = 0;
+    if (leftPaddleY + PADDLE_HEIGHT > canvas.height) {
+      leftPaddleY = canvas.height - PADDLE_HEIGHT;
+    }
+    if (rightPaddleY < 0) rightPaddleY = 0;
+    if (rightPaddleY + PADDLE_HEIGHT > canvas.height) {
+      rightPaddleY = canvas.height - PADDLE_HEIGHT;
+    }
+
+    // Colisão com a parede direita
+    if (ballX + BALL_SIZE >= canvas.width) {
       if (ballY > rightPaddleY && ballY < rightPaddleY + PADDLE_HEIGHT) {
         ballX -= (ballSpeedX * deltaTime) / 1000;
         ballSpeedX = -ballSpeedX;
@@ -90,7 +101,7 @@ export const gameCore = function (canvas, options = {}) {
       }
     }
 
-    // Bate na parede esquerda
+    // Colisão com a parede esquerda
     if (ballX <= 0) {
       if (ballY > leftPaddleY && ballY < leftPaddleY + PADDLE_HEIGHT) {
         ballX -= (ballSpeedX * deltaTime) / 1000;
@@ -103,8 +114,8 @@ export const gameCore = function (canvas, options = {}) {
       }
     }
 
-    // Bate no topo/fundo
-    if (ballY + 20 > canvas.height) {
+    // Colisão com topo/fundo
+    if (ballY + BALL_SIZE > canvas.height) {
       ballSpeedY = -ballSpeedY;
     }
     if (ballY < 0) {
@@ -114,17 +125,14 @@ export const gameCore = function (canvas, options = {}) {
 
   const checkWinner = () => {
     if (player1Score >= WINNING_SCORE) {
-      // Vencedor é o jogador da esquerda
       if (onMatchEnd) onMatchEnd(leftPlayerName);
-      return; // Para de atualizar (não reseta a bola)
+      return;
     }
     if (player2Score >= WINNING_SCORE) {
-      // Vencedor é o jogador da direita
       if (onMatchEnd) onMatchEnd(rightPlayerName);
       return;
     }
-
-    // Se ninguém chegou a 5 ainda, reposiciona a bola
+    // Se ninguém chegou a 5, reposiciona a bola
     ballX = canvas.width / 2;
     ballY = canvas.height / 2;
     ballSpeedX = -ballSpeedX;
@@ -134,29 +142,42 @@ export const gameCore = function (canvas, options = {}) {
   const draw = (ctx) => {
     ctx.save();
 
+    // Fundo
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.fillStyle = "white";
-    ctx.fillRect(ballX, ballY, 20, 20);
+    // Linha no meio (dashed)
+    ctx.beginPath();
+    ctx.setLineDash([5, 15]);
+    ctx.moveTo(canvas.width / 2, 0);
+    ctx.lineTo(canvas.width / 2, canvas.height);
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.setLineDash([]);
 
+    // Bola
+    ctx.fillStyle = "white";
+    ctx.fillRect(ballX, ballY, BALL_SIZE, BALL_SIZE);
+
+    // Paddles
     drawPaddle(ctx, 0, leftPaddleY);
     drawPaddle(ctx, canvas.width - PADDLE_THICKNESS, rightPaddleY);
 
+    // Placar maior
     ctx.fillStyle = "white";
-    ctx.font = "20px Arial";
-    ctx.fillText(player1Score, 100, 50);
-    ctx.fillText(player2Score, canvas.width - 100, 50);
+    ctx.font = "40px Arial";
+    // Exemplo: placar no topo, um pouco maior
+    ctx.fillText(player1Score, 100, 60);
+    ctx.fillText(player2Score, canvas.width - 140, 60);
 
     ctx.restore();
   };
 
   function keyDownHandler(e) {
-    // Evita scroll
     if (e.code === "ArrowUp" || e.code === "ArrowDown") {
       e.preventDefault();
     }
-
     if (e.code === "ArrowUp") upPressed = true;
     if (e.code === "ArrowDown") downPressed = true;
     if (e.code === "KeyW") qPressed = true;

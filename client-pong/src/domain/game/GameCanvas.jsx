@@ -7,12 +7,11 @@ import ukFlag from "../../assets/icons/uk-flag-round-circle-icon.svg";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGamepad, faTableTennis } from "@fortawesome/free-solid-svg-icons";
 import "../../assets/styles/landingPage.css";
-
-// CSS para o bracket (ver exemplo abaixo)
-import "../../assets/styles/localGame.css";
+import "../../assets/styles/localGame.css"; // Seu CSS para bracket, etc.
 
 import { useTranslation } from "react-i18next";
 import { gameCore } from "./gameCore.js";
+
 export function GameCanvas() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -36,30 +35,31 @@ export function GameCanvas() {
   const tournamentCanvasRef = useRef(null);
   const tournamentGameRef = useRef(null);
 
-  // (IMPORTANTE) Ao iniciar a Partida Simples, paramos qualquer jogo do torneio
+  // ----------------------------------------------------------------
+  // A) Iniciar Partida Simples
+  // ----------------------------------------------------------------
   const handleStartSingleMatch = () => {
-    // Se existe um jogo de torneio em execução, paramos
+    // Para torneio se estiver rodando
     if (tournamentGameRef.current) {
       tournamentGameRef.current.stop();
       tournamentGameRef.current = null;
     }
-    // Desativa o estado do torneio
     setTournamentActive(false);
 
-    // Agora paramos o jogo simples anterior, se houver
+    // Para jogo simples anterior, se houver
     if (singleGameRef.current) {
       singleGameRef.current.stop();
       singleGameRef.current = null;
     }
 
-    // Forçamos singleMatchActive para false e depois true, para recriar o jogo
+    // Força recriação do jogo (false -> true)
     setSingleMatchActive(false);
     setTimeout(() => {
       setSingleMatchActive(true);
     }, 0);
   };
 
-  // Ao iniciar a Partida Simples (singleMatchActive = true), cria o jogo
+  // Quando singleMatchActive = true, inicia o gameCore
   useEffect(() => {
     if (singleMatchActive) {
       const canvas = singleCanvasRef.current;
@@ -80,17 +80,18 @@ export function GameCanvas() {
     }
   }, [singleMatchActive]);
 
-  // (IMPORTANTE) Ao iniciar o Torneio, paramos a Partida Simples
+  // ----------------------------------------------------------------
+  // B) Iniciar Torneio
+  // ----------------------------------------------------------------
   const handleStartTournament = () => {
-    // Se existe um jogo simples em execução, paramos
+    // Para jogo simples se estiver rodando
     if (singleGameRef.current) {
       singleGameRef.current.stop();
       singleGameRef.current = null;
     }
-    // Desativa a partida simples
     setSingleMatchActive(false);
 
-    // Zera o estado do torneio
+    // Zera estado do torneio
     setTournamentActive(true);
     setCurrentMatch(1);
     setWinnerMatch1(null);
@@ -98,7 +99,7 @@ export function GameCanvas() {
     setChampion(null);
   };
 
-  // Sempre que currentMatch mudar, iniciamos a próxima partida do torneio
+  // Sempre que currentMatch mudar, iniciamos a próxima partida
   useEffect(() => {
     if (tournamentActive && !champion) {
       if (tournamentGameRef.current) {
@@ -144,14 +145,16 @@ export function GameCanvas() {
     }
   }, [tournamentActive, currentMatch, champion]);
 
-  // Quando definimos "champion", paramos o jogo final
+  // Quando definimos champion, paramos o jogo final
   useEffect(() => {
     if (champion && tournamentGameRef.current) {
       tournamentGameRef.current.stop();
     }
   }, [champion]);
 
-  // Navegação e Idioma
+  // ----------------------------------------------------------------
+  // C) Navegação e Idioma
+  // ----------------------------------------------------------------
   const handleBackToHome = () => {
     if (singleGameRef.current) singleGameRef.current.stop();
     if (tournamentGameRef.current) tournamentGameRef.current.stop();
@@ -162,6 +165,9 @@ export function GameCanvas() {
     i18n.changeLanguage(language);
   };
 
+  // ----------------------------------------------------------------
+  // D) Renderização
+  // ----------------------------------------------------------------
   return (
     <div className="container py-4 d-flex flex-column align-items-center">
       {/* Seletor de idioma */}
@@ -182,77 +188,93 @@ export function GameCanvas() {
         </div>
       </div>
 
-      {/* Título do jogo */}
+      {/* Título */}
       <h1 className="mb-4 d-flex align-items-center">
         <FontAwesomeIcon icon={faTableTennis} className="me-2" />
         {t("app_title")}
       </h1>
 
-      {/* Botões de escolha */}
+      {/* Botões */}
       <div className="mb-4">
         <button className="btn btn-primary me-3" onClick={handleStartSingleMatch}>
-          {t("start_simple_game")}
+          {t("start_simple_game") || "Iniciar Partida Simples"}
         </button>
         <button className="btn btn-success" onClick={handleStartTournament}>
-          {t("tournament.start_tournament")}
+          {t("tournament.start_tournament") || "Iniciar Torneio"}
         </button>
       </div>
 
       {/* PARTIDA SIMPLES */}
       {singleMatchActive && (
-        <div className="text-center mb-5">
-          <h3>{t("simple_game_title")}</h3>
-          <canvas
-            ref={singleCanvasRef}
-            width={800}
-            height={400}
-            className="border rounded"
-            style={{ backgroundColor: "#fff" }}
-          ></canvas>
+        <div className="text-center mb-5" style={{ width: "100%" }}>
+          <h3>{t("simple_game_title") || "Partida Simples (W|S vs ↑|↓) - Até 5 pontos"}</h3>
+
+          {/* Layout simples: só o canvas ao centro */}
+          <div className="d-flex align-items-start justify-content-center" style={{ marginTop: "20px" }}>
+            <canvas
+              ref={singleCanvasRef}
+              width={800}
+              height={400}
+              className="border rounded"
+              style={{ backgroundColor: "#222" }}
+            ></canvas>
+          </div>
         </div>
       )}
 
       {/* TORNEIO */}
       {tournamentActive && (
-        <div className="text-center">
-          <h3>{t("tournament.local_tournament")}</h3>
-          <div className="tournament-bracket">
-            {/* Round 1 */}
-            <div className="round round1">
-              <div className={`match ${currentMatch === 1 && !champion ? "current" : ""}`}>
-                <div className="team">PLAYER1</div>
-                <div className="team">PLAYER2</div>
-                {winnerMatch1 && <div className="winner">{t("winner")}: {winnerMatch1}</div>}
+        <div className="text-center" style={{ width: "100%" }}>
+          <h3>{t("tournament.local_tournament") || "Torneio Local"}</h3>
+
+          {/* Layout lado a lado: bracket e canvas */}
+          <div
+            className="d-flex align-items-start justify-content-center gap-5"
+            style={{ marginTop: "20px" }}
+          >
+            {/* BRACKET à esquerda */}
+            <div className="tournament-bracket" style={{ minWidth: "300px" }}>
+              {/* Round 1 */}
+              <div className="round round1">
+                <div className={`match ${currentMatch === 1 && !champion ? "current" : ""}`}>
+                  <div className="team">PLAYER1</div>
+                  <div className="team">PLAYER2</div>
+                  {winnerMatch1 && <div className="winner">{t("winner") || "Vencedor"}: {winnerMatch1}</div>}
+                </div>
+                <div className={`match ${currentMatch === 2 && !champion ? "current" : ""}`}>
+                  <div className="team">PLAYER3</div>
+                  <div className="team">PLAYER4</div>
+                  {winnerMatch2 && <div className="winner">{t("winner") || "Vencedor"}: {winnerMatch2}</div>}
+                </div>
               </div>
-              <div className={`match ${currentMatch === 2 && !champion ? "current" : ""}`}>
-                <div className="team">PLAYER3</div>
-                <div className="team">PLAYER4</div>
-                {winnerMatch2 && <div className="winner">{t("winner")}: {winnerMatch2}</div>}
+
+              {/* Round 2 (Final) */}
+              <div className="round round2">
+                <div className={`match ${currentMatch === 3 && !champion ? "current" : ""}`}>
+                  <div className="team">{winnerMatch1 || `${t("winner") || "Vencedor"} P1`}</div>
+                  <div className="team">{winnerMatch2 || `${t("winner") || "Vencedor"} P2`}</div>
+                  {champion && (
+                    <div className="winner">
+                      {t("champion") || "Campeão"}: {champion}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* Round 2 (Final) */}
-            <div className="round round2">
-              <div className={`match ${currentMatch === 3 && !champion ? "current" : ""}`}>
-                <div className="team">{winnerMatch1 || `${t("winner")} P1`}</div>
-                <div className="team">{winnerMatch2 || `${t("winner")} P2`}</div>
-                {champion && <div className="winner">{t("champion")}: {champion}</div>}
+            {/* Canvas do torneio à direita */}
+            {!champion && (
+              <div>
+                <canvas
+                  ref={tournamentCanvasRef}
+                  width={800}
+                  height={400}
+                  className="border rounded"
+                  style={{ backgroundColor: "#222" }}
+                ></canvas>
               </div>
-            </div>
+            )}
           </div>
-
-          {/* Canvas do torneio (some quando tiver campeão) */}
-          {!champion && (
-            <div className="mt-4">
-              <canvas
-                ref={tournamentCanvasRef}
-                width={800}
-                height={400}
-                className="border rounded"
-                style={{ backgroundColor: "#fff" }}
-              ></canvas>
-            </div>
-          )}
         </div>
       )}
 
@@ -263,7 +285,7 @@ export function GameCanvas() {
         style={{ fontWeight: "bold", padding: "10px 20px" }}
       >
         <FontAwesomeIcon icon={faGamepad} className="me-2" />
-        {t("back_to_home")}
+        {t("back_to_home") || "Voltar"}
       </button>
     </div>
   );
