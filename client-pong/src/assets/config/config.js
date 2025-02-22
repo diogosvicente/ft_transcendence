@@ -9,7 +9,7 @@ export const setApiLanguage = (language) => {
 };
 
 // URLs Base
-export const API_BASE_URL = "https://localhost";
+export const API_BASE_URL = "https://192.168.1.138";
 
 // Avatar padrão
 export const DEFAULT_AVATAR = `${API_BASE_URL}/media/avatars/default.png`;
@@ -24,7 +24,7 @@ export const getAvatar = (avatarPath) => {
 
 // Função para obter a URL do WebSocket
 export const getWsUrl = (path = "") => {
-  return "wss://localhost" + path;  // e.g. /ws/chat/
+  return "wss://192.168.1.138" + path;  // e.g. /ws/chat/
 };
 
 // Exportação padrão

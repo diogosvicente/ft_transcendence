@@ -35,7 +35,12 @@ SECRET_KEY= "django-insecure-rn9_4g7hoi_0xkvglm0f^3on+qs*m-sln5ucwp1*7vv_7(6pz0)
 # DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
 #ALLOWED_HOSTS = []
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "192.168.1.138",
+]
+
 
 # Application definition
 
@@ -210,6 +215,7 @@ CORS_ALLOW_HEADERS = [
 CORS_ALLOWED_ORIGINS = [
     "https://localhost:3000",  # Origem do seu frontend React
     "https://127.0.0.1:3000",    # Substitua pelo domínio em produção
+    "https://192.168.1.138"
 ]
 
 AUTHENTICATION_BACKENDS = [
