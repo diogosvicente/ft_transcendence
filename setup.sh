@@ -11,7 +11,7 @@ export IP_ADDRESS=$IP_ADDRESS
 
 # 3) Gera .env a partir do template
 echo "Gerando .env a partir de .env.template..."
-envsubst < templates/env.template > server-pong/.env
+envsubst < templates/env.template > .env
 
 # 4) Gera nginx.conf
 echo "Gerando nginx.conf a partir de nginx.conf.template..."
@@ -34,7 +34,7 @@ openssl req -x509 -newkey rsa:4096 -days 365 -nodes \
 
 echo
 echo "Setup finalizado com sucesso! Confira os arquivos gerados:"
-echo " - server-pong/.env"
+echo " - .env"
 echo " - nginx.conf"
 echo " - client-pong/vite.config.js"
 echo " - client-pong/src/assets/config/config.js"

@@ -6,6 +6,7 @@ export const setApiLanguage = (language) => {
 };
 
 export const API_BASE_URL = "https://${IP_ADDRESS}";
+
 export const DEFAULT_AVATAR = `${API_BASE_URL}/media/avatars/default.png`;
 
 export const getAvatar = (avatarPath) => {
@@ -16,7 +17,7 @@ export const getAvatar = (avatarPath) => {
 };
 
 export const getWsUrl = (path = "") => {
-  return "wss://${IP_ADDRESS}" + path;
+  return "wss://${IP_ADDRESS}" + path;  // e.g. /ws/chat/
 };
 
 export default API_BASE_URL;
