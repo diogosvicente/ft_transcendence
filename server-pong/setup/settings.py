@@ -4,12 +4,13 @@ from datetime import timedelta
 from django.utils.translation import gettext_lazy as _
 import os
 
-load_dotenv()
+BASE_DIR = Path(__file__).resolve().parent.parent  # server-pong/
+ENV_PATH = BASE_DIR.parent / '.env'               # ft_transcendence/.env
+load_dotenv(ENV_PATH)
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-SECRET_KEY = os.getenv('SECRET_KEY')
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
+SECRET_KEY = os.getenv('SECRET_KEY', 'fallback')
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 
 INSTALLED_APPS = ['django_extensions','daphne',
     # Apps integrados do Django
@@ -127,12 +128,6 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
     'accept','accept-encoding','authorization','content-type','dnt','origin','user-agent','x-csrftoken','x-requested-with',
-]
-
-CORS_ALLOWED_ORIGINS = [
-    "https://localhost:3000",
-    "https://127.0.0.1:3000",
-    "https://192.168.1.138"
 ]
 
 AUTHENTICATION_BACKENDS = [

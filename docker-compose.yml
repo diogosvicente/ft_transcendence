@@ -7,6 +7,8 @@ services:
     command: daphne -b 0.0.0.0 -p 8000 setup.asgi:application
     environment:
       - DJANGO_SETTINGS_MODULE=setup.settings
+    env_file:
+      - .env
     volumes:
       - ./server-pong:/app
       - ./server-pong/staticfiles:/app/staticfiles
@@ -56,10 +58,8 @@ services:
     image: postgres:13
     volumes:
       - postgres_data:/var/lib/postgresql/data/
-    environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    env_file:
+    - .env
 
   #
   # Redis para Channels
