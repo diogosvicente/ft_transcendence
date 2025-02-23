@@ -31,7 +31,6 @@ export default defineConfig({
     port: 3000,
     hmr: {
       host: '192.168.1.138', // IP da máquina principal
-      port: 3000,
     },
   },
 });

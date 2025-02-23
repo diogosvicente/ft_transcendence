@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   #
   # Django + Channels (Daphne) - Porta 8000 interna

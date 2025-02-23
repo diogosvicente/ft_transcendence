@@ -1,0 +1,22 @@
+let API_LANGUAGE = localStorage.getItem("language") || "en";
+
+export const setApiLanguage = (language) => {
+  API_LANGUAGE = language;
+  localStorage.setItem("language", language);
+};
+
+export const API_BASE_URL = "https://${IP_ADDRESS}";
+export const DEFAULT_AVATAR = `${API_BASE_URL}/media/avatars/default.png`;
+
+export const getAvatar = (avatarPath) => {
+  if (!avatarPath) return DEFAULT_AVATAR;
+  return avatarPath.startsWith("/media/")
+    ? `${API_BASE_URL}${avatarPath}`
+    : `${API_BASE_URL}/media/${avatarPath}`;
+};
+
+export const getWsUrl = (path = "") => {
+  return "wss://${IP_ADDRESS}" + path;
+};
+
+export default API_BASE_URL;
