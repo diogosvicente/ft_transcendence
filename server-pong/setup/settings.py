@@ -9,7 +9,6 @@ ENV_PATH = BASE_DIR.parent / '.env'               # ft_transcendence/.env
 load_dotenv(ENV_PATH)
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'fallback')
-DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 
 INSTALLED_APPS = ['django_extensions','daphne',

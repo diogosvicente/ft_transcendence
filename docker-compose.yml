@@ -4,17 +4,17 @@ services:
   #
   web:
     build: ./server-pong
-    command: daphne -b 0.0.0.0 -p 8000 setup.asgi:application
+    command: ["/wait-for-it.sh", "db", "5432", "--", "daphne", "-b", "0.0.0.0", "-p", "8000", "setup.asgi:application"]
     environment:
       - DJANGO_SETTINGS_MODULE=setup.settings
     env_file:
       - .env
     volumes:
-      - ./server-pong:/app
-      - ./server-pong/staticfiles:/app/staticfiles
-      - ./server-pong/media:/app/media
-    expose:
-      - "8000"
+      - django_app_data:/app
+      - django_static_data:/app/staticfiles
+      - django_media_data:/app/media
+    ports:
+      - "8000:8000"  # Se precisar acessar diretamente via IP
     depends_on:
       - db
       - redis
@@ -27,12 +27,12 @@ services:
       context: ./client-pong
       target: development
     volumes:
-      - ./client-pong:/app
-      - /app/node_modules
-    expose:
-      - "3000"
+      - react_app_data:/app
+    ports:
+      - "3000:3000"  # Se precisar acessar diretamente via IP
     depends_on:
       - web
+      - db
 
   #
   # Nginx - Porta 443 (SSL) e 80 (redirecionamento)
@@ -40,10 +40,10 @@ services:
   nginx:
     image: nginx:latest
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./server-pong/certs:/etc/nginx/certs       # Certificado e chave autoassinados
-      - ./server-pong/staticfiles:/app/staticfiles
-      - ./server-pong/media:/app/media
+      - ./nginx.conf:/etc/nginx/nginx.conf  # Arquivo de configuração ainda pode ser bind-mounted
+      - ./server-pong/certs:/etc/nginx/certs  # Certificados SSL precisam estar no projeto
+      - django_static_data:/app/staticfiles
+      - django_media_data:/app/media
     ports:
       - "80:80"   # Redireciona para HTTPS
       - "443:443" # HTTPS
@@ -52,17 +52,18 @@ services:
       - frontend
 
   #
-  # Banco de Dados PostgreSQL
+  # Banco de Dados PostgreSQL (armazenamento em /goinfre)
   #
   db:
     image: postgres:13
+    env_file:
+      - .env
     volumes:
       - postgres_data:/var/lib/postgresql/data/
-    env_file:
-    - .env
+    restart: always  # Garante que o banco seja reiniciado caso falhe
 
   #
-  # Redis para Channels
+  # Redis para Channels (armazenamento em /goinfre)
   #
   redis:
     image: redis:7-alpine
@@ -76,6 +77,43 @@ services:
       timeout: 5s
       retries: 5
 
+#
+# Volumes para armazenar dados em /goinfre/${USER} (evita perda de dados)
+#
 volumes:
+  django_app_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: "/goinfre/${USER}/ft_transcendence/django_app"
+      o: bind
+  django_static_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: "/goinfre/${USER}/ft_transcendence/staticfiles"
+      o: bind
+  django_media_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: "/goinfre/${USER}/ft_transcendence/media"
+      o: bind
   postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: "/goinfre/${USER}/ft_transcendence/postgres_data"
+      o: bind
   redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: "/goinfre/${USER}/ft_transcendence/redis_data"
+      o: bind
+  react_app_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: "/goinfre/${USER}/ft_transcendence/react_app"
+      o: bind
