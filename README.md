@@ -1,106 +1,119 @@
-# 🚀 ft_transcendence - Makefile
+# ft_transcendence
 
-Este **Makefile** automatiza a execução, limpeza e configuração do ambiente **ft_transcendence**.
+## 🚀 Sobre o Projeto
 
-## 📌 Índice
+Este projeto roda em **rede local**, permitindo que múltiplos usuários se conectem sem depender de serviços externos.
 
-- [🟢 Starting containers](#starting-containers)
-- [🛑 Stopping containers](#stopping-containers)
-- [🔄 Restarting containers](#restarting-containers)
-- [🗑 Cleaning up](#cleaning-up)
-- [🔥 Full cleanup](#full-cleanup)
-- [📂 Creating directories](#creating-directories)
-- [🔄 Running setup script](#running-setup-script)
-- [🗑 Clearing database tables](#clearing-database-tables)
+⚠️ **Antes de iniciar, rode `make setup` para configurar o IP da máquina servidora.**
 
----
+Diferente de aplicações tradicionais que rodam em `https://localhost:PORTA`, este projeto estará disponível em:
 
-## 🟢 Starting containers
+🔗 **`https://IP_MAQUINA_SERVIDORA`**
 
-```bash
-make all
-```
+## 🛠️ Tecnologias Utilizadas
 
-- Cria os diretórios necessários em `/goinfre/$USER`
-- Inicia os containers do **Docker Compose**
-- Executa as migrações do banco de dados
-
-Acesse o app em **[https://localhost:3000](https://localhost:3000)**.
+- 🐍 **Django** (Backend)
+- ⚛️ **React JS** (Frontend)
+- 🐘 **PostgreSQL** (Banco de Dados)
+- 🔄 **Redis** (Gerenciamento de WebSockets)
+- 🐳 **Docker & Docker Compose** (Orquestração de Contêineres)
+- 🔧 **Nginx** (Proxy Reverso)
 
 ---
 
-## 🛑 Stopping containers
+## 📌 Como Usar
 
-```bash
-make down
-```
-
-- Para os containers sem remover volumes.
-
----
-
-## 🔄 Restarting containers
-
-```bash
-make re
-```
-
-- Executa `fclean` (limpeza total) e depois `all` (reinicialização completa).
-
----
-
-## 🗑 Cleaning up
-
-```bash
-make clean
-```
-
-- Para os containers e remove **volumes temporários**.
-- Não remove imagens Docker.
-
----
-
-## 🔥 Full cleanup
-
-```bash
-make fclean
-```
-
-- Para os containers.
-- Remove **todas as imagens Docker associadas ao projeto**.
-- Apaga os volumes e dados armazenados em `/goinfre/$USER/ft_transcendence`.
-
----
-
-## 📂 Creating directories
-
-```bash
-make create_dirs
-```
-
-- Cria diretórios para armazenar volumes do Docker em `/goinfre/$USER/ft_transcendence`.
-
----
-
-## 🔄 Running setup script
+### 🔄 Executando o Setup Inicial
 
 ```bash
 make setup
 ```
 
-- Executa `setup.sh` para configuração inicial do projeto.
+Este comando configura o ambiente e define corretamente o IP da máquina servidora.
 
----
+### 🚀 Iniciando os Contêineres
 
-## 🗑 Clearing database tables
+```bash
+make all
+```
+
+Acesse o app via **`https://IP_MAQUINA_SERVIDORA`**
+
+### 🏗️ Construindo a Aplicação
+
+```bash
+make build
+```
+
+### 🛑 Parando os Contêineres
+
+```bash
+make down
+```
+
+### 🔄 Reinicializando o Ambiente
+
+```bash
+make re
+```
+
+### 🧹 Limpando os Contêineres e Volumes
+
+```bash
+make clean
+```
+
+### 🔥 Resetando Tudo (inclusive imagens Docker e volumes)
+
+```bash
+make fclean
+```
+
+### 🗑️ Limpando as Tabelas do Banco de Dados
 
 ```bash
 make clear-db
 ```
 
-- Executa `clear_db.sh` para limpar dados das tabelas sem excluir o banco de dados.
+---
+
+## 🧐 Logs e Debugging
+
+Para visualizar os logs de cada serviço:
+
+📜 **Backend (Django + Daphne):**
+```bash
+docker compose logs -f web
+```
+
+📜 **Banco de Dados (PostgreSQL):**
+```bash
+docker compose logs -f db
+```
+
+📜 **Frontend (React JS):**
+```bash
+docker compose logs -f frontend
+```
+
+📜 **Nginx (Proxy Reverso):**
+```bash
+docker compose logs -f nginx
+```
+
+📜 **Redis (Gerenciamento de WebSockets):**
+```bash
+docker compose logs -f redis
+```
 
 ---
 
-Este **Makefile** ajuda a manter o ambiente **ft_transcendence** organizado e automatizado. 🚀
+## 📌 Observações
+- **O acesso ao aplicativo deve ser feito via `https://IP_MAQUINA_SERVIDORA` e não `localhost`.**
+- **Certifique-se de que o firewall permite conexões na porta 443.**
+- **Os logs são úteis para verificar possíveis erros na comunicação entre os serviços.**
+
+---
+
+✅ **Tudo pronto! Agora é só começar a usar!** 🎮
 
