@@ -12,7 +12,7 @@ http {
     # SERVIDOR HTTPS
     server {
         listen 443 ssl;
-        server_name ${IP_ADDRESS};
+        server_name ${IP_ADDRESS};  # IP no server_name
 
         ssl_certificate     /etc/nginx/certs/cert.pem;
         ssl_certificate_key /etc/nginx/certs/key.pem;

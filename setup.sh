@@ -9,19 +9,19 @@ read -p "Digite o IP para o servidor (ex: 192.168.1.138): " IP_ADDRESS
 # 2) Exportar a variável para o envsubst
 export IP_ADDRESS=$IP_ADDRESS
 
-# 3) Gera .env a partir do template
+# 3) Gera .env a partir do template (substitui todas as variáveis)
 echo "Gerando .env a partir de .env.template..."
 envsubst < templates/env.template > .env
 
-# 4) Gera nginx.conf
+# 4) Gera nginx.conf (substitui **somente** ${IP_ADDRESS})
 echo "Gerando nginx.conf a partir de nginx.conf.template..."
-envsubst < templates/nginx.conf.template > nginx.conf
+envsubst '$IP_ADDRESS' < templates/nginx.conf.template > nginx.conf
 
-# 5) Gera vite.config.js
+# 5) Gera vite.config.js (substitui todas as variáveis)
 echo "Gerando vite.config.js a partir de vite.config.js.template..."
 envsubst < templates/vite.config.js.template > client-pong/vite.config.js
 
-# 6) Gera config.js
+# 6) Gera config.js (substitui todas as variáveis)
 echo "Gerando config.js a partir de config.js.template..."
 envsubst < templates/config.js.template > client-pong/src/assets/config/config.js
 
@@ -39,6 +39,3 @@ echo " - nginx.conf"
 echo " - client-pong/vite.config.js"
 echo " - client-pong/src/assets/config/config.js"
 echo " - server-pong/certs/key.pem e cert.pem"
-
-# 8) (Opcional) subir containers
-# docker compose up -d --build

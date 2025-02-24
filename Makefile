@@ -13,22 +13,32 @@ STATICFILES_PATH = $(GOINFRE_PATH)/staticfiles
 MEDIA_PATH = $(GOINFRE_PATH)/media
 REACT_APP_PATH = $(GOINFRE_PATH)/react_app
 
-# Criação de diretórios necessários
-create_dirs:
-	@printf "🔧 Criando diretórios para persistência dos dados...\n"
-	@mkdir -p $(POSTGRES_PATH) $(REDIS_PATH) $(DJANGO_APP_PATH) $(STATICFILES_PATH) $(MEDIA_PATH) $(REACT_APP_PATH)
+# Obtém o UID e GID do usuário atual
+USER_ID := $(shell id -u)
+GROUP_ID := $(shell id -g)
+
+# Garante que o setup.sh seja executado antes de rodar o Makefile
+setup:
+	@printf "🔄 Executando setup.sh...\n"
+	@chmod +x ./setup.sh
+	@./setup.sh
+
+# Criação de diretórios necessários com permissões corretas
+create_dirs: setup
+	@printf "🔧 Criando diretórios para persistência dos dados com UID=$(USER_ID) e GID=$(GROUP_ID)...\n"
+	@install -d -m 0755 -o $(USER) -g $(USER) $(POSTGRES_PATH) $(REDIS_PATH) $(DJANGO_APP_PATH) $(STATICFILES_PATH) $(MEDIA_PATH) $(REACT_APP_PATH)
 	@printf "✅ Diretórios criados com sucesso em $(GOINFRE_PATH)\n"
 
 # Inicialização completa do projeto
 all: create_dirs
-	@printf "🚀 Iniciando configuração ${name}...\n"
-	@docker compose -f $(DOCKER_COMPOSE_FILE) up -d
-	@docker compose exec -it web python manage.py migrate
+	@printf "🚀 Iniciando configuração ${name} com UID=$(USER_ID) e GID=$(GROUP_ID)...\n"
+	@USER_ID=$(USER_ID) GROUP_ID=$(GROUP_ID) docker compose -f $(DOCKER_COMPOSE_FILE) up -d
+	@docker compose exec -u $(USER_ID) web python manage.py migrate
 
 # Construção do projeto
 build: create_dirs
-	@printf "🏗️  Construindo configuração ${name}...\n"
-	@docker compose -f $(DOCKER_COMPOSE_FILE) up -d --build
+	@printf "🏗️  Construindo configuração ${name} com UID=$(USER_ID) e GID=$(GROUP_ID)...\n"
+	@USER_ID=$(USER_ID) GROUP_ID=$(GROUP_ID) docker compose -f $(DOCKER_COMPOSE_FILE) up -d --build
 
 # Parada dos containers
 down:
@@ -61,4 +71,4 @@ fclean:
 	@rm -rf $(GOINFRE_PATH)/*
 	@printf "✅ Todos os arquivos foram removidos com sucesso.\n"
 
-.PHONY: all build down re clean fclean create_dirs
+.PHONY: all build down re clean fclean create_dirs setup
