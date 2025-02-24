@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Certifique-se de ter o pacote `gettext-base` (envsubst) e `openssl` instalados.
-# Ex: sudo apt-get install gettext-base openssl
-
 # 1) Ler IP do usuário
 read -p "Digite o IP para o servidor (ex: 192.168.1.138): " IP_ADDRESS
 
@@ -23,7 +20,7 @@ envsubst < templates/vite.config.js.template > client-pong/vite.config.js
 
 # 6) Gera config.js (substitui todas as variáveis)
 echo "Gerando config.js a partir de config.js.template..."
-envsubst < templates/config.js.template > client-pong/src/assets/config/config.js
+envsubst '$IP_ADDRESS' < templates/config.js.template > client-pong/src/assets/config/config.js
 
 # 7) Gera certificado autoassinado
 echo "Gerando certificado autoassinado para $IP_ADDRESS..."

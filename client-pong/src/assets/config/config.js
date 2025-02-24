@@ -7,18 +7,16 @@ export const setApiLanguage = (language) => {
 
 export const API_BASE_URL = "https://192.168.1.138";
 
-export const DEFAULT_AVATAR = `/media/avatars/default.png`;
+export const DEFAULT_AVATAR = `${API_BASE_URL}/media/avatars/default.png`;
 
 export const getAvatar = (avatarPath) => {
-  if (!avatarPath || avatarPath === "/media/") {
-    return DEFAULT_AVATAR;
-  }
+  if (!avatarPath) return DEFAULT_AVATAR;
 
+  // Garante que o caminho final seja correto
   return avatarPath.startsWith("/media/")
-    ? ``
-    : `/media/`;
+    ? avatarPath
+    : `/media/${avatarPath}`;
 };
-
 
 export const getWsUrl = (path = "") => {
   return "wss://192.168.1.138" + path;  // e.g. /ws/chat/
