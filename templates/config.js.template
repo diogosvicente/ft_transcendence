@@ -10,7 +10,10 @@ export const API_BASE_URL = "https://${IP_ADDRESS}";
 export const DEFAULT_AVATAR = `${API_BASE_URL}/media/avatars/default.png`;
 
 export const getAvatar = (avatarPath) => {
-  if (!avatarPath) return DEFAULT_AVATAR;
+  if (!avatarPath || avatarPath === "/media/") {
+    return DEFAULT_AVATAR;
+  }
+
   return avatarPath.startsWith("/media/")
     ? `${API_BASE_URL}${avatarPath}`
     : `${API_BASE_URL}/media/${avatarPath}`;
