@@ -53,10 +53,10 @@ re: fclean all
 clean: down
 	@printf "🧹 Limpando configuração ${name}...\n"
 	@docker system prune -a --volumes --force
-	@rm -rf $(GOINFRE_PATH)/postgres_data/*
-	@rm -rf $(GOINFRE_PATH)/redis_data/*
-	@rm -rf $(GOINFRE_PATH)/react_app/*
-	@rm -rf $(PROJECT_PATH)/client-pong/node_modules
+	@sudo rm -rf $(GOINFRE_PATH)/postgres_data/*
+	@sudo rm -rf $(GOINFRE_PATH)/redis_data/*
+	@sudo rm -rf $(GOINFRE_PATH)/react_app/*
+	@sudo rm -rf $(PROJECT_PATH)/client-pong/node_modules
 
 # Limpeza total (tudo, incluindo imagens Docker e volumes)
 fclean:
@@ -67,8 +67,8 @@ fclean:
 	@docker network prune --force
 	@docker volume prune --force
 	@docker images -q --filter "reference=$(name)*" | xargs -r docker rmi -f
-	@rm -rf $(PROJECT_PATH)/client-pong/node_modules
-	@rm -rf $(GOINFRE_PATH)/*
+	@sudo rm -rf $(PROJECT_PATH)/client-pong/node_modules
+	@sudo rm -rf $(GOINFRE_PATH)/*
 	@printf "✅ Todos os arquivos foram removidos com sucesso.\n"
 
 .PHONY: all build down re clean fclean create_dirs setp
