@@ -18,6 +18,11 @@ setup:
 	@chmod +x ./setup.sh
 	@./setup.sh
 
+clear-db:
+	@printf "🗑️  Limpando tabelas do banco de dados...\n"
+	@test -x ./clear_db.sh || chmod +x ./clear_db.sh
+	@./clear_db.sh
+
 # Criação de diretórios necessários
 create_dirs:
 	@printf "🔧 Criando diretórios para persistência dos dados...\n"
