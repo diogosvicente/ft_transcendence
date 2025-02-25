@@ -115,10 +115,12 @@ export const gameCore = function (canvas, options = {}) {
     }
 
     // Colisão com topo/fundo
-    if (ballY + BALL_SIZE > canvas.height) {
+    if (ballY + BALL_SIZE > canvas.height
+        && ballSpeedY > 0) {
       ballSpeedY = -ballSpeedY;
     }
-    if (ballY < 0) {
+    if (ballY < 0
+        && ballSpeedY < 0) {
       ballSpeedY = -ballSpeedY;
     }
   };
