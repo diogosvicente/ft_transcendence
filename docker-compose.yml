@@ -45,8 +45,8 @@ services:
       - django_static_data:/app/staticfiles
       - django_media_data:/app/media
     ports:
-      - "80:80"   # Redireciona para HTTPS
-      - "443:443" # HTTPS
+      - "8080:80"   # Redireciona para HTTPS
+      - "4443:443" # HTTPS
     depends_on:
       - web
       - frontend
@@ -68,7 +68,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - redis_data:/data
     healthcheck:

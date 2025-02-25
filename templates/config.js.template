@@ -5,7 +5,7 @@ export const setApiLanguage = (language) => {
   localStorage.setItem("language", language);
 };
 
-export const API_BASE_URL = "https://${IP_ADDRESS}";
+export const API_BASE_URL = "https://${IP_ADDRESS}:4443";
 
 export const DEFAULT_AVATAR = `${API_BASE_URL}/media/avatars/default.png`;
 
