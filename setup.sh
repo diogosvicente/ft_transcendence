@@ -2,27 +2,67 @@
 
 # 1) Ler IP do usuário
 read -p "Digite o IP para o servidor (ex: 192.168.1.138): " IP_ADDRESS
+export IP_ADDRESS
 
-# 2) Exportar a variável para o envsubst
-export IP_ADDRESS=$IP_ADDRESS
+# 2) Tenta criar /goinfre/$USER com sudo; se falhar, cria ~/goinfre
+TARGET_DIR="/goinfre/$USER"
+echo "Tentando criar $TARGET_DIR com sudo..."
+sudo mkdir -p "$TARGET_DIR" 2>/dev/null
 
-# 3) Gera .env a partir do template (substitui todas as variáveis)
+if [ $? -eq 0 ]; then
+  echo "Sucesso ao criar $TARGET_DIR. Ajustando permissões..."
+  sudo chmod -R 775 "$TARGET_DIR"
+  sudo chown -R "$USER" "$TARGET_DIR"
+else
+  TARGET_DIR="$HOME/goinfre"
+  echo "Falha ao criar /goinfre/\$USER. Usando $TARGET_DIR."
+  mkdir -p "$TARGET_DIR"
+  chmod -R 775 "$TARGET_DIR"
+  chown -R "$USER" "$TARGET_DIR"
+fi
+
+# 3) Define a subpasta 'ft_transcendence' e exporta como VOLUME_BASE_PATH
+export VOLUME_BASE_PATH="$TARGET_DIR/ft_transcendence"
+echo "Pasta de volumes definida em: $VOLUME_BASE_PATH"
+
+# 3.1) Cria subpastas necessárias para volumes (redis_data, postgres_data, etc.)
+echo "Criando subpastas de volumes em $VOLUME_BASE_PATH..."
+mkdir -p "$VOLUME_BASE_PATH/redis_data" \
+         "$VOLUME_BASE_PATH/postgres_data" \
+         "$VOLUME_BASE_PATH/django_app" \
+         "$VOLUME_BASE_PATH/staticfiles" \
+         "$VOLUME_BASE_PATH/media" \
+         "$VOLUME_BASE_PATH/react_app"
+
+chmod -R 775 "$VOLUME_BASE_PATH"
+chown -R "$USER" "$VOLUME_BASE_PATH"
+
+# 4) Define PROJECT_PATH usando pwd
+export PROJECT_PATH="$(pwd)"
+echo "Project path: $PROJECT_PATH"
+
+# 5) Gera .env a partir do template (substitui todas as variáveis)
 echo "Gerando .env a partir de .env.template..."
 envsubst < templates/env.template > .env
 
-# 4) Gera nginx.conf (substitui **somente** ${IP_ADDRESS})
+# 6) Gera nginx.conf (substitui somente $IP_ADDRESS)
 echo "Gerando nginx.conf a partir de nginx.conf.template..."
 envsubst '$IP_ADDRESS' < templates/nginx.conf.template > nginx.conf
 
-# 5) Gera vite.config.js (substitui todas as variáveis)
+# 7) Gera vite.config.js (substitui todas as variáveis)
 echo "Gerando vite.config.js a partir de vite.config.js.template..."
 envsubst < templates/vite.config.js.template > client-pong/vite.config.js
 
-# 6) Gera config.js (substitui todas as variáveis)
+# 8) Gera config.js (substitui $IP_ADDRESS)
 echo "Gerando config.js a partir de config.js.template..."
 envsubst '$IP_ADDRESS' < templates/config.js.template > client-pong/src/assets/config/config.js
 
-# 7) Gera certificado autoassinado
+# 9) Gera docker-compose.yml (substitui $VOLUME_BASE_PATH, $PROJECT_PATH e $IP_ADDRESS)
+#    Necessário ter um docker-compose.yml.template com $VOLUME_BASE_PATH e $PROJECT_PATH
+echo "Gerando docker-compose.yml a partir de docker-compose.yml.template..."
+envsubst '$VOLUME_BASE_PATH $PROJECT_PATH $IP_ADDRESS' < templates/docker-compose.yml.template > docker-compose.yml
+
+# 10) Gera certificado autoassinado para $IP_ADDRESS
 echo "Gerando certificado autoassinado para $IP_ADDRESS..."
 openssl req -x509 -newkey rsa:4096 -days 365 -nodes \
   -keyout server-pong/certs/key.pem -out server-pong/certs/cert.pem \
@@ -35,4 +75,5 @@ echo " - .env"
 echo " - nginx.conf"
 echo " - client-pong/vite.config.js"
 echo " - client-pong/src/assets/config/config.js"
+echo " - docker-compose.yml"
 echo " - server-pong/certs/key.pem e cert.pem"

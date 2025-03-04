@@ -1,20 +1,18 @@
 services:
   #
-  # Django (Desenvolvimento) - hot reload com runserver
+  # Django + Channels (Daphne) - Porta 8000 interna
   #
   web:
-    build:
-      context: ./server-pong
-      target: development  # Usa o estágio "development" do Dockerfile
-    # Monte o diretório do código em /app, se quiser hot reload imediato
+    build: ./server-pong
+    command: ["/wait-for-it.sh", "db", "5432", "--", "daphne", "-b", "0.0.0.0", "-p", "8000", "setup.asgi:application"]
+    environment:
+      - DJANGO_SETTINGS_MODULE=setup.settings
+    env_file:
+      - .env
     volumes:
       - django_app_data:/app
       - django_static_data:/app/staticfiles
       - django_media_data:/app/media
-    env_file:
-      - .env
-    environment:
-      - DJANGO_SETTINGS_MODULE=setup.settings
     ports:
       - "8000:8000"
     depends_on:
@@ -22,13 +20,12 @@ services:
       - redis
 
   #
-  # React (Desenvolvimento) - hot reload com Vite
+  # React (Vite) - Porta 3000 interna
   #
   frontend:
     build:
       context: ./client-pong
-      target: development  # Usa o estágio "development" do Dockerfile
-    # Monte o diretório do código em /app, se quiser hot reload imediato
+      target: development
     volumes:
       - react_app_data:/app
     ports:
@@ -38,7 +35,7 @@ services:
       - db
 
   #
-  # Nginx - Opcional em Dev (caso queira testar roteamento/SSL)
+  # Nginx - Porta 443 (SSL) e 80 (redirecionamento)
   #
   nginx:
     image: nginx:latest
@@ -48,14 +45,14 @@ services:
       - django_static_data:/app/staticfiles
       - django_media_data:/app/media
     ports:
-      - "8080:80"    # HTTP
-      - "4443:443"   # HTTPS
+      - "8080:80"
+      - "4443:443"
     depends_on:
       - web
       - frontend
 
   #
-  # Postgres
+  # Banco de Dados PostgreSQL
   #
   db:
     image: postgres:13
@@ -81,42 +78,47 @@ services:
       retries: 5
 
 #
-# Volumes em /goinfre/${USER} para persistência de dados e hot reload
+# Volumes usando a variável $VOLUME_BASE_PATH
 #
 volumes:
   django_app_data:
     driver: local
     driver_opts:
       type: none
-      device: "/goinfre/${USER}/ft_transcendence/django_app"
+      device: "$VOLUME_BASE_PATH/django_app"
       o: bind
+
   django_static_data:
     driver: local
     driver_opts:
       type: none
-      device: "/goinfre/${USER}/ft_transcendence/staticfiles"
+      device: "$VOLUME_BASE_PATH/staticfiles"
       o: bind
+
   django_media_data:
     driver: local
     driver_opts:
       type: none
-      device: "/goinfre/${USER}/ft_transcendence/media"
+      device: "$VOLUME_BASE_PATH/media"
       o: bind
-  react_app_data:
-    driver: local
-    driver_opts:
-      type: none
-      device: "/goinfre/${USER}/ft_transcendence/react_app"
-      o: bind
+
   postgres_data:
     driver: local
     driver_opts:
       type: none
-      device: "/goinfre/${USER}/ft_transcendence/postgres_data"
+      device: "$VOLUME_BASE_PATH/postgres_data"
       o: bind
+
   redis_data:
     driver: local
     driver_opts:
       type: none
-      device: "/goinfre/${USER}/ft_transcendence/redis_data"
+      device: "$VOLUME_BASE_PATH/redis_data"
+      o: bind
+
+  react_app_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: "$VOLUME_BASE_PATH/react_app"
       o: bind
