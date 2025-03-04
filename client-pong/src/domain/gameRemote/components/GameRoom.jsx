@@ -11,114 +11,103 @@ const GameRoom = ({ matchId, userId, matchData, isPlayer1 }) => {
   const canvasRef = useRef(null);
   const gameRef = useRef(null);
   const navigate = useNavigate();
-  // Usamos useRef para armazenar a conexão WebSocket de forma estável
   const socketRef = useRef(null);
+
   const [assignedSide, setAssignedSide] = useState(null);
   const [countdown, setCountdown] = useState(null);
   const [pendingState, setPendingState] = useState(null);
   const [isPaused, setIsPaused] = useState(false);
+
+  // Referência para armazenar o intervalo de movimento
+  const moveIntervalRef = useRef(null);
+
   const defaultAvatar = `${API_BASE_URL}/media/avatars/default.png`;
 
-  // useEffect para criar a conexão WebSocket (única vez por matchId)
+  // Envia comando de movimento (W ou S) repetidamente
+  const handlePressStart = (directionKey, event) => {
+    event.preventDefault(); // evita zoom/scroll indesejado no mobile
+    if (!assignedSide || !socketRef.current) return;
+    if (socketRef.current.readyState !== WebSocket.OPEN) return;
+
+    // Se já existir um intervalo ativo, não cria outro
+    if (moveIntervalRef.current) return;
+
+    // Cria intervalo para enviar comando a cada 100ms
+    moveIntervalRef.current = setInterval(() => {
+      socketRef.current.send(
+        JSON.stringify({
+          type: "player_move",
+          direction: directionKey === "w" ? "up" : "down",
+        })
+      );
+    }, 100);
+  };
+
+  // Para de enviar comandos ao soltar o botão
+  const handlePressEnd = () => {
+    if (moveIntervalRef.current) {
+      clearInterval(moveIntervalRef.current);
+      moveIntervalRef.current = null;
+    }
+  };
+
   useEffect(() => {
     const accessToken = localStorage.getItem("access");
     const wsUrl = `${getWsUrl(`/ws/game/${matchId}/`)}?access_token=${accessToken}`;
     const ws = new WebSocket(wsUrl);
     socketRef.current = ws;
 
-    const initializeGame = () => {
+    ws.onopen = () => {
+      console.log("WebSocket conectado.");
       const canvas = canvasRef.current;
       if (canvas && !gameRef.current) {
         gameRef.current = gameCore(canvas);
-        console.log("Game inicializado com sucesso.");
-        if (pendingState) {
-          console.log("Renderizando estado pendente...");
-          gameRef.current.renderState(pendingState);
-          setPendingState(null);
-        }
       }
-    };
-
-    ws.onopen = () => {
-      console.log("WebSocket conectado.");
-      initializeGame();
     };
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      // console.log("Mensagem WebSocket recebida:", data);
-
       switch (data.type) {
         case "assigned_side":
           setAssignedSide(data.side);
-          console.log(`Jogador configurado no lado: ${data.side}`);
           break;
-
         case "countdown":
-          const countdownMessage = data.state?.message;
-          if (countdownMessage) {
-            setCountdown(countdownMessage);
-          } else {
-            console.warn("⚠ A contagem regressiva veio sem dados válidos:", data);
-          }
+          setCountdown(data.state?.message || null);
           break;
-
         case "wo_countdown":
-          if (data.state?.countdown !== undefined) {
-            setCountdown(data.state.countdown);
-            console.log(`Contagem para WO: ${data.state.countdown}`);
-          } else {
-            console.warn("⚠ Dados inválidos para WO countdown:", data);
-          }
+          setCountdown(data.state?.countdown || null);
           break;
-
         case "game_start":
-          console.log("Jogo iniciado após a contagem regressiva.");
           setCountdown(null);
           break;
-
         case "paused":
           setIsPaused(true);
-          console.log("Partida pausada.");
           break;
-
         case "resumed":
           setIsPaused(false);
-          console.log("Partida retomada.");
           if (pendingState && gameRef.current) {
             gameRef.current.renderState(pendingState);
             setPendingState(null);
           }
           break;
-
         case "state_update":
           if (gameRef.current) {
             gameRef.current.renderState(data.state);
           } else {
-            console.warn("Game ainda não foi inicializado. Salvando estado pendente.");
             setPendingState(data.state);
           }
           break;
-
         case "walkover":
           alert(data.state.message);
-          console.log("Partida finalizada por WO. Redirecionando...");
           navigate(data.state.redirect_url);
           break;
-
         case "match_finished":
-          // Obtém o ID do usuário atual (salvo no localStorage)
           const currentUserId = localStorage.getItem("id");
-          // Extrai a mensagem apropriada do objeto final_alert, usando o ID como chave
           const finalAlertMessage = data.state.final_alert[currentUserId] || "";
-          
-          // Exibe o alerta com a mensagem apropriada
           if (window.confirm(finalAlertMessage)) {
-            console.log("Partida finalizada por pontos. Redirecionando...");
             navigate(data.state.redirect_url);
           }
           break;
-
         default:
           console.warn("Mensagem desconhecida:", data);
       }
@@ -133,32 +122,29 @@ const GameRoom = ({ matchId, userId, matchData, isPlayer1 }) => {
     };
 
     return () => {
-      console.log("Limpando WebSocket...");
       if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
         ws.close();
       }
     };
-  }, [matchId]);
+  }, [matchId, navigate]);
 
-  // Esse useEffect monitora mudanças em pendingState para inicializar o game se ainda não estiver feito
+  // Renderiza estado pendente se o jogo não estava inicializado
   useEffect(() => {
     if (pendingState && !gameRef.current) {
       const canvas = canvasRef.current;
       if (canvas) {
         gameRef.current = gameCore(canvas);
-        console.log("Game inicializado via pendingState.");
         gameRef.current.renderState(pendingState);
         setPendingState(null);
       }
     }
   }, [pendingState]);
 
+  // Lida com teclas W/S no desktop
   const handleKeyDown = (e) => {
     if (!assignedSide || !socketRef.current) return;
-    if (socketRef.current.readyState !== WebSocket.OPEN) {
-      console.warn("Tentativa de enviar mensagem para WebSocket fechado.");
-      return;
-    }
+    if (socketRef.current.readyState !== WebSocket.OPEN) return;
+
     if (["w", "s"].includes(e.key)) {
       socketRef.current.send(
         JSON.stringify({
@@ -201,26 +187,37 @@ const GameRoom = ({ matchId, userId, matchData, isPlayer1 }) => {
           </button>
           <div className="players-info">
             <div className="player">
+              {/* Avatar do Player 1 */}
               <img
-                src={matchData.player1_avatar ? `${API_BASE_URL}${matchData.player1_avatar}` : defaultAvatar}
+                src={
+                  matchData.player1_avatar
+                    ? `${API_BASE_URL}${matchData.player1_avatar}`
+                    : defaultAvatar
+                }
                 alt={matchData.player1_display}
                 className="avatar"
               />
               <p>{matchData.player1_display}</p>
-              {isPlayer1 && <p>({(t("gameroom.you"))})</p>}
+              {isPlayer1 && <p>({t("gameroom.you")})</p>}
             </div>
             <span>VS</span>
             <div className="player">
+              {/* Avatar do Player 2 */}
               <img
-                src={matchData.player2_avatar ? `${API_BASE_URL}${matchData.player2_avatar}` : defaultAvatar}
+                src={
+                  matchData.player2_avatar
+                    ? `${API_BASE_URL}${matchData.player2_avatar}`
+                    : defaultAvatar
+                }
                 alt={matchData.player2_display}
                 className="avatar"
               />
               <p>{matchData.player2_display}</p>
-              {!isPlayer1 && <p>({(t("gameroom.you"))})</p>}
+              {!isPlayer1 && <p>({t("gameroom.you")})</p>}
             </div>
           </div>
         </div>
+
         <div className="game-board">
           {isPaused && (
             <div className="overlay">
@@ -228,16 +225,38 @@ const GameRoom = ({ matchId, userId, matchData, isPlayer1 }) => {
             </div>
           )}
           <canvas ref={canvasRef} width="800" height="600"></canvas>
+
           {countdown && (
             <div className="countdown-overlay">
               <p className="countdown-text">{countdown}</p>
             </div>
           )}
+
           {assignedSide && (
             <p className="paddle-info">
               {t("gameroom.you_control_paddle")} <strong>{t(`gameroom.side_${assignedSide}`)}</strong>
             </p>
           )}
+
+          {/* Botões de controle (mobile) */}
+          <div className="mobile-controls">
+            <button
+              onMouseDown={(e) => handlePressStart("w", e)}
+              onTouchStart={(e) => handlePressStart("w", e)}
+              onMouseUp={handlePressEnd}
+              onTouchEnd={handlePressEnd}
+            >
+              ▲
+            </button>
+            <button
+              onMouseDown={(e) => handlePressStart("s", e)}
+              onTouchStart={(e) => handlePressStart("s", e)}
+              onMouseUp={handlePressEnd}
+              onTouchEnd={handlePressEnd}
+            >
+              ▼
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -1,63 +1,84 @@
 .status-dot {
-    display: inline-block;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    margin-right: 5px;
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+
+.status-dot.online {
+  background-color: green;
+}
+
+.status-dot.offline {
+  background-color: red;
+}
+
+.accordion-section {
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+}
+
+.accordion-header {
+  cursor: pointer;
+  padding: 10px;
+  font-weight: bold;
+  font-size: 16px;
+  background-color: #e0e0e0;
+  border-bottom: 1px solid #ccc;
+  transition: background-color 0.2s ease;
+}
+
+.accordion-header:hover {
+  background-color: #d0d0d0;
+}
+
+.accordion-content {
+  padding: 10px;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.player-item {
+  display: flex;
+  align-items: center;
+  margin: 10px 0;
+}
+
+.player-name {
+  margin-left: 10px;
+}
+
+/* Animação de fade-in */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
   }
-  
-  .status-dot.online {
-    background-color: green;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
-  
-  .status-dot.offline {
-    background-color: red;
+}
+
+/* 
+   Em telas menores, habilitamos wrap e
+   justificamos o conteúdo para que os botões
+   fiquem dentro do card, mesmo se faltar largura.
+*/
+@media (max-width: 768px) {
+  .player-item {
+    flex-wrap: wrap;               /* Permite quebrar linha */
+    justify-content: space-between; /* Distribui espaço */
   }
 
-  .accordion-section {
-    margin-bottom: 15px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    background-color: #f9f9f9;
-  }
+  /* Ajuste opcional: se os botões estiverem
+     dentro de outra classe, você pode forçar
+     margens ou tamanhos aqui, por exemplo:
   
-  .accordion-header {
-    cursor: pointer;
-    padding: 10px;
-    font-weight: bold;
-    font-size: 16px;
-    background-color: #e0e0e0;
-    border-bottom: 1px solid #ccc;
-    transition: background-color 0.2s ease;
+  .player-item button {
+    margin-top: 5px;
   }
-  
-  .accordion-header:hover {
-    background-color: #d0d0d0;
-  }
-  
-  .accordion-content {
-    padding: 10px;
-    animation: fadeIn 0.3s ease-in-out;
-  }
-  
-  .player-item {
-    display: flex;
-    align-items: center;
-    margin: 10px 0;
-  }
-  
-  .player-name {
-    margin-left: 10px;
-  }
-  
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
+  */
+}

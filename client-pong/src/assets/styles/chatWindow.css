@@ -27,7 +27,7 @@
 }
 
 .chat-avatar {
-  width: 30;
+  width: 30px;
   height: 30px;
   border-radius: 50%;
   margin-right: 10px;
@@ -50,8 +50,8 @@
 }
 
 .chat-messages {
-  flex: 1;
-  overflow-y: auto;
+  flex: 1;          /* Ocupa o espaço restante */
+  overflow-y: auto; /* Rolagem quando ultrapassar a altura */
   padding: 10px;
 }
 
@@ -82,4 +82,31 @@
 
 .chat-input button:hover {
   background-color: #45a049;
+}
+
+/* 
+   Em telas até 768px, reduza a altura das mensagens
+   e empilhe textarea + botão.
+*/
+@media (max-width: 768px) {
+  /* Limita a altura das mensagens para sobrar mais espaço ao input */
+  .chat-messages {
+    flex: none;          /* Desativa o flex:1 */
+    max-height: 500px;   /* Ajuste conforme desejar */
+  }
+
+  .chat-input {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .chat-input textarea {
+    margin-right: 0;
+    margin-bottom: 10px; 
+    min-height: 60px;    /* Campo de texto maior em mobile */
+  }
+
+  .chat-input button {
+    align-self: flex-end; 
+  }
 }

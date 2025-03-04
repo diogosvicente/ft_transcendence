@@ -1,43 +1,39 @@
-// client-pong/src/domain/game/GameCanvas.jsx
+// GameCanvas.jsx
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faGamepad, faTableTennis } from "@fortawesome/free-solid-svg-icons";
+import { useTranslation } from "react-i18next";
+
 import brazilFlag from "../../assets/icons/brazil-flag-round-circle-icon.svg";
 import spainFlag from "../../assets/icons/spain-country-flag-round-icon.svg";
 import ukFlag from "../../assets/icons/uk-flag-round-circle-icon.svg";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGamepad, faTableTennis } from "@fortawesome/free-solid-svg-icons";
-import "../../assets/styles/landingPage.css";
-import "../../assets/styles/localGame.css"; // Seu CSS para bracket, etc.
 
-import { useTranslation } from "react-i18next";
-import { gameCore } from "./gameCore.js";
+import { gameCore, setKeyDown, setKeyUp } from "./gameCore";
+import "../../assets/styles/landingPage.css";
+import "../../assets/styles/localGame.css"; // CSS para bracket, etc.
 
 export function GameCanvas() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
 
-  // -------------------------
-  // Partida Simples
-  // -------------------------
+  // Estado e refs do jogo simples
   const [singleMatchActive, setSingleMatchActive] = useState(false);
   const singleCanvasRef = useRef(null);
   const singleGameRef = useRef(null);
 
-  // -------------------------
-  // Torneio (3 partidas)
-  // -------------------------
+  // Estado e refs do torneio
   const [tournamentActive, setTournamentActive] = useState(false);
   const [currentMatch, setCurrentMatch] = useState(1);
   const [winnerMatch1, setWinnerMatch1] = useState(null);
   const [winnerMatch2, setWinnerMatch2] = useState(null);
   const [champion, setChampion] = useState(null);
-
   const tournamentCanvasRef = useRef(null);
   const tournamentGameRef = useRef(null);
 
-  // ----------------------------------------------------------------
-  // A) Iniciar Partida Simples
-  // ----------------------------------------------------------------
+  // -----------------------------------------------
+  // A) Partida Simples
+  // -----------------------------------------------
   const handleStartSingleMatch = () => {
     // Para torneio se estiver rodando
     if (tournamentGameRef.current) {
@@ -52,14 +48,13 @@ export function GameCanvas() {
       singleGameRef.current = null;
     }
 
-    // Força recriação do jogo (false -> true)
+    // Força recriação do jogo
     setSingleMatchActive(false);
     setTimeout(() => {
       setSingleMatchActive(true);
     }, 0);
   };
 
-  // Quando singleMatchActive = true, inicia o gameCore
   useEffect(() => {
     if (singleMatchActive) {
       const canvas = singleCanvasRef.current;
@@ -80,11 +75,10 @@ export function GameCanvas() {
     }
   }, [singleMatchActive]);
 
-  // ----------------------------------------------------------------
-  // B) Iniciar Torneio
-  // ----------------------------------------------------------------
+  // -----------------------------------------------
+  // B) Torneio
+  // -----------------------------------------------
   const handleStartTournament = () => {
-    // Para jogo simples se estiver rodando
     if (singleGameRef.current) {
       singleGameRef.current.stop();
       singleGameRef.current = null;
@@ -99,7 +93,6 @@ export function GameCanvas() {
     setChampion(null);
   };
 
-  // Sempre que currentMatch mudar, iniciamos a próxima partida
   useEffect(() => {
     if (tournamentActive && !champion) {
       if (tournamentGameRef.current) {
@@ -145,16 +138,15 @@ export function GameCanvas() {
     }
   }, [tournamentActive, currentMatch, champion]);
 
-  // Quando definimos champion, paramos o jogo final
   useEffect(() => {
     if (champion && tournamentGameRef.current) {
       tournamentGameRef.current.stop();
     }
   }, [champion]);
 
-  // ----------------------------------------------------------------
+  // -----------------------------------------------
   // C) Navegação e Idioma
-  // ----------------------------------------------------------------
+  // -----------------------------------------------
   const handleBackToHome = () => {
     if (singleGameRef.current) singleGameRef.current.stop();
     if (tournamentGameRef.current) tournamentGameRef.current.stop();
@@ -165,9 +157,22 @@ export function GameCanvas() {
     i18n.changeLanguage(language);
   };
 
-  // ----------------------------------------------------------------
-  // D) Renderização
-  // ----------------------------------------------------------------
+  // -----------------------------------------------
+  // D) Funções de Press/Release (mobile)
+  //    REMOVENDO preventDefault() e usando touch-action: none
+  // -----------------------------------------------
+  const handlePressStart = (code) => {
+    // Não chamamos e.preventDefault(), pois isso dispara o warning em eventos passivos
+    setKeyDown(code);
+  };
+
+  const handlePressEnd = (code) => {
+    setKeyUp(code);
+  };
+
+  // -----------------------------------------------
+  // Render
+  // -----------------------------------------------
   return (
     <div className="container py-4 d-flex flex-column align-items-center">
       {/* Seletor de idioma */}
@@ -208,8 +213,6 @@ export function GameCanvas() {
       {singleMatchActive && (
         <div className="text-center mb-5" style={{ width: "100%" }}>
           <h3>{t("simple_game_title") || "Partida Simples (W|S vs ↑|↓) - Até 5 pontos"}</h3>
-
-          {/* Layout simples: só o canvas ao centro */}
           <div className="d-flex align-items-start justify-content-center" style={{ marginTop: "20px" }}>
             <canvas
               ref={singleCanvasRef}
@@ -219,6 +222,42 @@ export function GameCanvas() {
               style={{ backgroundColor: "#222" }}
             ></canvas>
           </div>
+
+          {/* Botões de controle para mobile (W, S, Up, Down) */}
+          <div className="mobile-controls">
+            <button
+              onMouseDown={() => handlePressStart("KeyW")}
+              onTouchStart={() => handlePressStart("KeyW")}
+              onMouseUp={() => handlePressEnd("KeyW")}
+              onTouchEnd={() => handlePressEnd("KeyW")}
+            >
+              W
+            </button>
+            <button
+              onMouseDown={() => handlePressStart("KeyS")}
+              onTouchStart={() => handlePressStart("KeyS")}
+              onMouseUp={() => handlePressEnd("KeyS")}
+              onTouchEnd={() => handlePressEnd("KeyS")}
+            >
+              S
+            </button>
+            <button
+              onMouseDown={() => handlePressStart("ArrowUp")}
+              onTouchStart={() => handlePressStart("ArrowUp")}
+              onMouseUp={() => handlePressEnd("ArrowUp")}
+              onTouchEnd={() => handlePressEnd("ArrowUp")}
+            >
+              ↑
+            </button>
+            <button
+              onMouseDown={() => handlePressStart("ArrowDown")}
+              onTouchStart={() => handlePressStart("ArrowDown")}
+              onMouseUp={() => handlePressEnd("ArrowDown")}
+              onTouchEnd={() => handlePressEnd("ArrowDown")}
+            >
+              ↓
+            </button>
+          </div>
         </div>
       )}
 
@@ -227,24 +266,28 @@ export function GameCanvas() {
         <div className="text-center" style={{ width: "100%" }}>
           <h3>{t("tournament.local_tournament") || "Torneio Local"}</h3>
 
-          {/* Layout lado a lado: bracket e canvas */}
-          <div
-            className="d-flex align-items-start justify-content-center gap-5"
-            style={{ marginTop: "20px" }}
-          >
-            {/* BRACKET à esquerda */}
+          <div className="tournament-container">
+            {/* BRACKET: mostra as partidas, vencedores, etc. */}
             <div className="tournament-bracket" style={{ minWidth: "300px" }}>
               {/* Round 1 */}
               <div className="round round1">
                 <div className={`match ${currentMatch === 1 && !champion ? "current" : ""}`}>
                   <div className="team">PLAYER1</div>
                   <div className="team">PLAYER2</div>
-                  {winnerMatch1 && <div className="winner">{t("winner") || "Vencedor"}: {winnerMatch1}</div>}
+                  {winnerMatch1 && (
+                    <div className="winner">
+                      {t("winner") || "Vencedor"}: {winnerMatch1}
+                    </div>
+                  )}
                 </div>
                 <div className={`match ${currentMatch === 2 && !champion ? "current" : ""}`}>
                   <div className="team">PLAYER3</div>
                   <div className="team">PLAYER4</div>
-                  {winnerMatch2 && <div className="winner">{t("winner") || "Vencedor"}: {winnerMatch2}</div>}
+                  {winnerMatch2 && (
+                    <div className="winner">
+                      {t("winner") || "Vencedor"}: {winnerMatch2}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -262,16 +305,51 @@ export function GameCanvas() {
               </div>
             </div>
 
-            {/* Canvas do torneio à direita */}
+            {/* CANVAS e BOTÕES: se não houver campeão ainda */}
             {!champion && (
-              <div>
+              <div className="tournament-canvas-container">
                 <canvas
                   ref={tournamentCanvasRef}
                   width={800}
                   height={400}
-                  className="border rounded"
-                  style={{ backgroundColor: "#222" }}
+                  className="game-canvas"
                 ></canvas>
+
+                {/* Botões de controle para mobile (mesmo esquema da partida simples) */}
+                <div className="mobile-controls">
+                  <button
+                    onMouseDown={(e) => handlePressStart("KeyW", e)}
+                    onTouchStart={(e) => handlePressStart("KeyW", e)}
+                    onMouseUp={(e) => handlePressEnd("KeyW", e)}
+                    onTouchEnd={(e) => handlePressEnd("KeyW", e)}
+                  >
+                    W
+                  </button>
+                  <button
+                    onMouseDown={(e) => handlePressStart("KeyS", e)}
+                    onTouchStart={(e) => handlePressStart("KeyS", e)}
+                    onMouseUp={(e) => handlePressEnd("KeyS", e)}
+                    onTouchEnd={(e) => handlePressEnd("KeyS", e)}
+                  >
+                    S
+                  </button>
+                  <button
+                    onMouseDown={(e) => handlePressStart("ArrowUp", e)}
+                    onTouchStart={(e) => handlePressStart("ArrowUp", e)}
+                    onMouseUp={(e) => handlePressEnd("ArrowUp", e)}
+                    onTouchEnd={(e) => handlePressEnd("ArrowUp", e)}
+                  >
+                    ↑
+                  </button>
+                  <button
+                    onMouseDown={(e) => handlePressStart("ArrowDown", e)}
+                    onTouchStart={(e) => handlePressStart("ArrowDown", e)}
+                    onMouseUp={(e) => handlePressEnd("ArrowDown", e)}
+                    onTouchEnd={(e) => handlePressEnd("ArrowDown", e)}
+                  >
+                    ↓
+                  </button>
+                </div>
               </div>
             )}
           </div>

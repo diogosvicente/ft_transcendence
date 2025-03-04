@@ -1,58 +1,61 @@
 services:
   #
-  # Django + Channels (Daphne) - Porta 8000 interna
+  # Django (Desenvolvimento) - hot reload com runserver
   #
   web:
-    build: ./server-pong
-    command: ["/wait-for-it.sh", "db", "5432", "--", "daphne", "-b", "0.0.0.0", "-p", "8000", "setup.asgi:application"]
-    environment:
-      - DJANGO_SETTINGS_MODULE=setup.settings
-    env_file:
-      - .env
+    build:
+      context: ./server-pong
+      target: development  # Usa o estágio "development" do Dockerfile
+    # Monte o diretório do código em /app, se quiser hot reload imediato
     volumes:
       - django_app_data:/app
       - django_static_data:/app/staticfiles
       - django_media_data:/app/media
+    env_file:
+      - .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=setup.settings
     ports:
-      - "8000:8000"  # Se precisar acessar diretamente via IP
+      - "8000:8000"
     depends_on:
       - db
       - redis
 
   #
-  # React (Vite) - Porta 3000 interna
+  # React (Desenvolvimento) - hot reload com Vite
   #
   frontend:
     build:
       context: ./client-pong
-      target: development
+      target: development  # Usa o estágio "development" do Dockerfile
+    # Monte o diretório do código em /app, se quiser hot reload imediato
     volumes:
       - react_app_data:/app
     ports:
-      - "3000:3000"  # Se precisar acessar diretamente via IP
+      - "3000:3000"
     depends_on:
       - web
       - db
 
   #
-  # Nginx - Porta 443 (SSL) e 80 (redirecionamento)
+  # Nginx - Opcional em Dev (caso queira testar roteamento/SSL)
   #
   nginx:
     image: nginx:latest
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf  # Arquivo de configuração ainda pode ser bind-mounted
-      - ./server-pong/certs:/etc/nginx/certs  # Certificados SSL precisam estar no projeto
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./server-pong/certs:/etc/nginx/certs
       - django_static_data:/app/staticfiles
       - django_media_data:/app/media
     ports:
-      - "8080:80"   # Redireciona para HTTPS
-      - "4443:443" # HTTPS
+      - "8080:80"    # HTTP
+      - "4443:443"   # HTTPS
     depends_on:
       - web
       - frontend
 
   #
-  # Banco de Dados PostgreSQL (armazenamento em /goinfre)
+  # Postgres
   #
   db:
     image: postgres:13
@@ -60,10 +63,10 @@ services:
       - .env
     volumes:
       - postgres_data:/var/lib/postgresql/data/
-    restart: always  # Garante que o banco seja reiniciado caso falhe
+    restart: always
 
   #
-  # Redis para Channels (armazenamento em /goinfre)
+  # Redis
   #
   redis:
     image: redis:7-alpine
@@ -78,7 +81,7 @@ services:
       retries: 5
 
 #
-# Volumes para armazenar dados em /goinfre/${USER} (evita perda de dados)
+# Volumes em /goinfre/${USER} para persistência de dados e hot reload
 #
 volumes:
   django_app_data:
@@ -99,6 +102,12 @@ volumes:
       type: none
       device: "/goinfre/${USER}/ft_transcendence/media"
       o: bind
+  react_app_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: "/goinfre/${USER}/ft_transcendence/react_app"
+      o: bind
   postgres_data:
     driver: local
     driver_opts:
@@ -110,10 +119,4 @@ volumes:
     driver_opts:
       type: none
       device: "/goinfre/${USER}/ft_transcendence/redis_data"
-      o: bind
-  react_app_data:
-    driver: local
-    driver_opts:
-      type: none
-      device: "/goinfre/${USER}/ft_transcendence/react_app"
       o: bind

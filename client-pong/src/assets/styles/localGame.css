@@ -1,20 +1,19 @@
-/* Exemplo de CSS básico para exibir um bracket */
+/* ------------------------------------------------
+   CSS do Bracket / Torneio
+   ------------------------------------------------ */
 
+/* Exemplo de CSS básico para exibir um bracket */
 .main-container {
-    padding: 2rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  
-.tournament-bracket {
+  padding: 2rem;
   display: flex;
-  justify-content: space-evenly;
+  flex-direction: column;
   align-items: center;
-  max-width: 800px;
-  margin: 20px auto;
-  position: relative;
-  flex-wrap: wrap; /* Caso a tela seja pequena, permitir quebra */
+}
+
+.tournament-bracket {
+  flex: none;          /* Mantém tamanho fixo */
+  width: 300px;        /* Largura do bracket */
+  margin-right: 20px;  /* Espaço ao lado do canvas */
 }
 
 .round {
@@ -53,9 +52,6 @@
   color: #333;
 }
 
-/* Se quiser desenhar linhas horizontais ligando as partidas
-   (isso é apenas ilustrativo, você pode customizar) */
-
 /* Linhas da Round 1 para Round 2 */
 .round1 .match::after {
   content: "";
@@ -74,4 +70,127 @@
   background: #999;
   left: -40px;
   top: 50%;
+}
+
+/* ------------------------------------------------
+   Canvas do Jogo (para torneio ou partida simples)
+   ------------------------------------------------ */
+
+.game-canvas {
+  width: 800px;      /* Tamanho fixo */
+  height: 400px;
+  background-color: #222;
+  border: 2px solid #4caf50;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: block;
+}
+
+/* Se quiser responsivo, use:
+.game-canvas {
+  max-width: 800px;
+  width: 100%;
+  height: auto;
+  ...
+}
+*/
+
+/* ------------------------------------------------
+   Botões de Controle (Mobile Controls)
+   ------------------------------------------------ */
+
+.mobile-controls {
+  display: none; /* Escondido por padrão em telas grandes */
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.mobile-controls button {
+  padding: 15px 20px;
+  font-size: 1.2rem;
+  border: none;
+  border-radius: 8px;
+  background-color: #4caf50;
+  color: #fff;
+  cursor: pointer;
+  user-select: none;
+  touch-action: none;
+}
+
+.mobile-controls button:hover {
+  background-color: #45a049;
+}
+
+/* Exibe os botões em telas até 768px */
+@media (max-width: 768px) {
+  .mobile-controls {
+    display: flex;
+    justify-content: center;
+  }
+
+  .tournament-bracket {
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 20px;
+  }
+
+  .game-canvas {
+    width: 100%;
+    max-width: 800px;
+    height: auto;
+  }
+}
+
+/* 
+  Contêiner principal do torneio:
+  Em telas grandes, lado a lado (row).
+  Em telas pequenas, empilha (column).
+*/
+.tournament-container {
+  display: flex;
+  flex-direction: row;       /* Desktop: lado a lado */
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2rem;                 /* Espaço entre bracket e canvas */
+  margin-top: 20px;
+}
+
+/* 
+  O bracket e o canvas-cotainer podem ter tamanhos fixos ou flexíveis,
+  ajuste conforme necessidade.
+*/
+.tournament-bracket {
+  flex: none;                /* Mantém tamanho fixo, se quiser */
+  min-width: 300px;
+  /* ... seu estilo existente ... */
+}
+
+/* 
+  Canvas do torneio fica em .tournament-canvas-container.
+  Aqui você pode ajustar a largura do canvas, etc.
+*/
+.tournament-canvas-container {
+  flex: none;                /* Mantém tamanho fixo ou ajusta conforme desejar */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Em telas pequenas, empilhar bracket e canvas */
+@media (max-width: 768px) {
+  .tournament-container {
+    flex-direction: column;  /* Canvas abaixo do bracket */
+    align-items: center;
+  }
+
+  .tournament-bracket {
+    margin-bottom: 20px;     /* Espaço abaixo do bracket */
+  }
+  
+  /* Se quiser que o canvas ocupe a largura total no mobile */
+  .game-canvas {
+    width: 100%;
+    max-width: 800px;
+    height: auto;
+  }
 }

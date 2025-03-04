@@ -5,7 +5,7 @@ export const setApiLanguage = (language) => {
   localStorage.setItem("language", language);
 };
 
-export const API_BASE_URL = "https://192.168.1.138";
+export const API_BASE_URL = "https://192.168.1.138:4443";
 
 export const DEFAULT_AVATAR = `${API_BASE_URL}/media/avatars/default.png`;
 
@@ -19,7 +19,7 @@ export const getAvatar = (avatarPath) => {
 };
 
 export const getWsUrl = (path = "") => {
-  return "wss://192.168.1.138" + path;  // e.g. /ws/chat/
+  return "wss://192.168.1.138:4443" + path;  // e.g. /ws/chat/
 };
 
 export default API_BASE_URL;

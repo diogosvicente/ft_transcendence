@@ -7,10 +7,26 @@ let ballY = 300;
 let ballSpeedX = 300;
 let ballSpeedY = 300;
 
-let qPressed = false;
-let aPressed = false;
-let upPressed = false;
-let downPressed = false;
+// Variáveis de controle (globais ao módulo)
+let qPressed = false;   // W
+let aPressed = false;   // S
+let upPressed = false;  // ArrowUp
+let downPressed = false; // ArrowDown
+
+// Funções para alterar as variáveis globalmente (usadas no modo mobile)
+export function setKeyDown(code) {
+  if (code === "KeyW") qPressed = true;
+  if (code === "KeyS") aPressed = true;
+  if (code === "ArrowUp") upPressed = true;
+  if (code === "ArrowDown") downPressed = true;
+}
+
+export function setKeyUp(code) {
+  if (code === "KeyW") qPressed = false;
+  if (code === "KeyS") aPressed = false;
+  if (code === "ArrowUp") upPressed = false;
+  if (code === "ArrowDown") downPressed = false;
+}
 
 let player1Score = 0;
 let player2Score = 0;
@@ -32,6 +48,7 @@ export const gameCore = function (canvas, options = {}) {
   let prevTime;
   let animationId = null;
 
+  // Loop principal de animação
   const mainLoop = (currTime) => {
     animationId = requestAnimationFrame(mainLoop);
 
@@ -51,8 +68,9 @@ export const gameCore = function (canvas, options = {}) {
     player1Score = 0;
     player2Score = 0;
 
-    window.addEventListener("keydown", keyDownHandler, false);
-    window.addEventListener("keyup", keyUpHandler, false);
+    // Adicionamos { passive: false } para poder chamar e.preventDefault() sem warning
+    window.addEventListener("keydown", keyDownHandler, { passive: false });
+    window.addEventListener("keyup", keyUpHandler, { passive: false });
 
     animationId = requestAnimationFrame(mainLoop);
   };
@@ -62,10 +80,12 @@ export const gameCore = function (canvas, options = {}) {
       cancelAnimationFrame(animationId);
       animationId = null;
     }
+    // Removemos os listeners
     window.removeEventListener("keydown", keyDownHandler);
     window.removeEventListener("keyup", keyUpHandler);
   };
 
+  // Atualiza estado do jogo
   const update = (deltaTime) => {
     // Movimentação da bola
     ballX += (ballSpeedX * deltaTime) / 1000;
@@ -90,6 +110,7 @@ export const gameCore = function (canvas, options = {}) {
 
     // Colisão com a parede direita
     if (ballX + BALL_SIZE >= canvas.width) {
+      // Se bater no paddle direito
       if (ballY > rightPaddleY && ballY < rightPaddleY + PADDLE_HEIGHT) {
         ballX -= (ballSpeedX * deltaTime) / 1000;
         ballSpeedX = -ballSpeedX;
@@ -103,6 +124,7 @@ export const gameCore = function (canvas, options = {}) {
 
     // Colisão com a parede esquerda
     if (ballX <= 0) {
+      // Se bater no paddle esquerdo
       if (ballY > leftPaddleY && ballY < leftPaddleY + PADDLE_HEIGHT) {
         ballX -= (ballSpeedX * deltaTime) / 1000;
         ballSpeedX = -ballSpeedX;
@@ -115,16 +137,15 @@ export const gameCore = function (canvas, options = {}) {
     }
 
     // Colisão com topo/fundo
-    if (ballY + BALL_SIZE > canvas.height
-        && ballSpeedY > 0) {
+    if (ballY + BALL_SIZE > canvas.height && ballSpeedY > 0) {
       ballSpeedY = -ballSpeedY;
     }
-    if (ballY < 0
-        && ballSpeedY < 0) {
+    if (ballY < 0 && ballSpeedY < 0) {
       ballSpeedY = -ballSpeedY;
     }
   };
 
+  // Verifica se alguém ganhou
   const checkWinner = () => {
     if (player1Score >= WINNING_SCORE) {
       if (onMatchEnd) onMatchEnd(leftPlayerName);
@@ -141,6 +162,7 @@ export const gameCore = function (canvas, options = {}) {
     ballSpeedY = 300;
   };
 
+  // Desenha os elementos na tela
   const draw = (ctx) => {
     ctx.save();
 
@@ -169,16 +191,17 @@ export const gameCore = function (canvas, options = {}) {
     // Placar maior
     ctx.fillStyle = "white";
     ctx.font = "40px Arial";
-    // Exemplo: placar no topo, um pouco maior
     ctx.fillText(player1Score, 100, 60);
     ctx.fillText(player2Score, canvas.width - 140, 60);
 
     ctx.restore();
   };
 
+  // Handlers de teclado
   function keyDownHandler(e) {
+    // Exemplo: prevenindo scroll em setas
     if (e.code === "ArrowUp" || e.code === "ArrowDown") {
-      e.preventDefault();
+      e.preventDefault(); // agora permitido pois passive=false
     }
     if (e.code === "ArrowUp") upPressed = true;
     if (e.code === "ArrowDown") downPressed = true;
