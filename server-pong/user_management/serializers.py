@@ -25,10 +25,11 @@ class UserSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
     def validate_email(self, value):
-        # Verifica se o email já existe no banco de dados
-        if User.objects.filter(email=value).exists():
+        # Remove espaços em branco e normaliza o e-mail (convertendo para lowercase, entre outras coisas)
+        normalized_email = User.objects.normalize_email(value.strip())
+        if User.objects.filter(email__iexact=normalized_email).exists():
             raise serializers.ValidationError(_("O e-mail já está cadastrado."))
-        return value
+        return normalized_email
 
     def validate_display_name(self, value):
         # Verifica se o display_name já existe no banco de dados
