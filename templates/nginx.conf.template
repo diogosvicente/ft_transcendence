@@ -16,6 +16,7 @@ http {
 
         ssl_certificate     /etc/nginx/certs/cert.pem;
         ssl_certificate_key /etc/nginx/certs/key.pem;
+        ssl_protocols TLSv1.2 TLSv1.3;
 
         # Arquivos estáticos
         location /static/ {

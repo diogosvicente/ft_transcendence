@@ -1,0 +1,124 @@
+services:
+  #
+  # Django + Channels (Daphne) - Porta 8000 interna
+  #
+  web:
+    build: ./server-pong
+    command: ["/wait-for-it.sh", "db", "5432", "--", "daphne", "-b", "0.0.0.0", "-p", "8000", "setup.asgi:application"]
+    environment:
+      - DJANGO_SETTINGS_MODULE=setup.settings
+    env_file:
+      - .env
+    volumes:
+      - django_app_data:/app
+      - django_static_data:/app/staticfiles
+      - django_media_data:/app/media
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+
+  #
+  # React (Vite) - Porta 3000 interna
+  #
+  frontend:
+    build:
+      context: ./client-pong
+      target: development
+    volumes:
+      - react_app_data:/app
+    ports:
+      - "3000:3000"
+    depends_on:
+      - web
+      - db
+
+  #
+  # Nginx - Porta 443 (SSL) e 80 (redirecionamento)
+  #
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./server-pong/certs:/etc/nginx/certs
+      - django_static_data:/app/staticfiles
+      - django_media_data:/app/media
+    ports:
+      - "8080:80"
+      - "4443:443"
+    depends_on:
+      - web
+      - frontend
+
+  #
+  # Banco de Dados PostgreSQL
+  #
+  db:
+    image: postgres:13
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    restart: always
+
+  #
+  # Redis
+  #
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+#
+# Volumes usando a variável /home/dioda-si/goinfre/ft_transcendence
+#
+volumes:
+  django_app_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: "/home/dioda-si/goinfre/ft_transcendence/django_app"
+      o: bind
+
+  django_static_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: "/home/dioda-si/goinfre/ft_transcendence/staticfiles"
+      o: bind
+
+  django_media_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: "/home/dioda-si/goinfre/ft_transcendence/media"
+      o: bind
+
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: "/home/dioda-si/goinfre/ft_transcendence/postgres_data"
+      o: bind
+
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: "/home/dioda-si/goinfre/ft_transcendence/redis_data"
+      o: bind
+
+  react_app_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: "/home/dioda-si/goinfre/ft_transcendence/react_app"
+      o: bind

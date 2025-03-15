@@ -6,20 +6,7 @@ export IP_ADDRESS
 
 # 2) Tenta criar /goinfre/$USER com sudo; se falhar, cria ~/goinfre
 TARGET_DIR="/goinfre/$USER"
-echo "Tentando criar $TARGET_DIR com sudo..."
-sudo mkdir -p "$TARGET_DIR" 2>/dev/null
-
-if [ $? -eq 0 ]; then
-  echo "Sucesso ao criar $TARGET_DIR. Ajustando permissões..."
-  sudo chmod -R 775 "$TARGET_DIR"
-  sudo chown -R "$USER" "$TARGET_DIR"
-else
-  TARGET_DIR="$HOME/goinfre"
-  echo "Falha ao criar /goinfre/\$USER. Usando $TARGET_DIR."
-  mkdir -p "$TARGET_DIR"
-  chmod -R 775 "$TARGET_DIR"
-  chown -R "$USER" "$TARGET_DIR"
-fi
+export VOLUME_BASE_PATH="$TARGET_DIR/ft_transcendence"
 
 # 3) Define a subpasta 'ft_transcendence' e exporta como VOLUME_BASE_PATH
 export VOLUME_BASE_PATH="$TARGET_DIR/ft_transcendence"

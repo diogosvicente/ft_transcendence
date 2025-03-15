@@ -55,10 +55,7 @@ fclean:
 	@docker volume prune --force
 	@docker images -q --filter "reference=$(name)*" | xargs -r docker rmi -f
 
-	# Remove pastas de volumes, tanto /goinfre/$USER/ft_transcendence quanto ~/goinfre/$USER/ft_transcendence
-	@sudo rm -rf /goinfre/$(USER)/ft_transcendence || true
-	@sudo rm -rf $(HOME)/goinfre/$(USER)/ft_transcendence || true
-
+	@printf "🧹 Exclua a pasta /goinfre/$(USER)/ft_transcendence manualmente!.\n"
 	@printf "✅ Todos os arquivos foram removidos com sucesso.\n"
 
 # -----------------------------------------------------------------------------
