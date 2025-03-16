@@ -1,0 +1,91 @@
+/* landingPage.css */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #f8f9fa; /* Cor de fundo */
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.vh-100 {
+  min-height: 100vh; /* Garante altura total da viewport */
+}
+
+.language-selector {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  
+  .language-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    width: 60px;
+    text-align: center;
+    background-color: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease-in-out;
+  }
+  
+  .language-card:hover {
+    transform: scale(1.05);
+  }
+  
+  .language-flag {
+    cursor: pointer;
+    width: 30px;
+    height: auto;
+  }
+  
+  .language-text {
+    font-size: 0.75rem;
+    font-weight: bold;
+  }
+  
+  .custom-file-upload {
+    display: flex;
+    align-items: center;
+  }
+  .custom-file-upload label {
+    cursor: pointer;
+  }
+  .custom-file-upload span {
+    font-size: 0.9rem;
+    color: #555;
+  }
+
+  .password-input-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem; /* Espaçamento entre o input e o botão */
+  }
+  
+  .password-eye-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: calc(2.25rem + 2px); /* Mesma altura do input */
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 0.375rem;
+    background-color: #fff;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  .password-eye-button:hover {
+    background-color: #f8f9fa;
+  }
+  
+  /* Div separada para o feedback */
+  .password-feedback {
+    margin-top: 0.5rem; /* Espaçamento em relação ao input */
+    color: #dc3545; /* Vermelho */
+    font-size: 0.875rem; /* Tamanho do texto */
+  }
+  

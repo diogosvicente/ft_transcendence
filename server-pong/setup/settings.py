@@ -5,11 +5,16 @@ from django.utils.translation import gettext_lazy as _
 import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent  # server-pong/
-ENV_PATH = BASE_DIR.parent / '.env'               # ft_transcendence/.env
+ENV_PATH = '.env'               # ft_transcendence/.env
 load_dotenv(ENV_PATH)
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'fallback')
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
+
+DEBUG = True  # (apenas em desenvolvimento)
+SECURE_SSL_REDIRECT = False
+CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = False
 
 INSTALLED_APPS = ['django_extensions','daphne',
     # Apps integrados do Django
@@ -19,7 +24,7 @@ INSTALLED_APPS = ['django_extensions','daphne',
     'rest_framework','rest_framework_simplejwt','rest_framework_simplejwt.token_blacklist','corsheaders','axes','channels',
 
     # Seus apps personalizados
-    'chat','user_management','game',
+    'chat','user_management','game', 'client_pong',
 ]
 
 REST_FRAMEWORK = {
@@ -75,7 +80,7 @@ DATABASES = {
         'NAME': os.getenv('DB_NAME', 'ft_transcendence'),
         'USER': os.getenv('DB_USER', 'postgres'),
         'PASSWORD': os.getenv('DB_PASSWORD', '123456'),
-        'HOST': 'db',
+        'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
@@ -157,7 +162,7 @@ LOCALE_PATHS = [
     os.path.join(BASE_DIR, 'locale'),
 ]
 
-SECURE_SSL_REDIRECT = True
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
+#SECURE_SSL_REDIRECT = True
+#SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+#CSRF_COOKIE_SECURE = True
+#SESSION_COOKIE_SECURE = True

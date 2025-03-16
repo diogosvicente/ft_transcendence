@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>FT Transcendence - Login/Registro</title>
+  <!-- FontAwesome (via CDN livre, ou substitua pelo seu kit) -->
+  <link rel="stylesheet" href="/static/client_pong/vendor/bootstrap/bootstrap.min.css">
+  <!-- CSS customizado -->
+  <link rel="stylesheet" href="/static/client_pong/vendor/font-awesome/css/font-awesome.min.css"/>
+  <link rel="stylesheet" href="/static/client_pong/css/landingPage.css" />
+</head>
+<body>
+  <!-- Seletor de idioma -->
+  <div class="language-selector position-absolute top-0 end-0 mt-3 me-3">
+    <div class="d-flex gap-3">
+      <div class="language-card" data-lang="pt_BR">
+        <img
+          src="/static/client_pong/images/brazil-flag-round-circle-icon.svg"
+          alt="Português (Brasil)"
+          class="language-flag"
+        />
+        <span class="language-text">PT-BR</span>
+      </div>
+      <div class="language-card" data-lang="en">
+        <img
+          src="/static/client_pong/images/uk-flag-round-circle-icon.svg"
+          alt="English"
+          class="language-flag"
+        />
+        <span class="language-text">EN</span>
+      </div>
+      <div class="language-card" data-lang="es">
+        <img
+          src="/static/client_pong/images/spain-flag-round-icon.svg"
+          alt="Español"
+          class="language-flag"
+        />
+        <span class="language-text">ES</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Seção para o botão de Partida Local -->
+  <div class="my-4 d-flex justify-content-center">
+    <button class="btn btn-success" id="btnLocalMatch">
+      <i class="fa fa-gamepad me-2"></i>
+      Iniciar Partida Local
+    </button>
+  </div>
+
+  <div class="vh-100 d-flex flex-column justify-content-center align-items-center">
+    <h1 class="mb-4 d-flex align-items-center justify-content-center">
+      <i class="fa fa-table-tennis me-3"></i>
+      FT Transcendence
+    </h1>
+    <div class="container col-lg-4 border rounded p-4 mx-auto">
+      <!-- Nav Tabs para Login e Registro -->
+      <ul class="nav nav-tabs" id="authTab" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button
+            class="nav-link active"
+            id="login-tab"
+            data-bs-toggle="tab"
+            data-bs-target="#loginTabContent"
+            type="button"
+            role="tab"
+          >
+            <i class="fa fa-sign-in me-2"></i> Login
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button
+            class="nav-link"
+            id="register-tab"
+            data-bs-toggle="tab"
+            data-bs-target="#registerTabContent"
+            type="button"
+            role="tab"
+          >
+            <i class="fa fa-user-plus me-2"></i> Register
+          </button>
+        </li>
+      </ul>
+      <!-- Conteúdo das tabs -->
+      <div class="tab-content pt-3">
+        <!-- Aba de Login -->
+        <div class="tab-pane fade show active" id="loginTabContent" role="tabpanel">
+          <form id="loginForm" novalidate>
+            <div class="mb-3">
+              <label for="loginEmail" class="form-label">Email</label>
+              <input
+                type="text"
+                class="form-control"
+                id="loginEmail"
+                name="email"
+                placeholder="Seu email"
+                required
+              />
+              <div class="invalid-feedback">Campo obrigatório.</div>
+            </div>
+            <div class="mb-3">
+              <label for="loginPassword" class="form-label">Password</label>
+              <div class="input-group">
+                <input
+                  type="password"
+                  class="form-control"
+                  id="loginPassword"
+                  name="password"
+                  placeholder="Sua senha"
+                  required
+                />
+                <button class="btn btn-outline-secondary" type="button" id="toggleLoginPassword">
+                  <i class="fa fa-eye"></i>
+                </button>
+              </div>
+              <div class="invalid-feedback">Campo obrigatório.</div>
+            </div>
+            <!-- Campo para 2FA, inicialmente oculto -->
+            <div id="login2FAContainer" class="mb-3" style="display: none;">
+              <label for="login2FACode" class="form-label">2FA Code</label>
+              <input
+                type="text"
+                class="form-control"
+                id="login2FACode"
+                name="code"
+                placeholder="Digite o código 2FA"
+              />
+              <div class="invalid-feedback">Campo obrigatório.</div>
+
+              <!-- Botão para validar 2FA separadamente -->
+              <button type="button" class="btn btn-outline-secondary mt-2 w-100" id="validate2FABtn">
+                <i class="fa fa-key me-2"></i>
+                Validar 2FA
+              </button>
+            </div>
+            <div id="loginSuccessAlert" class="alert alert-success d-none"></div>
+            <div id="loginErrorAlert" class="alert alert-danger d-none"></div>
+            <div class="d-flex justify-content-center py-4">
+              <button type="submit" class="btn btn-outline-secondary w-50" id="loginBtn">
+                <i class="fa fa-sign-in me-2"></i> Login
+              </button>
+            </div>
+          </form>
+        </div>
+        <!-- Aba de Registro -->
+        <div class="tab-pane fade" id="registerTabContent" role="tabpanel">
+          <form id="registerForm" novalidate enctype="multipart/form-data">
+            <div class="mb-3">
+              <label for="registerEmail" class="form-label">Email</label>
+              <input
+                type="text"
+                class="form-control"
+                id="registerEmail"
+                name="email"
+                placeholder="Seu email"
+                required
+              />
+              <div class="invalid-feedback">Campo obrigatório.</div>
+            </div>
+            <div class="mb-3">
+              <label for="displayName" class="form-label">Display Name</label>
+              <input
+                type="text"
+                class="form-control"
+                id="displayName"
+                name="display_name"
+                placeholder="Nome de exibição"
+                required
+              />
+              <div class="invalid-feedback">Campo obrigatório.</div>
+            </div>
+            <div class="mb-3">
+              <label for="registerPassword" class="form-label">Password</label>
+              <div class="input-group">
+                <input
+                  type="password"
+                  class="form-control"
+                  id="registerPassword"
+                  name="password"
+                  placeholder="Sua senha"
+                  required
+                />
+                <button class="btn btn-outline-secondary" type="button" id="toggleRegisterPassword">
+                  <i class="fa fa-eye"></i>
+                </button>
+              </div>
+              <div class="invalid-feedback">Campo obrigatório.</div>
+              <!-- Requisitos da senha -->
+              <ul class="list-unstyled" id="passwordRequirements">
+                <li id="reqMinLength" style="color: red;">Mínimo de 12 caracteres</li>
+                <li id="reqUppercase" style="color: red;">Ao menos uma letra maiúscula</li>
+                <li id="reqLowercase" style="color: red;">Ao menos uma letra minúscula</li>
+                <li id="reqNumber" style="color: red;">Ao menos um número</li>
+                <li id="reqSpecialChar" style="color: red;">Ao menos um caractere especial</li>
+              </ul>
+            </div>
+            <div class="mb-3">
+              <label for="avatar" class="form-label">Avatar</label>
+              <div class="d-flex align-items-center">
+                <label for="avatarInput" class="btn btn-outline-secondary w-100" style="text-align: left;">
+                  <i class="fa fa-file me-2"></i> Escolher arquivo
+                </label>
+                <input
+                  type="file"
+                  id="avatarInput"
+                  name="avatar"
+                  accept=".jpg,.png"
+                  style="display: none;"
+                />
+                <button type="button" class="btn btn-outline-danger ms-2 d-none" id="removeAvatarBtn">
+                  <i class="fa fa-times"></i>
+                </button>
+              </div>
+              <div class="form-text">Tamanho máximo: 1MB</div>
+            </div>
+            <div id="registerSuccessAlert" class="alert alert-success d-none"></div>
+            <div id="registerErrorAlert" class="alert alert-danger d-none"></div>
+            <div class="d-flex justify-content-center py-4">
+              <button type="submit" class="btn btn-dark w-50" id="registerBtn">
+                <i class="fa fa-user-plus me-2"></i> Register
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS Bundle -->
+  <script src="/static/client_pong/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <!-- Script customizado (landing.js) -->
+  <script src="/static/client_pong/js/landing.js"></script>
+</body>
+</html>

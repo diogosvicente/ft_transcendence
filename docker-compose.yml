@@ -78,47 +78,47 @@ services:
       retries: 5
 
 #
-# Volumes usando a variável /home/dioda-si/goinfre/ft_transcendence
+# Volumes usando a variável /goinfre/diogo/ft_transcendence
 #
 volumes:
   django_app_data:
     driver: local
     driver_opts:
       type: none
-      device: "/home/dioda-si/goinfre/ft_transcendence/django_app"
+      device: "/goinfre/diogo/ft_transcendence/django_app"
       o: bind
 
   django_static_data:
     driver: local
     driver_opts:
       type: none
-      device: "/home/dioda-si/goinfre/ft_transcendence/staticfiles"
+      device: "/goinfre/diogo/ft_transcendence/staticfiles"
       o: bind
 
   django_media_data:
     driver: local
     driver_opts:
       type: none
-      device: "/home/dioda-si/goinfre/ft_transcendence/media"
+      device: "/goinfre/diogo/ft_transcendence/media"
       o: bind
 
   postgres_data:
     driver: local
     driver_opts:
       type: none
-      device: "/home/dioda-si/goinfre/ft_transcendence/postgres_data"
+      device: "/goinfre/diogo/ft_transcendence/postgres_data"
       o: bind
 
   redis_data:
     driver: local
     driver_opts:
       type: none
-      device: "/home/dioda-si/goinfre/ft_transcendence/redis_data"
+      device: "/goinfre/diogo/ft_transcendence/redis_data"
       o: bind
 
   react_app_data:
     driver: local
     driver_opts:
       type: none
-      device: "/home/dioda-si/goinfre/ft_transcendence/react_app"
+      device: "/goinfre/diogo/ft_transcendence/react_app"
       o: bind
