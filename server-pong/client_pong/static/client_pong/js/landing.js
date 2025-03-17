@@ -7,7 +7,10 @@ function initializeNotificationWebSocket(access, userId, context) {
   // Aqui você implementaria a lógica real de WebSocket, se necessário
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+// Em vez de DOMContentLoaded, definimos uma função global
+window.initLanding = function() {
+  console.log("initLanding chamado!"); // Para debug
+
   // ==========================================================
   // A) Verificar se usuário já está logado
   // ==========================================================
@@ -67,6 +70,12 @@ document.addEventListener("DOMContentLoaded", () => {
     alertElement.classList.add("d-none");
   }
 
+  // Valida se string é email
+  function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+
   function isPasswordValid(password) {
     const minLength = password.length >= 12;
     const uppercase = /[A-Z]/.test(password);
@@ -88,205 +97,234 @@ document.addEventListener("DOMContentLoaded", () => {
   // ==========================================================
   // D) Lógica do Login
   // ==========================================================
-  loginForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    hideAlert(loginSuccessAlert);
-    hideAlert(loginErrorAlert);
+  if (loginForm) {
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault(); // Impede envio padrão (GET)
+      hideAlert(loginSuccessAlert);
+      hideAlert(loginErrorAlert);
 
-    const email = loginEmail.value.trim();
-    const password = loginPassword.value.trim();
-    if (!email || !password) {
-      showAlert(loginErrorAlert, "Email e senha são obrigatórios.");
-      return;
-    }
+      const email = loginEmail.value.trim();
+      const password = loginPassword.value.trim();
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/user-management/login/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await response.json();
-      if (response.ok) {
-        if (data.requires_2fa) {
-          // Mostra campo de 2FA + botão de validar
-          is2FARequired = true;
-          login2FAContainer.style.display = "block";
-          showAlert(loginSuccessAlert, "2FA requerido. Insira o código.");
+      // Verifica se email e senha foram preenchidos
+      if (!email || !password) {
+        showAlert(loginErrorAlert, "Email e senha são obrigatórios.");
+        return;
+      }
+
+      // Verifica se email é válido
+      if (!isValidEmail(email)) {
+        showAlert(loginErrorAlert, "Email inválido.");
+        return;
+      }
+
+      // Faz POST via fetch()
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/user-management/login/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await response.json();
+        alert(data);
+
+        if (response.ok) {
+          if (data.requires_2fa) {
+            // Mostra campo de 2FA + botão de validar
+            is2FARequired = true;
+            login2FAContainer.style.display = "block";
+            showAlert(loginSuccessAlert, "2FA requerido. Insira o código.");
+          } else {
+            showAlert(loginSuccessAlert, "Login efetuado com sucesso!");
+            localStorage.setItem("access", data.access);
+            localStorage.setItem("refresh", data.refresh);
+            localStorage.setItem("id", data.id);
+
+            // Inicializa WebSockets
+            initializeNotificationWebSocket(data.access, data.id, "handleLogin");
+
+            // Redireciona e recarrega
+            window.location.href = "/home";
+            window.location.reload();
+          }
         } else {
-          showAlert(loginSuccessAlert, "Login efetuado com sucesso!");
+          showAlert(loginErrorAlert, data.error || "Credenciais inválidas.");
+        }
+      } catch (err) {
+        showAlert(loginErrorAlert, "Erro de conexão.");
+      }
+    });
+  }
+
+  // Botão para validar 2FA
+  if (validate2FABtn) {
+    validate2FABtn.addEventListener("click", async () => {
+      if (!is2FARequired) return;
+      hideAlert(loginErrorAlert);
+      hideAlert(loginSuccessAlert);
+
+      const email = loginEmail.value.trim();
+      const code = login2FACode.value.trim();
+      if (!code) {
+        showAlert(loginErrorAlert, "Código 2FA é obrigatório.");
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/user-management/2fa/validate/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, code }),
+        });
+        const data = await response.json();
+        if (response.ok) {
+          showAlert(loginSuccessAlert, "2FA validado com sucesso!");
           localStorage.setItem("access", data.access);
           localStorage.setItem("refresh", data.refresh);
           localStorage.setItem("id", data.id);
 
-          // Inicializa WebSockets
-          initializeNotificationWebSocket(data.access, data.id, "handleLogin");
-
-          // Redireciona e recarrega
           window.location.href = "/home";
           window.location.reload();
+        } else {
+          showAlert(loginErrorAlert, data.error || "Código 2FA inválido.");
         }
-      } else {
-        showAlert(loginErrorAlert, data.error || "Credenciais inválidas.");
+      } catch (err) {
+        showAlert(loginErrorAlert, "Erro de conexão.");
       }
-    } catch (err) {
-      showAlert(loginErrorAlert, "Erro de conexão.");
-    }
-  });
-
-  // Botão para validar 2FA (em vez de "change" no input)
-  validate2FABtn.addEventListener("click", async () => {
-    if (!is2FARequired) return;
-    hideAlert(loginErrorAlert);
-    hideAlert(loginSuccessAlert);
-
-    const email = loginEmail.value.trim();
-    const code = login2FACode.value.trim();
-    if (!code) {
-      showAlert(loginErrorAlert, "Código 2FA é obrigatório.");
-      return;
-    }
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/user-management/2fa/validate/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code }),
-      });
-      const data = await response.json();
-      if (response.ok) {
-        showAlert(loginSuccessAlert, "2FA validado com sucesso!");
-        localStorage.setItem("access", data.access);
-        localStorage.setItem("refresh", data.refresh);
-        localStorage.setItem("id", data.id);
-
-        window.location.href = "/home";
-        window.location.reload();
-      } else {
-        showAlert(loginErrorAlert, data.error || "Código 2FA inválido.");
-      }
-    } catch (err) {
-      showAlert(loginErrorAlert, "Erro de conexão.");
-    }
-  });
+    });
+  }
 
   // ==========================================================
   // E) Lógica do Registro
   // ==========================================================
   // Atualiza requisitos de senha em tempo real
-  registerPassword.addEventListener("input", () => {
-    updatePasswordRequirements(registerPassword.value);
-  });
+  if (registerPassword) {
+    registerPassword.addEventListener("input", () => {
+      updatePasswordRequirements(registerPassword.value);
+    });
+  }
 
   // Lida com upload de avatar
-  avatarInput.addEventListener("change", () => {
-    const file = avatarInput.files[0];
-    if (file && file.size > 1024 * 1024) {
-      alert("O tamanho do avatar deve ser no máximo 1MB.");
+  if (avatarInput) {
+    avatarInput.addEventListener("change", () => {
+      const file = avatarInput.files[0];
+      if (file && file.size > 1024 * 1024) {
+        alert("O tamanho do avatar deve ser no máximo 1MB.");
+        avatarInput.value = "";
+        removeAvatarBtn.classList.add("d-none");
+      } else if (file) {
+        removeAvatarBtn.classList.remove("d-none");
+      }
+    });
+  }
+
+  if (removeAvatarBtn) {
+    removeAvatarBtn.addEventListener("click", () => {
       avatarInput.value = "";
       removeAvatarBtn.classList.add("d-none");
-    } else if (file) {
-      removeAvatarBtn.classList.remove("d-none");
-    }
-  });
+    });
+  }
 
-  removeAvatarBtn.addEventListener("click", () => {
-    avatarInput.value = "";
-    removeAvatarBtn.classList.add("d-none");
-  });
+  if (registerForm) {
+    registerForm.addEventListener("submit", async (e) => {
+      e.preventDefault(); // Impede envio padrão
+      hideAlert(registerSuccessAlert);
+      hideAlert(registerErrorAlert);
 
-  registerForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    hideAlert(registerSuccessAlert);
-    hideAlert(registerErrorAlert);
+      const email = registerEmail.value.trim();
+      const dName = displayName.value.trim();
+      const password = registerPassword.value;
 
-    const email = registerEmail.value.trim();
-    const dName = displayName.value.trim();
-    const password = registerPassword.value;
-    if (!email || !dName || !password) {
-      showAlert(registerErrorAlert, "Preencha todos os campos obrigatórios.");
-      return;
-    }
-
-    // Validação de e-mail
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      showAlert(registerErrorAlert, "Email inválido.");
-      return;
-    }
-
-    // Validação de senha
-    const checks = isPasswordValid(password);
-    const allValid = Object.values(checks).every(Boolean);
-    if (!allValid) {
-      showAlert(registerErrorAlert, "A senha não atende aos requisitos.");
-      return;
-    }
-
-    // Monta formData
-    const formDataToSend = new FormData();
-    formDataToSend.append("email", email);
-    formDataToSend.append("password", password);
-    formDataToSend.append("display_name", dName);
-
-    if (avatarInput.files[0]) {
-      formDataToSend.append("avatar", avatarInput.files[0]);
-    }
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/user-management/register/`, {
-        method: "POST",
-        body: formDataToSend,
-      });
-      const data = await response.json();
-      if (response.ok) {
-        showAlert(registerSuccessAlert, "Usuário registrado com sucesso!");
-        // Alterna para aba de login
-        const loginTabBtn = document.getElementById("login-tab");
-        loginTabBtn.click();
-      } else {
-        if (data.email) {
-          showAlert(registerErrorAlert, "Este email já está em uso.");
-        } else if (data.display_name) {
-          showAlert(registerErrorAlert, "Este display_name já está em uso.");
-        } else {
-          showAlert(registerErrorAlert, "Erro desconhecido ao registrar.");
-        }
+      if (!email || !dName || !password) {
+        showAlert(registerErrorAlert, "Preencha todos os campos obrigatórios.");
+        return;
       }
-    } catch (err) {
-      showAlert(registerErrorAlert, "Erro de conexão.");
-    }
-  });
+
+      // Validação de e-mail
+      if (!isValidEmail(email)) {
+        showAlert(registerErrorAlert, "Email inválido.");
+        return;
+      }
+
+      // Validação de senha
+      const checks = isPasswordValid(password);
+      const allValid = Object.values(checks).every(Boolean);
+      if (!allValid) {
+        showAlert(registerErrorAlert, "A senha não atende aos requisitos.");
+        return;
+      }
+
+      // Monta formData
+      const formDataToSend = new FormData();
+      formDataToSend.append("email", email);
+      formDataToSend.append("password", password);
+      formDataToSend.append("display_name", dName);
+
+      if (avatarInput.files[0]) {
+        formDataToSend.append("avatar", avatarInput.files[0]);
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/user-management/register/`, {
+          method: "POST",
+          body: formDataToSend,
+        });
+        const data = await response.json();
+        if (response.ok) {
+          showAlert(registerSuccessAlert, "Usuário registrado com sucesso!");
+          // Alterna para aba de login
+          const loginTabBtn = document.getElementById("login-tab");
+          loginTabBtn.click();
+        } else {
+          if (data.email) {
+            showAlert(registerErrorAlert, "Este email já está em uso.");
+          } else if (data.display_name) {
+            showAlert(registerErrorAlert, "Este display_name já está em uso.");
+          } else {
+            showAlert(registerErrorAlert, "Erro desconhecido ao registrar.");
+          }
+        }
+      } catch (err) {
+        showAlert(registerErrorAlert, "Erro de conexão.");
+      }
+    });
+  }
 
   // ==========================================================
   // F) Mostrar/Esconder senha
   // ==========================================================
-  toggleLoginPassword.addEventListener("click", () => {
-    if (loginPassword.type === "password") {
-      loginPassword.type = "text";
-      toggleLoginPassword.innerHTML = '<i class="fas fa-eye-slash"></i>';
-    } else {
-      loginPassword.type = "password";
-      toggleLoginPassword.innerHTML = '<i class="fas fa-eye"></i>';
-    }
-  });
+  if (toggleLoginPassword) {
+    toggleLoginPassword.addEventListener("click", () => {
+      if (loginPassword.type === "password") {
+        loginPassword.type = "text";
+        toggleLoginPassword.innerHTML = '<i class="fas fa-eye-slash"></i>';
+      } else {
+        loginPassword.type = "password";
+        toggleLoginPassword.innerHTML = '<i class="fas fa-eye"></i>';
+      }
+    });
+  }
 
-  toggleRegisterPassword.addEventListener("click", () => {
-    if (registerPassword.type === "password") {
-      registerPassword.type = "text";
-      toggleRegisterPassword.innerHTML = '<i class="fas fa-eye-slash"></i>';
-    } else {
-      registerPassword.type = "password";
-      toggleRegisterPassword.innerHTML = '<i class="fas fa-eye"></i>';
-    }
-  });
+  if (toggleRegisterPassword) {
+    toggleRegisterPassword.addEventListener("click", () => {
+      if (registerPassword.type === "password") {
+        registerPassword.type = "text";
+        toggleRegisterPassword.innerHTML = '<i class="fas fa-eye-slash"></i>';
+      } else {
+        registerPassword.type = "password";
+        toggleRegisterPassword.innerHTML = '<i class="fas fa-eye"></i>';
+      }
+    });
+  }
 
   // ==========================================================
   // G) Botão Partida Local
   // ==========================================================
-  btnLocalMatch.addEventListener("click", () => {
-    window.location.href = "/local-match";
-  });
+  if (btnLocalMatch) {
+    btnLocalMatch.addEventListener("click", () => {
+      window.location.href = "/local-match";
+    });
+  }
 
   // ==========================================================
   // H) Lógica de Idioma (Dummy)
@@ -298,4 +336,4 @@ document.addEventListener("DOMContentLoaded", () => {
       // Implemente sua lógica real de i18n ou recarregue a página com param de idioma etc.
     });
   });
-});
+};

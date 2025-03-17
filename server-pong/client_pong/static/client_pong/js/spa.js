@@ -1,8 +1,8 @@
 /**************************************************************
  * spa.js
  * Exemplo de SPA com rotas públicas/privadas e layout de navbar
- * Agora chamando arquivos HTML externos (partials) em vez de
- * definir cada página inline.
+ * Carregando arquivos HTML externos (partials) E o landing.js
+ * quando a rota "/pong/" é acessada.
  **************************************************************/
 
 /* ========== 1. Checagem de Autenticação ========== */
@@ -60,7 +60,6 @@ function renderPublicLayout(contentHTML) {
 
 // Layout privado: tem navbar no topo + conteúdo
 async function renderPrivateLayout(contentHTML) {
-  // 1) Buscar dados do usuário (avatar, displayName etc.), se quiser
   let userData = null;
   try {
     const userId = localStorage.getItem("id");
@@ -81,20 +80,15 @@ async function renderPrivateLayout(contentHTML) {
     console.error("Erro ao buscar user data:", err);
   }
 
-  // 2) Monta a navbar
   const navbarHTML = renderNavbar(userData);
-
-  // 3) Retorna HTML final
   return `
     ${navbarHTML}
     <div class="container">${contentHTML}</div>
   `;
 }
 
-/* ========== 4. Função para carregar parciais HTML ========== */
+/* ========== 4. Carregar parciais HTML ========== */
 async function loadPartial(partialFile) {
-  // Ex: partialFile = "landing.html"
-  // Ajuste o caminho conforme a pasta real dos arquivos
   const url = `/static/client_pong/pages/${partialFile}`;
   const response = await fetch(url);
   if (!response.ok) {
@@ -103,14 +97,18 @@ async function loadPartial(partialFile) {
   return await response.text();
 }
 
+/* ========== 4.1 Carregar script dinamicamente ========== */
+function loadScript(scriptName) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = `/static/client_pong/js/${scriptName}`;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error(`Falha ao carregar script ${scriptName}`));
+    document.body.appendChild(script);
+  });
+}
+
 /* ========== 5. Definição de Rotas ========== */
-/*
-  Cada rota define:
-  - path: regex para casar com window.location.pathname
-  - partial: arquivo HTML em /static/client_pong/pages/
-  - private: se rota exige login
-  - layout: "public" ou "private"
-*/
 const routes = [
   {
     path: "^/pong/$",
@@ -149,7 +147,6 @@ const routes = [
     layout: "private",
   },
   {
-    // Exemplo de rota dinâmica
     path: "^/pong/user-profile/(?<user_id>\\w+)$",
     partial: "user_profile.html",
     private: true,
@@ -162,7 +159,6 @@ const routes = [
     layout: "public",
   },
   {
-    // Exemplo de rota dinâmica com matchId
     path: "^/pong/game/(?<matchId>\\w+)$",
     partial: "game.html",
     private: true,
@@ -184,31 +180,24 @@ async function handleRoute() {
         return;
       }
 
-      // Carrega a parcial HTML do arquivo
       let partialHTML = "";
       try {
         partialHTML = await loadPartial(route.partial);
       } catch (err) {
         console.error(err);
-        document.getElementById("root").innerHTML = `
-          <h1>Erro ao carregar a página</h1>
-        `;
+        document.getElementById("root").innerHTML = `<h1>Erro ao carregar a página</h1>`;
         return;
       }
 
-      // Monta layout público ou privado
       let finalHTML = "";
       if (route.layout === "public") {
         finalHTML = renderPublicLayout(partialHTML);
       } else {
-        // Layout privado é assíncrono
         finalHTML = await renderPrivateLayout(partialHTML);
       }
 
-      // Insere no #root
       document.getElementById("root").innerHTML = finalHTML;
 
-      // Eventos pós-render
       attachEventsAfterRender(route, match.groups || {});
       return;
     }
@@ -235,27 +224,27 @@ document.addEventListener("click", (e) => {
 // Botão Voltar/Avançar do navegador
 window.addEventListener("popstate", handleRoute);
 
-/* ========== 7. Eventos pós-render (ex.: simular login/logout) ========== */
-function attachEventsAfterRender(route, params) {
-  // Exemplo: na rota /pong/ (Landing), “simular login”
+/* ========== 7. Eventos pós-render (dynamic script loading) ========== */
+async function attachEventsAfterRender(route, params) {
+  // Se a rota for /pong/ (Landing), carregamos o landing.js
   if (route.path === "^/pong/$") {
-    const btnSimularLogin = document.getElementById("btnSimularLogin");
-    if (btnSimularLogin) {
-      btnSimularLogin.addEventListener("click", () => {
-        // Simula tokens no localStorage
-        localStorage.setItem("access", "fakeToken");
-        localStorage.setItem("id", "123");
-        // Redireciona para Home
-        navigateTo("/pong/home");
-      });
+    try {
+      await loadScript("landing.js"); 
+      // Supondo que landing.js define window.initLanding()
+      if (window.initLanding) {
+        window.initLanding(); 
+      } else {
+        console.error("initLanding não foi definido em landing.js");
+      }
+    } catch (err) {
+      console.error("Erro ao carregar landing.js:", err);
     }
   }
 
-  // No layout privado, podemos ter o botão “Logout”
+  // Exemplo de logout no layout privado
   const btnLogout = document.getElementById("btnLogout");
   if (btnLogout) {
     btnLogout.addEventListener("click", async () => {
-      // Exemplo: chamar logout na API
       try {
         const access = localStorage.getItem("access");
         const refresh = localStorage.getItem("refresh");
@@ -282,7 +271,7 @@ function attachEventsAfterRender(route, params) {
     });
   }
 
-  // Seletor de idioma no layout privado
+  // Seletor de idioma
   document.querySelectorAll("[data-lang]").forEach((langEl) => {
     langEl.addEventListener("click", () => {
       const lang = langEl.getAttribute("data-lang");
