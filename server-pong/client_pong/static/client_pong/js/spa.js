@@ -119,7 +119,7 @@ const routes = [
   {
     path: "^/pong/home$",
     partial: "home.html",
-    private: true,
+    private: false,
     layout: "private",
   },
   {
@@ -232,7 +232,7 @@ async function attachEventsAfterRender(route, params) {
       await loadScript("landing.js"); 
       // Supondo que landing.js define window.initLanding()
       if (window.initLanding) {
-        window.initLanding(); 
+        window.initLanding();
       } else {
         console.error("initLanding não foi definido em landing.js");
       }

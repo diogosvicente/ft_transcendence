@@ -17,7 +17,7 @@ window.initLanding = function() {
   const accessToken = localStorage.getItem("access");
   if (accessToken) {
     // Se já estiver logado, redireciona para /home
-    window.location.href = "/home";
+    window.location.href = "/pong/home";
     return; // Impede que continue a lógica de login/registro
   }
 

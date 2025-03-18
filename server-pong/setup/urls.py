@@ -9,5 +9,5 @@ urlpatterns = [
     path('api/user-management/', include('user_management.urls')),  # App User Management
     path('api/chat/', include('chat.urls')),  # App Chat
     path('api/game/', include('game.urls')),  # App Game
-    path('pong/', include('client_pong.urls')),  # App Frontend
+    path('pong/', include('client_pong.urls')),  # App Frontend => client_pong
 ]
