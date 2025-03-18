@@ -1,66 +1,62 @@
 /**************************************************************
  * spa.js
- * Exemplo de SPA com rotas públicas/privadas e layout de navbar
- * Carregando arquivos HTML externos (partials) E o landing.js
- * quando a rota "/pong/" é acessada.
+ * Exemplo de SPA com rotas públicas/privadas, layout via navbar.html
+ * e carregamento dinâmico de scripts (landing.js, home.js, etc.).
  **************************************************************/
 
 /* ========== 1. Checagem de Autenticação ========== */
 function isAuthenticated() {
-  // Se existir "access" no localStorage, consideramos logado
   return !!localStorage.getItem("access");
 }
 
-/* ========== 2. Navbar (HTML) ========== */
-function renderNavbar(userData) {
-  // userData pode conter avatar, displayName, etc.
-  // Ajuste conforme sua API real
-  const avatarUrl = userData?.avatar || "/media/avatars/default.png";
-  const displayName = userData?.displayName || "Usuário";
-
-  return `
-    <nav class="navbar navbar-light bg-light mb-4">
-      <div class="container-fluid">
-        <a href="/pong/" data-link class="navbar-brand">
-          <img src="${avatarUrl}" alt="Avatar" 
-               style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
-          <span class="ms-2">Pong App</span>
-        </a>
-        <div>
-          <a href="/pong/chat" data-link class="me-3">Chat</a>
-          <a href="/pong/tournaments" data-link class="me-3">Torneios</a>
-          <a href="/pong/user-profile/${localStorage.getItem("id")}" data-link class="me-3">Perfil</a>
-          <a href="/pong/ranking" data-link class="me-3">Ranking</a>
-
-          <!-- Seletor de idioma -->
-          <span class="me-3">
-            <img src="/static/client_pong/images/brazil-flag-round-circle-icon.svg" 
-                 alt="PT" style="width:24px; cursor:pointer;" data-lang="pt_BR">
-            <img src="/static/client_pong/images/uk-flag-round-circle-icon.svg" 
-                 alt="EN" style="width:24px; cursor:pointer;" data-lang="en">
-            <img src="/static/client_pong/images/spain-flag-round-icon.svg" 
-                 alt="ES" style="width:24px; cursor:pointer;" data-lang="es">
-          </span>
-
-          <button class="btn btn-outline-secondary" id="btnLogout">Sair</button>
-        </div>
-      </div>
-    </nav>
-  `;
+/* ========== 2. Carregar partial HTML (ex.: landing.html, home.html) ========== */
+async function loadPartial(partialFile) {
+  const url = `/static/client_pong/pages/${partialFile}`;
+  const resp = await fetch(url);
+  if (!resp.ok) {
+    throw new Error(`Não foi possível carregar a parcial: ${partialFile}`);
+  }
+  return await resp.text();
 }
 
-/* ========== 3. Layout Público vs. Privado ========== */
+/* ========== 3. Carregar script dinamicamente (ex.: landing.js, navbar.js) ========== */
+function loadScript(scriptName) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = `/static/client_pong/js/${scriptName}`;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error(`Falha ao carregar script: ${scriptName}`));
+    document.body.appendChild(script);
+  });
+}
 
-// Layout público: não tem navbar
+/* ========== 4. Carregar e injetar a navbar (para layout privado) ========== */
+async function loadNavbarHTML() {
+  const url = "/static/client_pong/pages/navbar.html";
+  const resp = await fetch(url);
+  if (!resp.ok) {
+    throw new Error("Não foi possível carregar navbar.html");
+  }
+  return await resp.text();
+}
+
+/* ========== 5. Layout Público vs. Privado ========== */
+
+/** 
+ * Layout público: não tem navbar
+ */
 function renderPublicLayout(contentHTML) {
   return `
     <div>${contentHTML}</div>
   `;
 }
 
-// Layout privado: tem navbar no topo + conteúdo
-async function renderPrivateLayout(contentHTML) {
-  let userData = null;
+/** 
+ * Layout privado: carrega navbar.html e concatena com o conteúdo
+ * Também pode buscar dados do usuário, se necessário.
+ */
+async function renderPrivateLayout(contentHTML, route) {
+  // 1) Buscar dados do usuário (opcional)
   try {
     const userId = localStorage.getItem("id");
     const accessToken = localStorage.getItem("access");
@@ -70,103 +66,116 @@ async function renderPrivateLayout(contentHTML) {
       });
       if (resp.ok) {
         const data = await resp.json();
-        userData = {
-          avatar: data.avatar ? data.avatar : "/media/avatars/default.png",
-          displayName: data.display_name,
-        };
+        // Armazena avatar e displayName no localStorage, se quiser
+        localStorage.setItem("avatarUrl", data.avatar ? `/${data.avatar}` : "/static/client_pong/avatars/default.png");
+        localStorage.setItem("displayName", data.display_name || "");
       }
     }
   } catch (err) {
     console.error("Erro ao buscar user data:", err);
   }
 
-  const navbarHTML = renderNavbar(userData);
+  // 2) Carrega a navbar.html
+  let navbarHTML = "";
+  try {
+    navbarHTML = await loadNavbarHTML();
+  } catch (err) {
+    console.error("Erro ao carregar navbar.html:", err);
+  }
+
+  // 3) Retorna navbar + conteúdo final
   return `
     ${navbarHTML}
     <div class="container">${contentHTML}</div>
   `;
 }
 
-/* ========== 4. Carregar parciais HTML ========== */
-async function loadPartial(partialFile) {
-  const url = `/static/client_pong/pages/${partialFile}`;
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Não foi possível carregar a parcial: ${partialFile}`);
-  }
-  return await response.text();
-}
-
-/* ========== 4.1 Carregar script dinamicamente ========== */
-function loadScript(scriptName) {
-  return new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = `/static/client_pong/js/${scriptName}`;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error(`Falha ao carregar script ${scriptName}`));
-    document.body.appendChild(script);
-  });
-}
-
-/* ========== 5. Definição de Rotas ========== */
+/* ========== 6. Definição de Rotas ========== */
+/**
+ * Cada rota define:
+ * - path: regex para window.location.pathname
+ * - partial: nome do arquivo HTML
+ * - script: nome do arquivo JS (se quiser dinamicamente)
+ * - initFunction: nome da função global (ex.: window.initLanding)
+ * - private: se rota exige login
+ * - layout: "public" ou "private"
+ */
 const routes = [
   {
     path: "^/pong/$",
     partial: "landing.html",
+    script: "landing.js",
+    initFunction: "initLanding",
     private: false,
     layout: "public",
   },
   {
     path: "^/pong/home$",
     partial: "home.html",
+    script: "home.js",
+    initFunction: "initHome",
     private: false,
     layout: "private",
   },
   {
     path: "^/pong/chat$",
     partial: "chat.html",
+    script: "chat.js",
+    initFunction: "initChat",
     private: true,
     layout: "private",
   },
   {
     path: "^/pong/tournaments$",
     partial: "tournaments.html",
+    script: "tournaments.js",
+    initFunction: "initTournaments",
     private: true,
     layout: "private",
   },
   {
     path: "^/pong/profile$",
     partial: "profile.html",
+    script: "profile.js",
+    initFunction: "initProfile",
     private: true,
     layout: "private",
   },
   {
     path: "^/pong/ranking$",
     partial: "ranking.html",
+    script: "ranking.js",
+    initFunction: "initRanking",
     private: true,
     layout: "private",
   },
   {
     path: "^/pong/user-profile/(?<user_id>\\w+)$",
-    partial: "user_profile.html",
+    partial: "user-profile.html",
+    script: "user-profile.js",
+    initFunction: "initUserProfile",
     private: true,
     layout: "private",
   },
   {
     path: "^/pong/local-match$",
     partial: "local_match.html",
+    script: "local_match.js",
+    initFunction: "initLocalMatch",
     private: false,
     layout: "public",
   },
   {
     path: "^/pong/game/(?<matchId>\\w+)$",
     partial: "game.html",
+    script: "game.js",
+    initFunction: "initGame",
     private: true,
     layout: "private",
   },
 ];
 
-/* ========== 6. Roteador (History API) ========== */
+/* ========== 7. Roteador (History API) ========== */
 async function handleRoute() {
   const path = window.location.pathname;
 
@@ -180,6 +189,7 @@ async function handleRoute() {
         return;
       }
 
+      // Carrega o HTML parcial
       let partialHTML = "";
       try {
         partialHTML = await loadPartial(route.partial);
@@ -189,15 +199,19 @@ async function handleRoute() {
         return;
       }
 
+      // Monta layout público ou privado
       let finalHTML = "";
       if (route.layout === "public") {
         finalHTML = renderPublicLayout(partialHTML);
       } else {
-        finalHTML = await renderPrivateLayout(partialHTML);
+        // Layout privado
+        finalHTML = await renderPrivateLayout(partialHTML, route);
       }
 
+      // Insere no #root
       document.getElementById("root").innerHTML = finalHTML;
 
+      // attachEventsAfterRender + script dinâmico
       attachEventsAfterRender(route, match.groups || {});
       return;
     }
@@ -207,12 +221,13 @@ async function handleRoute() {
   document.getElementById("root").innerHTML = "<h1>404 - Página não encontrada</h1>";
 }
 
+/** Atualiza URL e chama handleRoute() */
 function navigateTo(url) {
   history.pushState({}, "", url);
   handleRoute();
 }
 
-// Intercepta cliques em <a data-link>
+// Intercepta cliques em <a data-link> para evitar reload e usar SPA
 document.addEventListener("click", (e) => {
   const link = e.target.closest("a[data-link]");
   if (link) {
@@ -224,64 +239,45 @@ document.addEventListener("click", (e) => {
 // Botão Voltar/Avançar do navegador
 window.addEventListener("popstate", handleRoute);
 
-/* ========== 7. Eventos pós-render (dynamic script loading) ========== */
+/* ========== 8. Eventos pós-render ========== */
 async function attachEventsAfterRender(route, params) {
-  // Se a rota for /pong/ (Landing), carregamos o landing.js
-  if (route.path === "^/pong/$") {
+  // 8.1. Carregar script dinâmico da rota, se definido
+  if (route.script) {
     try {
-      await loadScript("landing.js"); 
-      // Supondo que landing.js define window.initLanding()
-      if (window.initLanding) {
-        window.initLanding();
+      await loadScript(route.script);
+      if (route.initFunction && window[route.initFunction]) {
+        window[route.initFunction]();
       } else {
-        console.error("initLanding não foi definido em landing.js");
+        console.warn(`Função de init não definida: ${route.initFunction}`);
       }
     } catch (err) {
-      console.error("Erro ao carregar landing.js:", err);
+      console.error(`Erro ao carregar script ${route.script}:`, err);
     }
   }
 
-  // Exemplo de logout no layout privado
-  const btnLogout = document.getElementById("btnLogout");
-  if (btnLogout) {
-    btnLogout.addEventListener("click", async () => {
-      try {
-        const access = localStorage.getItem("access");
-        const refresh = localStorage.getItem("refresh");
-        if (refresh) {
-          await fetch(`/api/user-management/logout/`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${access}`
-            },
-            body: JSON.stringify({ refresh }),
-          });
-        }
-      } catch (err) {
-        console.error("Erro ao deslogar:", err);
-      } finally {
-        // Limpa localStorage
-        localStorage.removeItem("access");
-        localStorage.removeItem("refresh");
-        localStorage.removeItem("id");
-        // Volta para landing
-        navigateTo("/pong/");
+  // 8.2. Carregar script da navbar (caso a rota seja privada)
+  if (route.layout === "private") {
+    try {
+      await loadScript("navbar.js"); // Carrega o script da navbar
+      if (window.initNavbar) {
+        window.initNavbar(); // Inicializa a navbar (avatar, logout, idioma)
       }
-    });
+    } catch (err) {
+      console.error("Erro ao carregar navbar.js:", err);
+    }
   }
 
-  // Seletor de idioma
+  // 8.3. Seletor de idioma (já coberto em navbar.js, mas se quiser adicional)
   document.querySelectorAll("[data-lang]").forEach((langEl) => {
     langEl.addEventListener("click", () => {
       const lang = langEl.getAttribute("data-lang");
       console.log("Mudando idioma para:", lang);
-      // Aqui você implementaria a lógica real de i18n
+      // Lógica real de i18n se quiser
     });
   });
 }
 
-/* ========== 8. Início da aplicação ========== */
+/* ========== 9. Início da aplicação ========== */
 document.addEventListener("DOMContentLoaded", () => {
   handleRoute();
 });

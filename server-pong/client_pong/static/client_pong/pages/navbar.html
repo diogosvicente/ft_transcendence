@@ -1,0 +1,41 @@
+<nav class="navbar navbar-light bg-light mb-4">
+    <div class="container-fluid">
+      <!-- Marca -->
+      <a href="/pong/home" data-link class="navbar-brand">
+        <!-- Avatar padrão carregado no HTML; JS atualizará se o usuário tiver avatar -->
+        <img
+          id="navbarAvatar"
+          alt="Avatar"
+          style="width:40px; height:40px; border-radius:50%; object-fit:cover;"
+          src="/static/client_pong/avatars/default.png"
+        />
+        <span class="ms-2">Pong App</span>
+      </a>
+      <div>
+        <a href="/pong/chat" data-link class="me-3">Chat</a>
+        <a href="/pong/tournaments" data-link class="me-3">Torneios</a>
+        <!-- Temporariamente “0”; JS mudará para /pong/user-profile/{id} -->
+        <a href="/pong/user-profile/0" data-link id="navbarProfileLink" class="me-3">Perfil</a>
+        <a href="/pong/ranking" data-link class="me-3">Ranking</a>
+  
+        <!-- Seletor de idioma -->
+        <span class="me-3">
+          <img
+            src="/static/client_pong/images/brazil-flag-round-circle-icon.svg"
+            alt="PT" style="width:24px; cursor:pointer;" data-lang="pt_BR"
+          />
+          <img
+            src="/static/client_pong/images/uk-flag-round-circle-icon.svg"
+            alt="EN" style="width:24px; cursor:pointer;" data-lang="en"
+          />
+          <img
+            src="/static/client_pong/images/spain-flag-round-icon.svg"
+            alt="ES" style="width:24px; cursor:pointer;" data-lang="es"
+          />
+        </span>
+  
+        <button class="btn btn-outline-secondary" id="btnLogout">Sair</button>
+      </div>
+    </div>
+  </nav>
+  

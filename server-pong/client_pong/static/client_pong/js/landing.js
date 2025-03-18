@@ -126,7 +126,6 @@ window.initLanding = function() {
           body: JSON.stringify({ email, password }),
         });
         const data = await response.json();
-        alert(data);
 
         if (response.ok) {
           if (data.requires_2fa) {
