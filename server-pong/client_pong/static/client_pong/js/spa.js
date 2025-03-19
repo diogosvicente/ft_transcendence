@@ -25,12 +25,14 @@ function loadScript(scriptName) {
     const script = document.createElement("script");
     script.src = `/static/client_pong/js/${scriptName}`;
     script.onload = () => resolve();
-    script.onerror = () => reject(new Error(`Falha ao carregar script: ${scriptName}`));
+    script.onerror = () =>
+      reject(new Error(`Falha ao carregar script: ${scriptName}`));
     document.body.appendChild(script);
   });
 }
 
 /* ========== 4. Carregar e injetar a navbar (para layout privado) ========== */
+// Função para carregar o HTML da navbar
 async function loadNavbarHTML() {
   const url = "/static/client_pong/pages/navbar.html";
   const resp = await fetch(url);
@@ -38,6 +40,45 @@ async function loadNavbarHTML() {
     throw new Error("Não foi possível carregar navbar.html");
   }
   return await resp.text();
+}
+
+// Função para carregar o CSS da navbar
+async function loadNavbarCSS() {
+  const url = "/static/client_pong/css/navbar.css";
+  const resp = await fetch(url);
+  if (!resp.ok) {
+    throw new Error("Não foi possível carregar navbar.css");
+  }
+  return await resp.text();
+}
+
+// Variável para evitar recarregar a navbar mais de uma vez
+let navbarLoaded = false;
+
+// Função que carrega (se ainda não carregada) e injeta a navbar em um contêiner fixo
+async function initNavbar() {
+  if (!navbarLoaded) {
+    try {
+      const [navbarHTML, navbarCSS] = await Promise.all([
+        loadNavbarHTML(),
+        loadNavbarCSS()
+      ]);
+      // Injetar o CSS da navbar (apenas uma vez)
+      const styleEl = document.createElement("style");
+      styleEl.textContent = navbarCSS;
+      document.head.appendChild(styleEl);
+      // Injetar o HTML da navbar no contêiner fixo (definido no template, ex.: <div id="navbar-container"></div>)
+      document.getElementById("navbar-container").innerHTML = navbarHTML;
+      navbarLoaded = true;
+      // Opcional: carrega os scripts e inicializa os eventos da navbar
+      await loadScript("navbar.js");
+      if (window.initNavbar) {
+        window.initNavbar();
+      }
+    } catch (error) {
+      console.error("Erro ao carregar a navbar:", error);
+    }
+  }
 }
 
 /* ========== 5. Layout Público vs. Privado ========== */
@@ -52,8 +93,8 @@ function renderPublicLayout(contentHTML) {
 }
 
 /** 
- * Layout privado: carrega navbar.html e concatena com o conteúdo
- * Também pode buscar dados do usuário, se necessário.
+ * Layout privado: utiliza a navbar fixa injetada no contêiner #navbar-container
+ * e renderiza o conteúdo dinâmico no elemento #root.
  */
 async function renderPrivateLayout(contentHTML, route) {
   // 1) Buscar dados do usuário (opcional)
@@ -66,8 +107,13 @@ async function renderPrivateLayout(contentHTML, route) {
       });
       if (resp.ok) {
         const data = await resp.json();
-        // Armazena avatar e displayName no localStorage, se quiser
-        localStorage.setItem("avatarUrl", data.avatar ? `/${data.avatar}` : "/static/client_pong/avatars/default.png");
+        // Armazena avatar e displayName no localStorage, se desejar
+        localStorage.setItem(
+          "avatarUrl",
+          data.avatar
+            ? `/${data.avatar}`
+            : "/static/client_pong/avatars/default.png"
+        );
         localStorage.setItem("displayName", data.display_name || "");
       }
     }
@@ -75,19 +121,11 @@ async function renderPrivateLayout(contentHTML, route) {
     console.error("Erro ao buscar user data:", err);
   }
 
-  // 2) Carrega a navbar.html
-  let navbarHTML = "";
-  try {
-    navbarHTML = await loadNavbarHTML();
-  } catch (err) {
-    console.error("Erro ao carregar navbar.html:", err);
-  }
+  // 2) Garante que a navbar esteja carregada no contêiner fixo
+  await initNavbar();
 
-  // 3) Retorna navbar + conteúdo final
-  return `
-    ${navbarHTML}
-    <div class="container">${contentHTML}</div>
-  `;
+  // 3) Retorna somente o conteúdo dinâmico (a navbar permanece fixa)
+  return `<div class="container">${contentHTML}</div>`;
 }
 
 /* ========== 6. Definição de Rotas ========== */
@@ -95,7 +133,7 @@ async function renderPrivateLayout(contentHTML, route) {
  * Cada rota define:
  * - path: regex para window.location.pathname
  * - partial: nome do arquivo HTML
- * - script: nome do arquivo JS (se quiser dinamicamente)
+ * - script: nome do arquivo JS (se quiser carregá-lo dinamicamente)
  * - initFunction: nome da função global (ex.: window.initLanding)
  * - private: se rota exige login
  * - layout: "public" ou "private"
@@ -204,21 +242,22 @@ async function handleRoute() {
       if (route.layout === "public") {
         finalHTML = renderPublicLayout(partialHTML);
       } else {
-        // Layout privado
+        // Layout privado: o conteúdo dinâmico é renderizado em #root, enquanto a navbar permanece fixa
         finalHTML = await renderPrivateLayout(partialHTML, route);
       }
 
-      // Insere no #root
+      // Insere o conteúdo final no #root
       document.getElementById("root").innerHTML = finalHTML;
 
-      // attachEventsAfterRender + script dinâmico
+      // Eventos pós-render e carregamento dinâmico de script
       attachEventsAfterRender(route, match.groups || {});
       return;
     }
   }
 
   // Se nenhuma rota casar => 404
-  document.getElementById("root").innerHTML = "<h1>404 - Página não encontrada</h1>";
+  document.getElementById("root").innerHTML =
+    "<h1>404 - Página não encontrada</h1>";
 }
 
 /** Atualiza URL e chama handleRoute() */
@@ -255,24 +294,12 @@ async function attachEventsAfterRender(route, params) {
     }
   }
 
-  // 8.2. Carregar script da navbar (caso a rota seja privada)
-  if (route.layout === "private") {
-    try {
-      await loadScript("navbar.js"); // Carrega o script da navbar
-      if (window.initNavbar) {
-        window.initNavbar(); // Inicializa a navbar (avatar, logout, idioma)
-      }
-    } catch (err) {
-      console.error("Erro ao carregar navbar.js:", err);
-    }
-  }
-
-  // 8.3. Seletor de idioma (já coberto em navbar.js, mas se quiser adicional)
+  // 8.2. Seletor de idioma (opcional, caso não esteja no navbar.js)
   document.querySelectorAll("[data-lang]").forEach((langEl) => {
     langEl.addEventListener("click", () => {
       const lang = langEl.getAttribute("data-lang");
       console.log("Mudando idioma para:", lang);
-      // Lógica real de i18n se quiser
+      // Implemente a lógica de troca de idioma, se necessário
     });
   });
 }

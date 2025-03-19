@@ -7,14 +7,10 @@
   <title>Meu SPA em Vanilla JS</title>
   <!-- Bootstrap (opcional) -->
   <link rel="stylesheet" href="/static/client_pong/vendor/bootstrap/bootstrap.min.css">
-  </head>
+</head>
 <body>
-
-  <!--
-    Se quiser um menu fixo sempre (público ou privado), pode colocar aqui.
-    Mas se quer “Navbar” só para usuários logados, deixaremos para o JS injetar
-    quando a rota for privada.
-  -->
+  <!-- Navbar fixa para usuários logados -->
+  <div id="navbar-container"></div>
 
   <!-- Container principal do SPA -->
   <div id="root" class="container mt-4"></div>
@@ -23,6 +19,5 @@
   <script src="/static/client_pong/vendor/bootstrap/bootstrap.bundle.min.js"></script>
   <!-- Arquivo principal do SPA -->
   <script src="{% static 'client_pong/js/spa.js' %}"></script>
-  <script src="{% static 'client_pong/js/navbar.js' %}"></script>
 </body>
 </html>

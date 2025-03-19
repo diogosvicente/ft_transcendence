@@ -1,41 +1,65 @@
-<nav class="navbar navbar-light bg-light mb-4">
-    <div class="container-fluid">
-      <!-- Marca -->
-      <a href="/pong/home" data-link class="navbar-brand">
-        <!-- Avatar padrão carregado no HTML; JS atualizará se o usuário tiver avatar -->
-        <img
-          id="navbarAvatar"
-          alt="Avatar"
-          style="width:40px; height:40px; border-radius:50%; object-fit:cover;"
-          src="/static/client_pong/avatars/default.png"
-        />
-        <span class="ms-2">Pong App</span>
-      </a>
+<nav class="navbar-custom">
+  <div class="container d-flex justify-content-between align-items-center">
+    <!-- ESQUERDA: Avatar + Título + Saudação -->
+    <a href="/pong/home" data-link class="text-decoration-none text-dark d-flex align-items-center">
+      <img
+        id="navbarAvatar"
+        alt="Avatar"
+        class="user-avatar me-3"
+        src="/static/client_pong/avatars/default.png"
+      />
       <div>
-        <a href="/pong/chat" data-link class="me-3">Chat</a>
-        <a href="/pong/tournaments" data-link class="me-3">Torneios</a>
-        <!-- Temporariamente “0”; JS mudará para /pong/user-profile/{id} -->
-        <a href="/pong/user-profile/0" data-link id="navbarProfileLink" class="me-3">Perfil</a>
-        <a href="/pong/ranking" data-link class="me-3">Ranking</a>
-  
-        <!-- Seletor de idioma -->
-        <span class="me-3">
+        <!-- “Jogo Pong” com o ícone da raquete -->
+        <span class="user-title d-block">
+          Jogo Pong <i class="fa fa-table-tennis ms-2"></i>
+        </span>
+        <!-- Saudação (ex.: “Olá, Fulano”) atualizada via JS -->
+        <span class="user-greeting" style="color: gray; font-size: 0.9rem;">
+          Olá, Usuário
+        </span>
+      </div>
+    </a>
+
+    <!-- CENTRO: Links de Navegação -->
+    <div class="d-flex gap-3">
+      <a href="/pong/chat" data-link class="nav-link p-0">Chat</a>
+      <a href="/pong/tournaments" data-link class="nav-link p-0">Torneios</a>
+      <!-- O link do perfil será atualizado dinamicamente via JS -->
+      <a href="/pong/user-profile/0" data-link id="navbarProfileLink" class="nav-link p-0">Perfil</a>
+      <a href="/pong/ranking" data-link class="nav-link p-0">Ranking</a>
+    </div>
+
+    <!-- DIREITA: Seletor de idioma + Botão Sair -->
+    <div class="d-flex align-items-center gap-3">
+      <div class="language-selector d-flex gap-2">
+        <div class="language-card" onclick="handleLanguageChange('pt_BR')">
           <img
             src="/static/client_pong/images/brazil-flag-round-circle-icon.svg"
-            alt="PT" style="width:24px; cursor:pointer;" data-lang="pt_BR"
+            alt="Português (Brasil)"
+            class="language-flag"
           />
+          <span class="language-text">PT-BR</span>
+        </div>
+        <div class="language-card" onclick="handleLanguageChange('en')">
           <img
             src="/static/client_pong/images/uk-flag-round-circle-icon.svg"
-            alt="EN" style="width:24px; cursor:pointer;" data-lang="en"
+            alt="English"
+            class="language-flag"
           />
+          <span class="language-text">EN</span>
+        </div>
+        <div class="language-card" onclick="handleLanguageChange('es')">
           <img
             src="/static/client_pong/images/spain-flag-round-icon.svg"
-            alt="ES" style="width:24px; cursor:pointer;" data-lang="es"
+            alt="Español"
+            class="language-flag"
           />
-        </span>
-  
-        <button class="btn btn-outline-secondary" id="btnLogout">Sair</button>
+          <span class="language-text">ES</span>
+        </div>
       </div>
+      <button class="btn btn-outline-secondary" id="btnLogout" onclick="handleLogout()">
+        Sair
+      </button>
     </div>
-  </nav>
-  
+  </div>
+</nav>
