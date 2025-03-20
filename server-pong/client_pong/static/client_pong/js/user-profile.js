@@ -46,7 +46,7 @@ window.initUserProfile = async () => {
         const userData = await userRes.json();
 
         // Buscar histórico de partidas
-        const matchesRes = await fetch(`/api/user-management/match-history/${user_id}/`, {
+        const matchesRes = await fetch(`/api/game/match-history/${user_id}/`, {
             headers: { Authorization: `Bearer ${accessToken}` }
         });
 
@@ -54,9 +54,10 @@ window.initUserProfile = async () => {
 
         // Not implemented yet
         const matchesData = await matchesRes.json();
+        console.log(matchesData)
 
         // Atualizar estado
-        state = { ...state, user: userData, matches: [] };
+        state = { ...state, user: userData, matches: matchesData };
 
         // Atualizar UI
         elements.loading.classList.add('d-none');
