@@ -4,6 +4,7 @@ services:
   #
   web:
     build: ./server-pong
+    command: ["/wait-for-it.sh", "db", "5432", "--", "daphne", "-b", "0.0.0.0", "-p", "8000", "setup.asgi:application"]
     environment:
       - DJANGO_SETTINGS_MODULE=setup.settings
     env_file:
