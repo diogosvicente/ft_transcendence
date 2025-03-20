@@ -9,6 +9,16 @@ events {
 }
 
 http {
+
+	types {
+		application/javascript js;
+		application/json json;
+		image/svg+xml svg;
+		image/x-icon ico;
+		text/css css;
+		text/html html;
+	}
+
     # SERVIDOR HTTPS
     server {
         listen 443 ssl;
@@ -27,18 +37,17 @@ http {
             alias /app/media/;
         }
 
-        # Frontend React (porta 3000 em HTTP interno)
-        location / {
-            proxy_pass http://frontend:3000;
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection "Upgrade";
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto https;
-        }
-
+		location / {
+			proxy_pass http://web:8000;  # Route requests to Django
+			proxy_http_version 1.1;
+			proxy_set_header Upgrade $http_upgrade;
+			proxy_set_header Connection "Upgrade";
+			proxy_set_header Host $host;
+			proxy_set_header X-Real-IP $remote_addr;
+			proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+			proxy_set_header X-Forwarded-Proto https;
+		}
+		
         # API Django (porta 8000 em HTTP interno)
         location /api/ {
             proxy_pass http://web:8000;

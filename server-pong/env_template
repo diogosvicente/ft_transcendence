@@ -6,7 +6,7 @@ ALLOWED_HOSTS=127.0.0.1,localhost,192.168.1.138
 DB_NAME=ft_transcendence
 DB_USER=postgres
 DB_PASSWORD=123456
-DB_HOST=localhost
+DB_HOST=db
 DB_PORT=5432
 
 POSTGRES_DB=ft_transcendence

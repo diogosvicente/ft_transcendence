@@ -26,6 +26,7 @@ up:
 	@docker compose -f $(DOCKER_COMPOSE_FILE) up -d --build
 	@printf "⏳ Aguardando containers e executando migrations...\n"
 	@docker compose -f $(DOCKER_COMPOSE_FILE) exec -it web python manage.py migrate
+	@docker compose -f $(DOCKER_COMPOSE_FILE) exec -it web python manage.py collectstatic --noinput
 
 down:
 	@printf "🛑 Parando serviços...\n"
