@@ -1,0 +1,15 @@
+/* static/client_pong/css/user-profile.css */
+.avatar-lg {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border: 3px solid #fff;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+@media (max-width: 768px) {
+  .avatar-lg {
+    width: 100px;
+    height: 100px;
+  }
+}

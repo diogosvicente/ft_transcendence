@@ -172,10 +172,10 @@ const routes = [
     layout: "private",
   },
   {
-    path: "^/pong/profile$",
-    partial: "profile.html",
-    script: "profile.js",
-    initFunction: "initProfile",
+    path: "^/pong/user-profile/(?<user_id>\\d+)$",  // Altere para \\d+ se user_id for numérico
+    partial: "user-profile.html",
+    script: "user-profile.js",
+    initFunction: "initUserProfile",
     private: true,
     layout: "private",
   },

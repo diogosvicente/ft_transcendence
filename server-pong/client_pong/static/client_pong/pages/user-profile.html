@@ -1,1 +1,47 @@
-<h1>User-Profile</h1>
+<!-- static/client_pong/pages/user-profile.html -->
+<div class="user-profile-container">
+  <!-- Container de loading/erro -->
+  <div id="profile-loading" class="text-center mt-4">Carregando perfil...</div>
+  <div id="profile-error" class="alert alert-danger d-none"></div>
+
+  <!-- Conteúdo do perfil -->
+  <div id="profile-content" class="d-none">
+    <!-- Header -->
+    <div class="profile-header row mb-4">
+      <div class="col-md-3 text-center">
+        <img id="profile-avatar" class="avatar-lg rounded-circle mb-2" alt="Avatar">
+        <h3 id="profile-username" class="h4"></h3>
+      </div>
+    </div>
+
+    <!-- Estatísticas -->
+    <div class="profile-stats card mb-4">
+      <div class="card-body">
+        <div class="row text-center">
+          <div class="col-md-4">
+            <h5 class="stats-title">Vitórias</h5>
+            <p id="stats-wins" class="stats-value">0</p>
+          </div>
+          <div class="col-md-4">
+            <h5 class="stats-title">Derrotas</h5>
+            <p id="stats-losses" class="stats-value">0</p>
+          </div>
+          <div class="col-md-4">
+            <h5 class="stats-title">Win Rate</h5>
+            <p id="stats-winrate" class="stats-value">0%</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Histórico de Partidas -->
+    <div class="match-history card">
+      <div class="card-header">
+        <h4 class="mb-0">Histórico de Partidas</h4>
+      </div>
+      <div class="card-body">
+        <ul id="match-history-list" class="list-group"></ul>
+      </div>
+    </div>
+  </div>
+</div>
