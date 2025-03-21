@@ -321,7 +321,7 @@ window.initLanding = function() {
   // ==========================================================
   if (btnLocalMatch) {
     btnLocalMatch.addEventListener("click", () => {
-      window.location.href = "/local-match";
+      window.location.href = "/pong/local-match";
     });
   }
 
