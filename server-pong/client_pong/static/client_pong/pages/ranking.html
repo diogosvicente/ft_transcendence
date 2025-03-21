@@ -1,1 +1,12 @@
-<h1>Ranking</h1>
+<div class="ranking-container">
+	<!-- Loading/Error Containers -->
+	<div id="ranking-loading" class="text-center mt-4">Loading rankings...</div>
+	<div id="ranking-error" class="alert alert-danger d-none"></div>
+
+	<!-- Rankings Content -->
+	<div id="ranking-content" class="d-none"></div>
+</div>
+<script src="/static/client_pong/js/ranking.js"></script>
+<script>
+	document.addEventListener("DOMContentLoaded", window.initRanking);
+</script>
