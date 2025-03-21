@@ -1,5 +1,44 @@
 // static/client_pong/js/user-profile.js
 
+// Mostrar formulário de edição
+function showEditForm() {
+    document.getElementById('edit-profile-form').classList.remove('d-none');
+    document.getElementById('profile-content').classList.add('d-none');
+}
+
+// Cancelar edição
+function cancelEdit() {
+    document.getElementById('edit-profile-form').classList.add('d-none');
+    document.getElementById('profile-content').classList.remove('d-none');
+}
+
+// Enviar alterações (exemplo básico)
+async function saveProfileChanges(user_id) {
+    const newName = document.getElementById('display-name').value;
+    const avatarFile = document.getElementById('avatar-upload').files[0];
+    console.log(newName)
+
+    try {
+        const formData = new FormData();
+        if (newName) formData.append('display_name', newName);
+        if (avatarFile) formData.append('avatar', avatarFile);
+
+        const response = await fetch(`/api/user-management/user-profile/${user_id}/`, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access')}`
+            },
+            body: formData
+        });
+
+        if (response.ok) {
+            window.location.reload(); // Recarrega os dados atualizados
+        }
+    } catch (error) {
+        console.error('Erro ao atualizar perfil:', error);
+    }
+}
+
 window.initUserProfile = async () => {
     // Elementos do DOM
     const elements = {
@@ -33,6 +72,9 @@ window.initUserProfile = async () => {
     const pathSegments = window.location.pathname.split('/');
     const user_id = pathSegments[pathSegments.length - 1];
 
+    const loggedUserId = localStorage.getItem('id');
+    const isOwnProfile = parseInt(user_id) === parseInt(loggedUserId);
+
     try {
         const accessToken = localStorage.getItem('access');
 
@@ -40,7 +82,6 @@ window.initUserProfile = async () => {
         const userRes = await fetch(`/api/user-management/user-profile/${user_id}/`, {
             headers: { Authorization: `Bearer ${accessToken}` }
         });
-
         if (!userRes.ok) throw new Error('Falha ao carregar perfil');
 
         const userData = await userRes.json();
@@ -49,12 +90,10 @@ window.initUserProfile = async () => {
         const matchesRes = await fetch(`/api/game/match-history/${user_id}/`, {
             headers: { Authorization: `Bearer ${accessToken}` }
         });
-
         if (!matchesRes.ok) throw new Error('Falha ao carregar histórico');
 
         // Not implemented yet
         const matchesData = await matchesRes.json();
-        console.log(matchesData)
 
         // Atualizar estado
         state = { ...state, user: userData, matches: matchesData };
@@ -65,8 +104,9 @@ window.initUserProfile = async () => {
 
         // Preencher dados
         elements.avatar.src = userData.avatar
-            ? `/${userData.avatar}`
+            ? `http://localhost:8000${userData.avatar}`
             : '/static/client_pong/avatars/default.png';
+        elements.avatar.src += `?v=${new Date().getTime()}`;
 
         elements.username.textContent = userData.display_name;
         elements.wins.textContent = userData.wins || 0;
@@ -87,6 +127,15 @@ window.initUserProfile = async () => {
         </span>
       </li>
     `).join('');
+
+        if (isOwnProfile) {
+            document.getElementById('edit-profile-btn').classList.remove('d-none');
+            document.getElementById('edit-profile-btn').addEventListener('click', showEditForm);
+            document.getElementById('profile-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                saveProfileChanges(user_id);
+            });
+        }
 
     } catch (err) {
         console.error('Erro no perfil:', err);
