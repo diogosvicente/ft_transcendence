@@ -1,0 +1,30 @@
+/* static/client_pong/css/local_match.css */
+.game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem;
+}
+
+#pongCanvas {
+  background: #000;
+  border: 2px solid #fff;
+  border-radius: 5px;
+}
+
+.pong-header {
+  display: flex;
+  justify-content: space-between;
+  width: 800px;
+}
+
+.score-board {
+  font-size: 1.5rem;
+  gap: 2rem;
+  display: flex;
+}
+
+.controls {
+  text-align: center;
+}

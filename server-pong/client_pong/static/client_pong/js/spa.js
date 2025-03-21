@@ -197,9 +197,10 @@ const routes = [
   },
   {
     path: "^/pong/local-match$",
-    partial: "local_match.html",
-    script: "local_match.js",
+    partial: "local-match.html",
+    script: "local-match.js",
     initFunction: "initLocalMatch",
+    cleanupFunction: "cleanupLocalMatch",
     private: false,
     layout: "public",
   },
