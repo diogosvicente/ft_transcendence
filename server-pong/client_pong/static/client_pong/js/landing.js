@@ -140,7 +140,7 @@ window.initLanding = function() {
             initializeNotificationWebSocket(data.access, data.id, "handleLogin");
 
             // Redireciona e recarrega
-            window.location.href = "/home";
+            window.location.href = "/pong/home";
             window.location.reload();
           }
         } else {
@@ -179,7 +179,10 @@ window.initLanding = function() {
           localStorage.setItem("refresh", data.refresh);
           localStorage.setItem("id", data.id);
 
-          window.location.href = "/home";
+          // Opcional: Inicializar WebSocket após 2FA validado
+          initializeNotificationWebSocket(data.access, data.id, "handle2FA");
+
+          window.location.href = "/pong/home";
           window.location.reload();
         } else {
           showAlert(loginErrorAlert, data.error || "Código 2FA inválido.");
@@ -268,9 +271,9 @@ window.initLanding = function() {
         const data = await response.json();
         if (response.ok) {
           showAlert(registerSuccessAlert, "Usuário registrado com sucesso!");
-          // Alterna para aba de login
+          // Alterna para aba de login (exemplo)
           const loginTabBtn = document.getElementById("login-tab");
-          loginTabBtn.click();
+          if (loginTabBtn) loginTabBtn.click();
         } else {
           if (data.email) {
             showAlert(registerErrorAlert, "Este email já está em uso.");
