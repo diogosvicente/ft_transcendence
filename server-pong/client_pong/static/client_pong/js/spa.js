@@ -154,13 +154,13 @@ const routes = [
     path: "^/pong/home$",
     partial: "home.html",
     script: "home.js",
-    private: false,
+    initFunction: "initHome",
+    private: true,
     layout: "private",
   },
   {
     path: "^/pong/chat$",
     partial: "chat.html",
-    script: "chat.js",
     private: true,
     layout: "private",
   },
@@ -229,24 +229,12 @@ async function handleRoute() {
         return;
       }
 
-            // Exemplo para a rota /pong/home
-      if (route.path === "^/pong/home$") {
-        try {
-          await loadScript("home.js");
-          // Se quiser, chamar algo como window.initHome();
-        } catch (err) {
-          console.error("Erro ao carregar home.js:", err);
-        }
-      }
-
       // Para /pong/chat (rota do chat)
       if (route.path === "^/pong/chat$") {
         // Carrega scripts na ordem correta
         try {
           await loadScript("websocket.js");
-          await loadScript("userActions.js");
           await loadScript("playerList.js");
-          await loadScript("chat.js");
           console.log("✅ Scripts do chat carregados.");
 
           // Agora chamamos a função initChatGlobal() definida em chat.js

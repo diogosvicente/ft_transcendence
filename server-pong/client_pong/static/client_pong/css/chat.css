@@ -13,7 +13,7 @@ body {
   /* ========================= */
   .chat-container {
     display: flex;
-    max-width: 1200px;
+    max-width: 1000px;
     margin: 20px auto;
     padding: 20px;
     gap: 20px;
@@ -23,13 +23,14 @@ body {
   /* 🎮 Lista de Jogadores */
   /* ========================= */
   .players-list {
-    width: 30%;
+    width: 40%;
     background: white;
     border-radius: 8px;
     padding: 15px;
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
     overflow-y: auto;
-    max-height: 600px;
+    max-height: 400px;
+    flex-shrink: 0;
   }
   
   .list-title {
@@ -62,6 +63,15 @@ body {
     border: 1px solid #ddd;
   }
   
+  /* Avatar */
+  .user-avatar {
+    width: 60px;
+    height: 60px;
+    object-fit: cover; /* Garante que a imagem fique proporcional */
+    border-radius: 50%; /* Avatar redondo */
+    border: 2px solid #007bff; /* Borda azul */
+  }
+
   /* ========================= */
   /* 💬 Janela de Chat */
   /* ========================= */

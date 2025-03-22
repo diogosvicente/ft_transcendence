@@ -230,7 +230,7 @@
           console.log("[Global] Mensagem:", data);
           const msgDiv = document.createElement("div");
           msgDiv.classList.add("chat-message");
-          msgDiv.innerHTML = `<strong>${data.sender}</strong>: ${data.message}`;
+          msgDiv.innerHTML = `<strong>${data.display_name}</strong>: ${data.message}`;
           globalMessagesDiv.appendChild(msgDiv);
           globalMessagesDiv.scrollTop = globalMessagesDiv.scrollHeight;
         }
@@ -243,7 +243,7 @@
           }
           const msgDiv = document.createElement("div");
           msgDiv.classList.add("chat-message");
-          msgDiv.innerHTML = `<strong>${data.sender}</strong>: ${data.message}`;
+          msgDiv.innerHTML = `<strong>${data.display_name}</strong>: ${data.message}`;
           container.appendChild(msgDiv);
           container.scrollTop = container.scrollHeight;
         }
@@ -257,7 +257,7 @@
           const minId = Math.min(myId, targetUserId);
           const maxId = Math.max(myId, targetUserId);
           const roomName = `private_${minId}_${maxId}`;
-
+        
           if (!privateSockets[roomName]) {
             const socket = initializeWebSocket(roomName);
             if (!socket) {
@@ -267,20 +267,72 @@
             socket.roomName = roomName;
             privateSockets[roomName] = socket;
           }
-          createPrivateTab(roomName, targetUserId);
-          switchChatTab(roomName);
-          sendPrivateChatInvite(targetUserId, roomName);
+        
+          // createPrivateTab agora retorna uma Promise (ver abaixo)
+          createPrivateTab(roomName, targetUserId)
+            .then(() => {
+              // Agora que a aba (e o container de mensagens) foi criada, podemos trocar para ela
+              switchChatTab(roomName);
+              // E enviar o convite
+              sendPrivateChatInvite(targetUserId, roomName);
+            })
+            .catch(err => {
+              console.error("Erro ao criar a aba de chat privado:", err);
+            });
         };
+        
 
-        function createPrivateTab(roomName, targetUserId) {
+        // Função assíncrona que busca os dados do usuário (display_name) utilizando as views "friends" e "all-users"
+        async function getUserDisplayName(targetUserId) {
+          const API_BASE_URL = "http://127.0.0.1:8000";
+          const accessToken = localStorage.getItem("access");
+
+          try {
+            // Busca a lista de amigos
+            const friendsResponse = await fetch(`${API_BASE_URL}/api/chat/friends/`, {
+              headers: { Authorization: `Bearer ${accessToken}` }
+            });
+            const friendsData = await friendsResponse.json();
+            // Supondo que a resposta vem em: { friends: [ { user_id, display_name, ... }, ... ] }
+            const friendsList = friendsData.friends || [];
+
+            // Busca a lista de todos os usuários (não amigos)
+            const allUsersResponse = await fetch(`${API_BASE_URL}/api/chat/all-users/`, {
+              headers: { Authorization: `Bearer ${accessToken}` }
+            });
+            const allUsersData = await allUsersResponse.json();
+            // Supondo que a resposta vem em: { non_friends: [ { id, display_name, ... }, ... ] }
+            const allUsersList = allUsersData.non_friends || [];
+
+            // Tenta encontrar o usuário na lista de amigos (usando a propriedade "user_id")
+            let user = friendsList.find(u => parseInt(u.user_id, 10) === parseInt(targetUserId, 10));
+            // Se não encontrar, procura na lista de todos os usuários (usando a propriedade "id")
+            if (!user) {
+              user = allUsersList.find(u => parseInt(u.id, 10) === parseInt(targetUserId, 10));
+            }
+            return user ? user.display_name : `Usuário ${targetUserId}`;
+          } catch (error) {
+            console.error("Erro ao buscar o display name:", error);
+            return `Usuário ${targetUserId}`;
+          }
+        }
+
+        // Exemplo de uso na criação da aba de chat privado, de forma assíncrona
+        async function createPrivateTab(roomName, targetUserId) {
           if (document.querySelector(`.chat-tab[data-room="${roomName}"]`)) return;
 
+          // Obtém o display_name do usuário via fetch
+          const userDisplayName = await getUserDisplayName(targetUserId);
+
+          const chatTabsDiv = document.getElementById("chat-tabs");
           const tab = document.createElement("button");
           tab.classList.add("chat-tab");
           tab.dataset.room = roomName;
-          tab.innerHTML = `Chat c/ ${targetUserId} <span class="close-tab" data-room="${roomName}">&times;</span>`;
-
-          chatTabsDiv.appendChild(tab);
+          // Usa o nome obtido no rótulo da aba
+          tab.innerHTML = `Chat c/ ${userDisplayName} <span class="close-tab" data-room="${roomName}">&times;</span>`;
+          if (chatTabsDiv) {
+            chatTabsDiv.appendChild(tab);
+          }
 
           const chatWindow = document.querySelector(".chat-window");
           if (!chatWindow) return;
@@ -290,6 +342,7 @@
           privateDiv.style.display = "none";
           chatWindow.insertBefore(privateDiv, chatWindow.querySelector(".chat-input"));
         }
+        
 
         function sendPrivateChatInvite(targetUserId, roomName) {
           if (globalSocket && globalSocket.readyState === WebSocket.OPEN) {
@@ -428,7 +481,7 @@
   };
   
   window.viewProfile = function(targetUserId) {
-    alert(`Exibir perfil do usuário ${targetUserId}`);
+    window.open(`user-profile/${targetUserId}`, "_blank");
   };
 
 })();

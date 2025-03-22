@@ -79,7 +79,7 @@
   
           li.innerHTML = `
             <div class="player-header">
-              <img src="${playerAvatar}" class="player-avatar" />
+              <img src="${playerAvatar}" class="user-avatar" />
               <div class="player-details">
                 <p class="player-name">${playerName}</p>
                 <p class="player-status">
@@ -128,7 +128,6 @@
               <button title="Ver Perfil" onclick="viewProfile(${player.id})">👤</button>
               <button title="Adicionar Amigo" onclick="addFriend(${player.id})">➕</button>
               <button title="Bloquear" onclick="blockUser(${player.id})">🚫</button>
-              <button title="Conversar" onclick="openDirectChat(${player.id})">💬</button>
             `;
           default:
             return "";
