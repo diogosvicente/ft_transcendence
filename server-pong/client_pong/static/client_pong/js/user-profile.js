@@ -1,42 +1,78 @@
 // static/client_pong/js/user-profile.js
 
-// Mostrar formulário de edição
-function showEditForm() {
-    document.getElementById('edit-profile-form').classList.remove('d-none');
-    document.getElementById('profile-content').classList.add('d-none');
-}
-
-// Cancelar edição
-function cancelEdit() {
-    document.getElementById('edit-profile-form').classList.add('d-none');
-    document.getElementById('profile-content').classList.remove('d-none');
-}
-
 // Enviar alterações (exemplo básico)
 async function saveProfileChanges(user_id) {
     const newName = document.getElementById('display-name').value;
+    const newPassword = document.getElementById('new-password').value;
+    const confirmPassword = document.getElementById('confirm-password').value;
+    const enable2FA = document.getElementById('2fa-switch').checked;
     const avatarFile = document.getElementById('avatar-upload').files[0];
-    console.log(newName)
+
+    // Validação de senha
+    if (newPassword && newPassword !== confirmPassword) {
+        showError('As senhas não coincidem!');
+        return;
+    }
 
     try {
         const formData = new FormData();
         if (newName) formData.append('display_name', newName);
+        if (newPassword) formData.append('password', newPassword);
+        formData.append('is_2fa_verified', enable2FA);
         if (avatarFile) formData.append('avatar', avatarFile);
 
         const response = await fetch(`/api/user-management/user-profile/${user_id}/`, {
             method: 'PATCH',
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('access')}`
+                'Authorization': `Bearer ${localStorage.getItem('access')}`,
+                'X-CSRFToken': getCSRFToken(),
             },
             body: formData
         });
 
         if (response.ok) {
-            window.location.reload(); // Recarrega os dados atualizados
+            const updatedData = await response.json();
+
+            // Atualiza a UI com os novos dados
+            updateProfileUI(updatedData);
+
+            // Oculta o formulário e mostra o perfil novamente
+            document.getElementById('edit-profile-form').classList.add('d-none');
+            document.getElementById('profile-content').classList.remove('d-none');
+
+            showSuccess('Alterações salvas com sucesso!'); // Exemplo: toast ou mensagem
+        } else {
+            const errorData = await response.json();
+            showError(errorData.error || 'Erro ao atualizar perfil');
         }
     } catch (error) {
         console.error('Erro ao atualizar perfil:', error);
+        showError('Erro de conexão com o servidor');
     }
+}
+
+// Função para atualizar o perfil com os novos dados
+function updateProfileUI(updatedData) {
+    // Atualiza os campos do perfil
+    document.getElementById('profile-username').textContent = updatedData.display_name;
+    document.getElementById('stats-wins').textContent = updatedData.wins;
+    document.getElementById('stats-losses').textContent = updatedData.losses;
+    document.getElementById('stats-winrate').textContent = `${updatedData.winrate}%`;
+
+    // Atualiza o avatar (adiciona timestamp para evitar cache)
+    if (updatedData.avatar_url) {
+        const avatarImg = document.getElementById('profile-avatar');
+        avatarImg.src = updatedData.avatar_url + '?t=' + Date.now();
+    }
+
+    // Atualiza o switch de 2FA no perfil (se aplicável)
+    // (Você pode precisar de um elemento separado no perfil para exibir o status do 2FA)
+}
+
+// Função para carregar estado atual do 2FA
+function loadCurrentSettings(userData) {
+    document.getElementById('display-name').value = userData.display_name || '';
+    document.getElementById('2fa-switch').checked = userData.is_2fa_verified || false;
 }
 
 window.initUserProfile = async () => {
@@ -147,4 +183,45 @@ window.initUserProfile = async () => {
 function checkOwnProfile(userId) {
     const loggedId = localStorage.getItem('id');
     return parseInt(loggedId, 10) === parseInt(userId, 10);
+}
+
+function showError(message, duration = 5000) {
+    const errorElement = document.getElementById('profile-error');
+
+    // Define a mensagem e mostra o elemento
+    errorElement.textContent = message;
+    errorElement.classList.remove('d-none');
+
+    // Opcional: Esconde o erro após um tempo
+    setTimeout(() => {
+        errorElement.classList.add('d-none');
+    }, duration);
+}
+
+// Mostrar formulário de edição
+function showEditForm() {
+    document.getElementById('edit-profile-form').classList.remove('d-none');
+    document.getElementById('profile-content').classList.add('d-none');
+}
+
+// Cancelar edição
+function cancelEdit() {
+    // Oculta o formulário e mostra o perfil
+    document.getElementById('edit-profile-form').classList.add('d-none');
+    document.getElementById('profile-content').classList.remove('d-none');
+
+    // Opcional: Reseta os campos do formulário
+    document.getElementById('profile-form').reset();
+}
+
+function getCSRFToken() {
+    return document.cookie.split('csrftoken=')[1].split(';')[0];
+}
+
+function showSuccess(mensagem) {
+    const errorDiv = document.getElementById('profile-error');
+    errorDiv.textContent = mensagem;
+    errorDiv.classList.remove('d-none', 'alert-danger'); // Remove classe de erro
+    errorDiv.classList.add('alert-success'); // Adiciona classe de sucesso (verde)
+    setTimeout(() => errorDiv.classList.add('d-none'), 3000); // Esconde após 3 segundos
 }
