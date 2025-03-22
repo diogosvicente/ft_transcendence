@@ -123,7 +123,7 @@
         document.getElementById('game-over-message').classList.add('d-none');
       }
 
-      gameOverDiv.appendChild(restartBtn);
+      document.getElementById('game-over-message').appendChild(restartBtn);
     }
 
     showGameOverMessage(message) {
