@@ -8,6 +8,47 @@ from django.db import models
 from .models import BlockedUser
 from django.db.models import Q
 
+
+class AllUsersListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            user = request.user
+
+            # Obtém os IDs de amigos e bloqueados
+            friends = Friend.objects.filter(Q(user=user) | Q(friend=user)).values_list("user_id", "friend_id") or []
+            blocked_users = BlockedUser.objects.filter(Q(blocker=user) | Q(blocked=user)).values_list("blocker_id", "blocked_id") or []
+
+            # 🔥 Corrigindo: "Achatando" a lista de IDs
+            friends_ids = list(set([id for pair in friends for id in pair]))  # Converte tuplas em lista de IDs únicos
+            blocked_users_ids = list(set([id for pair in blocked_users for id in pair]))  # Mesmo para bloqueados
+
+            print(f"DEBUG - Amigos: {friends_ids}")  # 🛠 Log para debug
+            print(f"DEBUG - Bloqueados: {blocked_users_ids}")  # 🛠 Log para debug
+
+            # Exclui amigos e bloqueados
+            users = User.objects.exclude(id__in=friends_ids + blocked_users_ids + [user.id])
+
+            print(f"DEBUG - Usuários Encontrados: {users.count()}")  # 🛠 Log para debug
+
+            # Constrói a resposta JSON
+            user_list = [
+                {
+                    "id": u.id,
+                    "display_name": u.display_name,
+                    "avatar": u.avatar.url if u.avatar else None,
+                    "online_status": u.online_status,
+                }
+                for u in users
+            ]
+
+            return Response({"non_friends": user_list}, status=status.HTTP_200_OK)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()  # 🔥 Log completo do erro
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 # Lista de amigos
 class FriendsListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -319,29 +360,48 @@ class UnblockUserView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+
 class BlockedUsersIdsView(APIView):
     """
-    Retorna uma lista de IDs de usuários que bloquearam o usuário atual ou foram bloqueados por ele.
+    Retorna uma lista de usuários (id, display_name) que bloquearam o usuário atual
+    ou foram bloqueados por ele.
     """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         try:
-            user_id = request.user.id  # ID do usuário logado
+            user = request.user
+            user_id = user.id
 
-            # Consulta os registros de bloqueios envolvendo o usuário atual
+            # Consulta os registros de bloqueio envolvendo o usuário atual
             blocked_users = BlockedUser.objects.filter(
                 Q(blocked_id=user_id) | Q(blocker_id=user_id)
             )
 
-            # Coleta os IDs exclusivos de usuários relacionados aos bloqueios
+            # Coleta os IDs exclusivos dos usuários relacionados aos bloqueios,
+            # ignorando valores nulos e o próprio usuário
             blocked_ids = set()
             for blocked in blocked_users:
-                if blocked.blocked_id != user_id:
+                if blocked.blocked_id is not None and blocked.blocked_id != user_id:
                     blocked_ids.add(blocked.blocked_id)
-                if blocked.blocker_id != user_id:
+                if blocked.blocker_id is not None and blocked.blocker_id != user_id:
                     blocked_ids.add(blocked.blocker_id)
 
-            return Response({"blocked_users": list(blocked_ids)}, status=status.HTTP_200_OK)
+            # Busca os objetos User correspondentes aos IDs coletados
+            users = User.objects.filter(id__in=blocked_ids)
+
+            # Monta a lista com os dados necessários (id e display_name)
+            data = []
+            for u in users:
+                data.append({
+                    "id": u.id,
+                    "display_name": u.display_name,
+                })
+
+            return Response({"blocked_users": data}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+

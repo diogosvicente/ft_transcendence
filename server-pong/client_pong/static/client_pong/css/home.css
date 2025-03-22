@@ -1,0 +1,120 @@
+/* ========================= */
+/* 🌟 Estilos Gerais */
+/* ========================= */
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+}
+
+/* ========================= */
+/* 📌 Container Principal */
+/* ========================= */
+.container {
+    margin: 0 auto;
+    max-width: 100%;
+    padding-top: 20px;
+}
+
+/* ========================= */
+/* 🎉 Títulos Responsivos */
+/* ========================= */
+.h1-greeting {
+    font-size: 2rem;
+    margin-top: 10px;
+}
+
+.highlighted-name {
+    color: #0072ff;
+    font-weight: bold;
+}
+
+.h2-title {
+    font-size: 2rem;
+    color: #333;
+    margin-top: 10px;
+}
+
+hr {
+    width: 50%;
+    margin: 20px auto;
+}
+
+/* ========================= */
+/* 🏓 Seção para a bola ocupar toda a largura */
+/* ========================= */
+.pong-container {
+    width: 100vw; /* Ocupa toda a largura da tela */
+    overflow: hidden; /* Garante que nada saia da tela */
+    display: flex;
+    justify-content: flex-start; /* Mantém a bola alinhada corretamente */
+}
+
+/* ========================= */
+/* 🏓 Bola de Pong Responsiva */
+/* ========================= */
+.pong-ball {
+    width: 50px;
+    height: 50px;
+    background-color: #0072ff;
+    border-radius: 50%;
+    position: relative;
+    animation: pongBall 3s infinite linear;
+}
+
+/* 🔥 Correção da Animação */
+@keyframes pongBall {
+    0% { transform: translateX(0); }
+    50% { transform: translateX(calc(100vw - 100px)); }
+    100% { transform: translateX(0); }
+}
+
+/* ========================= */
+/* 🌟 Responsividade */
+/* ========================= */
+
+/* Para telas menores (celulares) */
+@media (max-width: 768px) {
+    .h1-greeting {
+        font-size: 1.8rem;
+    }
+
+    .h2-title {
+        font-size: 1.5rem;
+    }
+
+    .pong-ball {
+        width: 40px;
+        height: 40px;
+    }
+
+    @keyframes pongBall {
+        0% { transform: translateX(0); }
+        50% { transform: translateX(calc(100vw - 100px)); }
+        100% { transform: translateX(0); }
+    }
+}
+
+/* Para telas muito pequenas (menos de 480px) */
+@media (max-width: 480px) {
+    .h1-greeting {
+        font-size: 1.5rem;
+    }
+
+    .h2-title {
+        font-size: 1.2rem;
+    }
+
+    .pong-ball {
+        width: 30px;
+        height: 30px;
+    }
+
+    @keyframes pongBall {
+        0% { transform: translateX(0); }
+        50% { transform: translateX(calc(100vw - 100px)); }
+        100% { transform: translateX(0); }
+    }
+}
