@@ -31,7 +31,7 @@ function handleLogout() {
         localStorage.removeItem("access");
         localStorage.removeItem("refresh");
         localStorage.removeItem("id");
-        window.location.href = "/";
+        window.location.href = "/pong";
       });
   }
 }
