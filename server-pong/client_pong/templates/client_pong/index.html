@@ -8,8 +8,10 @@
   <!-- Bootstrap (opcional) -->
   <link rel="stylesheet" href="/static/client_pong/vendor/bootstrap/bootstrap.min.css">
 
+  <link rel="stylesheet" href="{% static 'client_pong/css/home.css' %}">
   <link rel="stylesheet" href="{% static 'client_pong/css/user-profile.css' %}">
   <link rel="stylesheet" href="{% static 'client_pong/css/local-match.css' %}">
+
 </head>
 <body>
   <!-- Navbar fixa para usuários logados -->
@@ -22,13 +24,18 @@
   <div id="toast-container"></div>
 
   <!-- Bootstrap JS (opcional) -->
-  <script src="/static/client_pong/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="{% static 'client_pong/vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
+
   <!-- Arquivo principal do SPA -->
   <script src="{% static 'client_pong/js/chat.js' %}"></script>
   <script src="{% static 'client_pong/js/playerList.js' %}"></script>
   <script src="{% static 'client_pong/js/home.js' %}"></script>
   <script src="{% static 'client_pong/js/local-match.js' %}"></script>
+  <script src="{% static 'client_pong/js/home.js' %}"></script>
   <script src="{% static 'client_pong/js/user-profile.js' %}"></script>
+  
+  <script src="https://unpkg.com/i18next@22.4.9/i18next.min.js"></script>
+  <script src="{% static 'client_pong/locales/i18n.js' %}"></script>
   <script src="{% static 'client_pong/js/spa.js' %}"></script>
   <!-- Script do WebSocketManager -->
   <script src="{% static 'client_pong/js/webSocketProvider.js' %}"></script>

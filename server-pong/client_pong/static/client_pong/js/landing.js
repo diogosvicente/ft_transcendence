@@ -14,7 +14,7 @@ window.initLanding = function() {
   const accessToken = localStorage.getItem("access");
   if (accessToken) {
     // Se já estiver logado, redireciona para /home
-    window.location.href = "/pong/home";
+    navigateTo("/pong/home");
     return; // Impede que continue a lógica de login/registro
   }
 
@@ -103,19 +103,8 @@ window.initLanding = function() {
       const email = loginEmail.value.trim();
       const password = loginPassword.value.trim();
 
-      // Verifica se email e senha foram preenchidos
-      if (!email || !password) {
-        showAlert(loginErrorAlert, "Email e senha são obrigatórios.");
-        return;
-      }
+      // (validações)...
 
-      // Verifica se email é válido
-      if (!isValidEmail(email)) {
-        showAlert(loginErrorAlert, "Email inválido.");
-        return;
-      }
-
-      // Faz POST via fetch()
       try {
         const response = await fetch(`${API_BASE_URL}/api/user-management/login/`, {
           method: "POST",
@@ -126,22 +115,28 @@ window.initLanding = function() {
 
         if (response.ok) {
           if (data.requires_2fa) {
-            // Mostra campo de 2FA + botão de validar
+            // 2FA requerido...
             is2FARequired = true;
             login2FAContainer.style.display = "block";
             showAlert(loginSuccessAlert, "2FA requerido. Insira o código.");
           } else {
+            // Login concluído
             showAlert(loginSuccessAlert, "Login efetuado com sucesso!");
             localStorage.setItem("access", data.access);
             localStorage.setItem("refresh", data.refresh);
             localStorage.setItem("id", data.id);
 
-            // Inicializa WebSockets
-            initializeNotificationWebSocket(data.access, data.id, "handleLogin");
+            // Chame aqui o WebSocketManager para conectar
+            if (window.WebSocketManager) {
+              window.WebSocketManager.initializeNotificationWebSocket(
+                data.access,
+                data.id,
+                "handleLogin"
+              );
+            }
 
-            // Redireciona e recarrega
-            window.location.href = "/pong/home";
-            window.location.reload();
+            // Redireciona via SPA
+            navigateTo("/pong/home");
           }
         } else {
           showAlert(loginErrorAlert, data.error || "Credenciais inválidas.");
@@ -173,17 +168,23 @@ window.initLanding = function() {
           body: JSON.stringify({ email, code }),
         });
         const data = await response.json();
+
         if (response.ok) {
           showAlert(loginSuccessAlert, "2FA validado com sucesso!");
           localStorage.setItem("access", data.access);
           localStorage.setItem("refresh", data.refresh);
           localStorage.setItem("id", data.id);
 
-          // Opcional: Inicializar WebSocket após 2FA validado
-          initializeNotificationWebSocket(data.access, data.id, "handle2FA");
+          // Conecta WebSocket após 2FA
+          if (window.WebSocketManager) {
+            window.WebSocketManager.initializeNotificationWebSocket(
+              data.access,
+              data.id,
+              "handle2FA"
+            );
+          }
 
-          window.location.href = "/pong/home";
-          window.location.reload();
+          navigateTo("/pong/home");
         } else {
           showAlert(loginErrorAlert, data.error || "Código 2FA inválido.");
         }
@@ -321,7 +322,7 @@ window.initLanding = function() {
   // ==========================================================
   if (btnLocalMatch) {
     btnLocalMatch.addEventListener("click", () => {
-      window.location.href = "/pong/local-match";
+      navigateTo("/pong/local-match");
     });
   }
 

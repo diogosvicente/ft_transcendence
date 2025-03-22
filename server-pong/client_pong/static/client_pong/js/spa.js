@@ -327,3 +327,16 @@ async function attachEventsAfterRender(route, params) {
 document.addEventListener("DOMContentLoaded", () => {
   handleRoute();
 });
+
+// Adicione esta função no final de spa.js
+window.reRenderCurrentRoute = function() {
+  // (Opcional) Se a rota atual tiver cleanupFunction, chamamos antes de recarregar
+  const path = window.location.pathname;
+  const route = routes.find(r => new RegExp(r.path).test(path));
+  if (route && route.cleanupFunction && window[route.cleanupFunction]) {
+    window[route.cleanupFunction]();
+  }
+
+  // Agora chamamos handleRoute() para recarregar a rota atual
+  handleRoute();
+};

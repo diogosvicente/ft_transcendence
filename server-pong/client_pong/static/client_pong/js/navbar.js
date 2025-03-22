@@ -38,7 +38,14 @@ function handleLogout() {
 
 // Função para alterar o idioma e atualizar o backend via PUT
 function handleLanguageChange(language) {
+  // Evita trocas repetidas se o idioma já for o mesmo
+  if (window.i18n && window.i18n.language === language) {
+    console.log(`Idioma já é '${language}', ignorando...`);
+    return;
+  }
+
   console.log("Mudando idioma para:", language);
+
   const userId = localStorage.getItem("id");
   const accessToken = localStorage.getItem("access");
 
@@ -60,9 +67,13 @@ function handleLanguageChange(language) {
       .then((data) => {
         const userLang = data.current_language;
         if (userLang && window.i18n && window.i18n.changeLanguage) {
-          window.i18n.changeLanguage(userLang);
+          window.i18n.changeLanguage(userLang).then(() => {
+            updateNavbarTranslations();  // <-- Atualiza a navbar aqui!
+          });
         } else if (window.i18n && window.i18n.changeLanguage) {
-          window.i18n.changeLanguage(language);
+          window.i18n.changeLanguage(language).then(() => {
+            updateNavbarTranslations();  // <-- Atualiza a navbar aqui também!
+          });
         }
       })
       .catch((error) => {
@@ -76,8 +87,15 @@ function handleLanguageChange(language) {
   }
 }
 
+// Variável para evitar re-inicializar a navbar
+let navbarInitialized = false;
+
 // Função para inicializar a navbar
 function initNavbar() {
+  // Se já inicializamos a navbar antes, não faça novamente
+  if (navbarInitialized) return;
+  navbarInitialized = true;
+
   // Seleciona os elementos do DOM
   const navbarAvatar = document.getElementById("navbarAvatar");
   const navbarProfileLink = document.getElementById("navbarProfileLink");
@@ -116,7 +134,9 @@ function initNavbar() {
         if (userGreeting) {
           // Se i18n estiver disponível, usa a tradução para a saudação; senão, usa "Olá"
           const greetingText =
-            window.i18n && window.i18n.t ? window.i18n.t("navbar.greeting") : "Olá";
+            window.i18n && window.i18n.t
+              ? window.i18n.t("navbar.greeting")
+              : "Olá";
           userGreeting.textContent = `${greetingText}, ${data.display_name || ""}`;
         }
       })
@@ -189,7 +209,41 @@ function initNavbar() {
       handleLanguageChange(lang);
     });
   });
+
+  if (window.i18n) {
+    window.i18n.on('initialized', updateNavbarTranslations);
+    window.i18n.on('languageChanged', updateNavbarTranslations);
+  }
+
+  if (window.i18n) {
+    window.i18n.on('initialized', () => {
+      updateNavbarTranslations();
+      updateStaticTranslations();
+    });
+    window.i18n.on('languageChanged', () => {
+      updateNavbarTranslations();
+      updateStaticTranslations();
+    });
+  }
 }
 
-// Inicializa a navbar quando o DOM estiver carregado
-// document.addEventListener("DOMContentLoaded", initNavbar);
+function updateNavbarTranslations() {
+  const userGreeting = document.querySelector(".user-greeting");
+  const displayName = localStorage.getItem("displayName") || "";
+  if (userGreeting && window.i18n && window.i18n.t) {
+    const greetingText = window.i18n.t("navbar.greeting");
+    userGreeting.textContent = `${greetingText}, ${displayName}`;
+  }
+}
+
+function updateStaticTranslations() {
+  document.querySelectorAll("[data-i18n]").forEach(element => {
+    const translationKey = element.getAttribute("data-i18n");
+    if (translationKey && window.i18n && window.i18n.t) {
+      element.childNodes.forEach(node => {
+        if (node.nodeType === Node.TEXT_NODE) node.nodeValue = '';
+      });
+      element.prepend(window.i18n.t(translationKey));
+    }
+  });
+}
