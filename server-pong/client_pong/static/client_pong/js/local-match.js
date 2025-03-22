@@ -11,7 +11,7 @@
       // Configurações do jogo
       this.config = {
         paddleWidth: 10,
-        paddleHeight: 100,
+        paddleHeight: 80,
         ballSize: 8,
         paddleSpeed: 5,
         ballSpeed: 3,
@@ -108,16 +108,22 @@
 
     gameOver(winner) {
       this.gameActive = false;
+
       this.showGameOverMessage(`${winner} venceu! 🎉`);
-      this.destroy();
 
       // Opcional: Botão de reinício
       const restartBtn = document.createElement('button');
       restartBtn.textContent = 'Jogar Novamente';
       restartBtn.className = 'btn btn-primary mt-3';
-      restartBtn.onclick = () => window.initLocalMatch();
 
-      document.getElementById('game-over-message').appendChild(restartBtn);
+      restartBtn.onclick = () => {
+        this.destroy();
+        window.cleanupLocalMatch();
+        window.initLocalMatch();
+        document.getElementById('game-over-message').classList.add('d-none');
+      }
+
+      gameOverDiv.appendChild(restartBtn);
     }
 
     showGameOverMessage(message) {
@@ -224,25 +230,45 @@
 
     destroy() {
       this.gameActive = false;
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+      // Remove eventos
       document.removeEventListener('keydown', this.handleKeyDown);
       document.removeEventListener('keyup', this.handleKeyUp);
+
+      // Reseta o placar
+      document.getElementById('player1-score').textContent = '0';
+      document.getElementById('player2-score').textContent = '0';
     }
   }
 
   window.PongGame = PongGame;
 
-  // Inicialização integrada com o SPA
   window.initLocalMatch = function() {
-    if (!window.pongInstance) {
-      window.pongInstance = new PongGame('pongCanvas');
-    }
+    // Limpa qualquer instância existente
+    window.cleanupLocalMatch();
+
+    // Recria o canvas e elementos do jogo
+    const gameContainer = document.getElementById('game-container');
+    gameContainer.innerHTML = `
+    <canvas id="pongCanvas" width="800" height="400"></canvas>
+    <div id="game-over-message" class="d-none text-center"></div>
+  `;
+
+    // Inicializa nova instância
+    window.pongInstance = new PongGame('pongCanvas');
   };
 
-  // Limpeza ao sair da página
   window.cleanupLocalMatch = function() {
-    if (!window.pongInstance) {
-      window.pongGame.destroy();
-      window.pongGame = null;
+    if (window.pongInstance) {
+      window.pongInstance.destroy();
+      window.pongInstance = null;
+    }
+
+    // Limpa o canvas e mensagens
+    const gameContainer = document.getElementById('game-container');
+    if (gameContainer) {
+      gameContainer.innerHTML = '';
     }
   };
 })();
