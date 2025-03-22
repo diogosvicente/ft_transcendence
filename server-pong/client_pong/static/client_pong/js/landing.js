@@ -1,6 +1,3 @@
-// Exemplo de endpoint base da API
-const API_BASE_URL = "http://127.0.0.1:8000"; // Ajuste conforme seu backend
-
 // Exemplo de função fictícia de WebSocket
 function initializeNotificationWebSocket(access, userId, context) {
   console.log("WebSocket init =>", { access, userId, context });

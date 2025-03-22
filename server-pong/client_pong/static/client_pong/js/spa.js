@@ -4,6 +4,9 @@
  * e carregamento dinâmico de scripts (landing.js, home.js, etc.).
  **************************************************************/
 
+// Defina a variável global API_BASE_URL
+const API_BASE_URL = "http://127.0.0.1:8000";
+
 /* ========== 1. Checagem de Autenticação ========== */
 function isAuthenticated() {
   return !!localStorage.getItem("access");
@@ -111,8 +114,8 @@ async function renderPrivateLayout(contentHTML, route) {
         localStorage.setItem(
           "avatarUrl",
           data.avatar
-            ? `/${data.avatar}`
-            : "/static/client_pong/avatars/default.png"
+            ? `${API_BASE_URL}${data.avatar}`
+            : `${API_BASE_URL}/media/avatars/default.png`
         );
         localStorage.setItem("displayName", data.display_name || "");
       }
@@ -151,8 +154,8 @@ const routes = [
     path: "^/pong/home$",
     partial: "home.html",
     script: "home.js",
-    initFunction: "initHome",
-    private: false,
+    initFunction: null,
+    private: true,
     layout: "private",
   },
   {
@@ -287,8 +290,6 @@ async function attachEventsAfterRender(route, params) {
       await loadScript(route.script);
       if (route.initFunction && window[route.initFunction]) {
         window[route.initFunction]();
-      } else {
-        console.warn(`Função de init não definida: ${route.initFunction}`);
       }
     } catch (err) {
       console.error(`Erro ao carregar script ${route.script}:`, err);
@@ -296,13 +297,13 @@ async function attachEventsAfterRender(route, params) {
   }
 
   // 8.2. Seletor de idioma (opcional, caso não esteja no navbar.js)
-  document.querySelectorAll("[data-lang]").forEach((langEl) => {
-    langEl.addEventListener("click", () => {
-      const lang = langEl.getAttribute("data-lang");
-      console.log("Mudando idioma para:", lang);
-      // Implemente a lógica de troca de idioma, se necessário
-    });
-  });
+  // document.querySelectorAll("[data-lang]").forEach((langEl) => {
+  //   langEl.addEventListener("click", () => {
+  //     const lang = langEl.getAttribute("data-lang");
+  //     console.log("Mudando idioma para:", lang);
+  //     // Implemente a lógica de troca de idioma, se necessário
+  //   });
+  // });
 }
 
 /* ========== 9. Início da aplicação ========== */
