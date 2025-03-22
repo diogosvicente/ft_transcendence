@@ -54,6 +54,7 @@
   <div id="edit-profile-form" class="card mb-4 d-none">
     <div class="card-body">
       <h5 class="card-title">Editar Perfil</h5>
+
       <form id="profile-form">
         <div class="mb-3">
           <label for="display-name" class="form-label">Nome de exibição</label>
@@ -66,11 +67,29 @@
           <div class="form-text">Formatos suportados: JPG, PNG, GIF</div>
         </div>
 
+        <div class="mb-3">
+          <label for="new-password" class="form-label">Nova Senha</label>
+          <input type="password" class="form-control" id="new-password" autocomplete="new-password" minlength="8">
+          <div class="form-text">Deixe em branco para não alterar</div>
+        </div>
+
+        <div class="mb-3">
+          <label for="confirm-password" class="form-label">Confirmar Nova Senha</label>
+          <input type="password" class="form-control" id="confirm-password" autocomplete="new-password">
+        </div>
+
+        <!-- Switch 2FA -->
+        <div class="mb-3 form-check form-switch">
+          <input type="checkbox" class="form-check-input" id="2fa-switch">
+          <label class="form-check-label" for="2fa-switch">Autenticação em Dois Fatores (2FA)</label>
+        </div>
+
         <div class="d-flex gap-2">
           <button type="button" class="btn btn-secondary" onclick="cancelEdit()">Cancelar</button>
           <button type="submit" class="btn btn-primary">Salvar Alterações</button>
         </div>
       </form>
+
     </div>
   </div>
 </div>

@@ -11,10 +11,11 @@
       // Configurações do jogo
       this.config = {
         paddleWidth: 10,
-        paddleHeight: 100,
+        paddleHeight: 80,
         ballSize: 8,
         paddleSpeed: 5,
-        ballSpeed: 3
+        ballSpeed: 3,
+        targetScore: 5,
       };
 
       // Estado do jogo
@@ -57,7 +58,7 @@
     }
 
     update() {
-      if (this.gameState.paused) return;
+      if (this.gameState.paused || !this.gameActive) return;
 
       // Movimento das raquetes
       if (this.keys['w']) this.gameState.player1Y -= this.config.paddleSpeed;
@@ -94,9 +95,41 @@
         this.resetBall();
       }
 
+      if (this.gameState.score1 >= this.config.targetScore) {
+        this.gameOver('Jogador 1');
+      } else if (this.gameState.score2 >= this.config.targetScore) {
+        this.gameOver('Jogador 2');
+      }
+
       // Atualizar placar
       document.getElementById('player1-score').textContent = this.gameState.score1;
       document.getElementById('player2-score').textContent = this.gameState.score2;
+    }
+
+    gameOver(winner) {
+      this.gameActive = false;
+
+      this.showGameOverMessage(`${winner} venceu! 🎉`);
+
+      // Opcional: Botão de reinício
+      const restartBtn = document.createElement('button');
+      restartBtn.textContent = 'Jogar Novamente';
+      restartBtn.className = 'btn btn-primary mt-3';
+
+      restartBtn.onclick = () => {
+        this.destroy();
+        window.cleanupLocalMatch();
+        window.initLocalMatch();
+        document.getElementById('game-over-message').classList.add('d-none');
+      }
+
+      document.getElementById('game-over-message').appendChild(restartBtn);
+    }
+
+    showGameOverMessage(message) {
+      const gameOverDiv = document.getElementById('game-over-message');
+      gameOverDiv.innerHTML = `<h3 class="text-center">${message}</h3>`;
+      gameOverDiv.classList.remove('d-none');
     }
 
     checkPaddleCollision() {
@@ -197,25 +230,45 @@
 
     destroy() {
       this.gameActive = false;
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+      // Remove eventos
       document.removeEventListener('keydown', this.handleKeyDown);
       document.removeEventListener('keyup', this.handleKeyUp);
+
+      // Reseta o placar
+      document.getElementById('player1-score').textContent = '0';
+      document.getElementById('player2-score').textContent = '0';
     }
   }
 
   window.PongGame = PongGame;
 
-  // Inicialização integrada com o SPA
   window.initLocalMatch = function() {
-    if (!window.pongInstance) {
-      window.pongInstance = new PongGame('pongCanvas');
-    }
+    // Limpa qualquer instância existente
+    window.cleanupLocalMatch();
+
+    // Recria o canvas e elementos do jogo
+    const gameContainer = document.getElementById('game-container');
+    gameContainer.innerHTML = `
+    <canvas id="pongCanvas" width="800" height="400"></canvas>
+    <div id="game-over-message" class="d-none text-center"></div>
+  `;
+
+    // Inicializa nova instância
+    window.pongInstance = new PongGame('pongCanvas');
   };
 
-  // Limpeza ao sair da página
   window.cleanupLocalMatch = function() {
-    if (!window.pongInstance) {
-      window.pongGame.destroy();
-      window.pongGame = null;
+    if (window.pongInstance) {
+      window.pongInstance.destroy();
+      window.pongInstance = null;
+    }
+
+    // Limpa o canvas e mensagens
+    const gameContainer = document.getElementById('game-container');
+    if (gameContainer) {
+      gameContainer.innerHTML = '';
     }
   };
 })();
