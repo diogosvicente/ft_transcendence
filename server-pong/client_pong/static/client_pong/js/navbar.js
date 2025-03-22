@@ -246,5 +246,4 @@ function updateStaticTranslations() {
       element.prepend(window.i18n.t(translationKey));
     }
   });
-
 }

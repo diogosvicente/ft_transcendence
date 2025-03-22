@@ -154,7 +154,7 @@ const routes = [
     path: "^/pong/home$",
     partial: "home.html",
     script: "home.js",
-    initFunction: null,
+    initFunction: "initHome",
     private: true,
     layout: "private",
   },
