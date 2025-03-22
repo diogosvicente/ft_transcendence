@@ -11,3 +11,7 @@ urlpatterns = [
     path('api/game/', include('game.urls')),  # App Game
     path('pong/', include('client_pong.urls')),  # App Frontend => client_pong
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+

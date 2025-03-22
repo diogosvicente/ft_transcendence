@@ -14,7 +14,8 @@
         paddleHeight: 100,
         ballSize: 8,
         paddleSpeed: 5,
-        ballSpeed: 3
+        ballSpeed: 3,
+        targetScore: 5,
       };
 
       // Estado do jogo
@@ -57,7 +58,7 @@
     }
 
     update() {
-      if (this.gameState.paused) return;
+      if (this.gameState.paused || !this.gameActive) return;
 
       // Movimento das raquetes
       if (this.keys['w']) this.gameState.player1Y -= this.config.paddleSpeed;
@@ -94,9 +95,35 @@
         this.resetBall();
       }
 
+      if (this.gameState.score1 >= this.config.targetScore) {
+        this.gameOver('Jogador 1');
+      } else if (this.gameState.score2 >= this.config.targetScore) {
+        this.gameOver('Jogador 2');
+      }
+
       // Atualizar placar
       document.getElementById('player1-score').textContent = this.gameState.score1;
       document.getElementById('player2-score').textContent = this.gameState.score2;
+    }
+
+    gameOver(winner) {
+      this.gameActive = false;
+      this.showGameOverMessage(`${winner} venceu! 🎉`);
+      this.destroy();
+
+      // Opcional: Botão de reinício
+      const restartBtn = document.createElement('button');
+      restartBtn.textContent = 'Jogar Novamente';
+      restartBtn.className = 'btn btn-primary mt-3';
+      restartBtn.onclick = () => window.initLocalMatch();
+
+      document.getElementById('game-over-message').appendChild(restartBtn);
+    }
+
+    showGameOverMessage(message) {
+      const gameOverDiv = document.getElementById('game-over-message');
+      gameOverDiv.innerHTML = `<h3 class="text-center">${message}</h3>`;
+      gameOverDiv.classList.remove('d-none');
     }
 
     checkPaddleCollision() {
