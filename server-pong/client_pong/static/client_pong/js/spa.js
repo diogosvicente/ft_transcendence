@@ -233,6 +233,7 @@ async function handleRoute() {
       if (route.path === "^/pong/chat$") {
         // Carrega scripts na ordem correta
         try {
+          await loadScript("webSocketProvider.js");
           await loadScript("websocket.js");
           await loadScript("playerList.js");
           console.log("✅ Scripts do chat carregados.");
