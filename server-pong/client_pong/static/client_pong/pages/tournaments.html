@@ -1,37 +1,70 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Criar Torneio</title>
-    <link rel="stylesheet" href="/static/client_pong/css/tournaments.css" />
+  <meta charset="UTF-8">
+  <title>Lista de Torneios</title>
+  <link rel="stylesheet" href="/static/client_pong/css/tournaments.css" />
 </head>
 <body>
-    <header>
-        <h1>Criar Torneio</h1>
-    </header>
-    <main>
-        <!-- Formulário para criar torneio -->
-        <section id="create-tournament">
-            <h2>Preencha as informações do torneio</h2>
-            <form id="create-tournament-form">
-                <label for="tournament-name">Nome do Torneio:</label>
-                <input type="text" id="tournament-name" name="name" required placeholder="Nome do torneio">
+  <header>
+    <h1>Lista de Torneios</h1>
+  </header>
 
-                <label for="tournament-alias">Alias do Criador:</label>
-                <input type="text" id="tournament-alias" name="alias" required placeholder="Alias do Criador">
+  <main class="container">
+    <!-- Mensagens de erro ou sucesso -->
+    <div id="error-message" style="color: red;"></div>
+    <div id="success-message" style="color: green;"></div>
 
-                <button type="submit" id="create-tournament-btn" class="botao-inscricao">Criar Torneio</button>
-            </form>
-            <div id="error-message" style="color: red;"></div>
-            <div id="success-message" style="color: green;"></div>
-        </section>
+    <!-- Seção para exibir Tabela de Torneios -->
+    <section id="tournaments-table-section" style="display: block;">
+      <div>
+        <!-- Botões de filtro -->
+        <button class="btn-filtro" data-filter="all">Todos</button>
+        <button class="btn-filtro" data-filter="planned">Planned</button>
+        <button class="btn-filtro" data-filter="ongoing">Ongoing</button>
+        <button class="btn-filtro" data-filter="completed">Completed</button>
 
-        <!-- Seção para listar os torneios criados -->
-        <section id="torneios">
-            <!-- Torneios serão carregados aqui -->
-        </section>
-    </main>
-    <script src="/static/client_pong/js/tournaments.js"></script>
+        <!-- Botão para exibir form de criação -->
+        <button id="toggle-create-form" style="margin-left: 1rem;">Criar Novo Torneio</button>
+      </div>
+
+      <!-- Formulário de criação de torneio (inicialmente oculto) -->
+      <div id="create-tournament-section" style="margin-top: 1rem; display: none;">
+        <input type="text" id="new-tournament-name" placeholder="Nome do Torneio" />
+        <input type="text" id="new-tournament-alias" placeholder="Alias do Criador" />
+        <button id="create-tournament-btn">Criar Torneio</button>
+      </div>
+
+      <table id="tournaments-table" border="1" cellpadding="8" style="margin-top: 1rem; width: 100%;">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nome</th>
+            <th>Criador</th>
+            <th>Criado em</th>
+            <th>Participantes</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tournaments-body">
+          <!-- Linhas geradas dinamicamente -->
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Seção para exibir Detalhes de um Torneio -->
+    <section id="tournament-details" style="display: none; margin-top: 2rem;">
+      <button id="back-to-list">Voltar para Lista</button>
+      <h2>Detalhes do Torneio</h2>
+      <div id="tournament-details-info"></div>
+      <h3>Participantes</h3>
+      <div id="participants-details"></div>
+      <h3>Partidas</h3>
+      <div id="matches-details"></div>
+    </section>
+  </main>
+
+  <script src="/static/client_pong/js/tournaments.js"></script>
 </body>
 </html>

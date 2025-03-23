@@ -1,47 +1,186 @@
+/* Corpo e estrutura básica */
 body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #f4f4f4;
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f9f9f9;
 }
 
 header {
-    background-color: #333;
-    color: #fff;
-    padding: 1rem;
-    text-align: center;
+  background-color: #333;
+  color: #fff;
+  padding: 1rem;
+  text-align: center;
 }
 
-#torneios {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    padding: 2rem;
+h1, h2, h3 {
+  margin: 1rem 0;
 }
 
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* Mensagens de erro e sucesso */
+#error-message {
+  margin-bottom: 1rem;
+  font-weight: bold;
+}
+
+#success-message {
+  margin-bottom: 1rem;
+  font-weight: bold;
+  color: green;
+}
+
+/* Seções de torneios e detalhes */
+#tournaments-table-section,
+#tournament-details {
+  background: #fff;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-top: 1rem;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+/* Tabela de torneios */
+#tournaments-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+#tournaments-table th,
+#tournaments-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+#tournaments-table th {
+  background: #eee;
+  text-align: left;
+}
+
+/* Botões de filtro */
+.btn-filtro {
+  background: #ddd;
+  margin-right: 0.5rem;
+  border: none;
+  padding: 0.5rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-filtro:hover {
+  background: #ccc;
+}
+
+/* Botão para exibir/ocultar formulário de criação */
+#toggle-create-form {
+  background: #28a745;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+#toggle-create-form:hover {
+  background: #218838;
+}
+
+/* Seção de criação de torneio */
+#create-tournament-section {
+  background: #f2f2f2;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-top: 1rem;
+}
+
+#create-tournament-section input {
+  margin-right: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding: 0.4rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+#create-tournament-btn {
+  background: #007bff;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#create-tournament-btn:hover {
+  background: #0069d9;
+}
+
+/* Ações na tabela de torneios */
+#tournaments-body button {
+  margin-right: 4px;
+  border: none;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+  background: #e2e2e2;
+}
+
+#tournaments-body button:hover {
+  background: #ccc;
+}
+
+/* Seção de detalhes do torneio */
+#tournament-details-info,
+#participants-details,
+#matches-details {
+  margin-top: 1rem;
+}
+
+#participants-details table,
+#matches-details table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+#participants-details th, #participants-details td,
+#matches-details th, #matches-details td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+#participants-details th,
+#matches-details th {
+  background: #eee;
+  text-align: left;
+}
+
+/* Botão de voltar */
+#back-to-list {
+  background: #ffc107;
+  color: #000;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#back-to-list:hover {
+  background: #e0a800;
+}
+
+/* Estiliza cada torneio como um "cartão" (opcional) */
 .torneio {
-    background-color: #fff;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    margin: 1rem;
-    padding: 1rem;
-    width: 300px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.torneio h2 {
-    margin-top: 0;
-}
-
-.botao-inscricao {
-    background-color: #28a745;
-    color: #fff;
-    border: none;
-    padding: 0.5rem 1rem;
-    cursor: pointer;
-    border-radius: 3px;
-}
-
-.botao-inscricao:hover {
-    background-color: #218838;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  box-shadow: 0 0 5px rgba(0,0,0,0);
 }
