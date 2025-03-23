@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>WebSocket Manager - SPA</title>
+  <style>
+    /* Exemplos de estilos – mantenha/ajuste as classes conforme seu projeto */
+    .toast {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      background: #333;
+      color: #fff;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 4px;
+      opacity: 0.9;
+      font-family: sans-serif;
+    }
+    .toast.info {
+      background: #2196F3;
+    }
+    .toast.success {
+      background: #4CAF50;
+    }
+    .toast.error {
+      background: #F44336;
+    }
+    .challenge-toast {
+      position: fixed;
+      bottom: 80px;
+      right: 10px;
+      background: #555;
+      color: #fff;
+      padding: 10px;
+      border-radius: 4px;
+      opacity: 0.95;
+      font-family: sans-serif;
+    }
+    .challenge-toast p {
+      margin: 0 0 10px 0;
+    }
+    .challenge-toast button {
+      margin-right: 5px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Conteúdo da sua SPA -->
+  <div id="app">
+    <!-- Aqui vai o conteúdo do seu aplicativo -->
+  </div>
+
+  <!-- Container para exibição de toasts -->
+  <div id="toast-container"></div>
+</body>
+</html>

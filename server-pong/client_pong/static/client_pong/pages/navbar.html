@@ -10,29 +10,26 @@
       />
       <div>
         <!-- “Jogo Pong” com o ícone da raquete -->
-        <span class="user-title d-block">
+        <span class="user-title d-block" data-i18n="navbar.app_title">
           Jogo Pong <i class="fa fa-table-tennis ms-2"></i>
         </span>
-        <!-- Saudação (ex.: “Olá, Fulano”) atualizada via JS -->
-        <span class="user-greeting" style="color: gray; font-size: 0.9rem;">
-          Olá, Usuário
-        </span>
+        <!-- Saudação atualizada via JS -->
+        <span class="user-greeting" data-i18n="navbar.greeting"></span>
       </div>
     </a>
 
     <!-- CENTRO: Links de Navegação -->
     <div class="d-flex gap-3">
-      <a href="/pong/chat" data-link class="nav-link p-0">Chat</a>
-      <a href="/pong/tournaments" data-link class="nav-link p-0">Torneios</a>
-      <!-- O link do perfil será atualizado dinamicamente via JS -->
-      <a href="/pong/user-profile/0" data-link id="navbarProfileLink" class="nav-link p-0">Perfil</a>
-      <a href="/pong/ranking" data-link class="nav-link p-0">Ranking</a>
+      <a href="/pong/chat" data-link class="nav-link p-0" data-i18n="navbar.chat">Chat</a>
+      <a href="/pong/tournaments" data-link class="nav-link p-0" data-i18n="navbar.tournaments">Torneios</a>
+      <a href="/pong/user-profile/0" data-link id="navbarProfileLink" class="nav-link p-0" data-i18n="navbar.profile">Perfil</a>
+      <a href="/pong/ranking" data-link class="nav-link p-0" data-i18n="navbar.ranking">Ranking</a>
     </div>
 
     <!-- DIREITA: Seletor de idioma + Botão Sair -->
     <div class="d-flex align-items-center gap-3">
       <div class="language-selector d-flex gap-2">
-        <div class="language-card" onclick="handleLanguageChange('pt_BR')">
+        <div class="language-card" data-lang="pt_BR">
           <img
             src="/static/client_pong/images/brazil-flag-round-circle-icon.svg"
             alt="Português (Brasil)"
@@ -40,7 +37,7 @@
           />
           <span class="language-text">PT-BR</span>
         </div>
-        <div class="language-card" onclick="handleLanguageChange('en')">
+        <div class="language-card" data-lang="en">
           <img
             src="/static/client_pong/images/uk-flag-round-circle-icon.svg"
             alt="English"
@@ -48,7 +45,7 @@
           />
           <span class="language-text">EN</span>
         </div>
-        <div class="language-card" onclick="handleLanguageChange('es')">
+        <div class="language-card" data-lang="es">
           <img
             src="/static/client_pong/images/spain-flag-round-icon.svg"
             alt="Español"
@@ -57,7 +54,7 @@
           <span class="language-text">ES</span>
         </div>
       </div>
-      <button class="btn btn-outline-secondary" id="btnLogout" onclick="handleLogout()">
+      <button class="btn btn-outline-secondary" id="btnLogout" onclick="handleLogout()" data-i18n="navbar.logout">
         Sair
       </button>
     </div>

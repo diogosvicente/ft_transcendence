@@ -9,10 +9,12 @@ from .views import (
     BlockedUsersListView,
     PendingFriendRequestsView,
     UnblockUserView,
-    BlockedUsersIdsView
+    BlockedUsersIdsView,
+    AllUsersListView
 )
 
 urlpatterns = [
+    path('all-users/', AllUsersListView.as_view(), name='all-users'),
     path('friends/', FriendsListView.as_view(), name='chat-friends'),
     path('add-friend/', AddFriendView.as_view(), name='add-friend'),
     path('remove-friend/', RemoveFriendView.as_view(), name='remove-friend'),  # Rota existente

@@ -66,8 +66,8 @@ window.initRanking = async () => {
         const avatarCell = document.createElement("td");
         const avatar = document.createElement("img");
         avatar.src = user.avatar
-          ? `/${user.avatar}`
-          : "/static/client_pong/avatars/default.png";
+          ? `${API_BASE_URL}${user.avatar}`
+          : `${API_BASE_URL}/media/avatars/default.png`;
         avatar.alt = user.display_name;
         avatar.className = "img-thumbnail avatar-sm"; // Bootstrap class for small avatar
         avatar.style.width = "50px"; // Ensure small size
