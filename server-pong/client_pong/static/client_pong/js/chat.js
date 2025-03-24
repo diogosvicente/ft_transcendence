@@ -1,6 +1,4 @@
 (function() {
-  console.log("✅ [chat.js] Carregado...");
-
   // Obtém o loggedID do localStorage (como string) e também sua versão numérica para comparações
   const loggedID = localStorage.getItem("id");
   const loggedIDNum = parseInt(loggedID || "0", 10);
@@ -85,7 +83,6 @@
 
     fetchBlockedUsers().then(() => {
       waitForChatElements().then(({ chatTabsDiv, globalMessagesDiv, messageInput, sendMessageBtn }) => {
-        console.log("✅ Elementos do chat encontrados, prosseguindo...");
 
         // Conecta ao chat global
         globalSocket = initializeWebSocket("global");
@@ -307,11 +304,9 @@
             console.warn("Global socket não está aberto para enviar convite.");
           }
         }
-  
-        console.log("✅ Chat Unificado (Global + Privado) inicializado (com polling).");
       })
       .catch(err => {
-        console.error("❌ Erro ao aguardar elementos do chat:", err);
+        console.error("Erro ao aguardar elementos do chat:", err);
       });
     });
   };
@@ -332,9 +327,7 @@
     .then(r => r.json())
     .then(data => {
       alert(data.message || data.error || "Solicitação enviada.");
-      // Notificação para o remetente: "Você enviou uma solicitação de amizade."
       sendNotification("notification", "addFriend", loggedID, targetUserId, "Você enviou uma solicitação de amizade.", { sender_id: loggedID, receiver_id: targetUserId });
-      // Notificação para o destinatário: "Você recebeu uma solicitação de amizade."
       sendNotification("notification", "addFriend", loggedID, targetUserId, "Você recebeu uma solicitação de amizade.", { sender_id: loggedID, receiver_id: targetUserId });
       if (window.fetchPlayers) window.fetchPlayers();
     })
@@ -371,9 +364,7 @@
     .then(r => r.json())
     .then(data => {
       alert(data.message || data.error || "Usuário bloqueado.");
-      // Notificação para o remetente: "Você bloqueou um usuário."
       sendNotification("notification", "blockUser", loggedID, targetUserId, "Você bloqueou um usuário.", { sender_id: loggedID, receiver_id: targetUserId });
-      // Notificação para o destinatário: "Você foi bloqueado."
       sendNotification("notification", "blockUser", loggedID, targetUserId, "Você foi bloqueado.", { sender_id: loggedID, receiver_id: targetUserId });
       if (window.fetchPlayers) window.fetchPlayers();
     })
