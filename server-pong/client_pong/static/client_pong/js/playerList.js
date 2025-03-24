@@ -11,9 +11,6 @@
   // Exponha a função fetchPlayers se quiser chamá-la externamente
   window.fetchPlayers = fetchPlayers;
 
-  // =========================
-  // 1) initPlayerList
-  // =========================
   window.initPlayerList = function() {
     const loadingEl = document.getElementById("player-list-loading");
     const errorEl   = document.getElementById("player-list-error");
@@ -113,7 +110,7 @@
 
       li.innerHTML = `
         <div class="player-header">
-          <img src="${playerAvatar}" class="user-avatar" />
+          <img src="${playerAvatar}" class="user-list-avatar" />
           <div class="player-details">
             <p class="player-name">${playerName}</p>
             <p class="player-status">
@@ -138,14 +135,14 @@
           <button title="Ver Perfil" onclick="viewProfile(${player.user_id})">👤</button>
           <button title="Conversar" onclick="openDirectChat(${player.user_id})">💬</button>
           <button title="Convidar" onclick="inviteToGame(${player.user_id})">🎮</button>
-          <button title="Desfazer Amizade" onclick="removeFriend(${player.id})">❌</button>
+          <button title="Desfazer Amizade" onclick="removeFriend(${player.id}, ${player.user_id})">❌</button>
           <button title="Bloquear" onclick="blockUser(${player.user_id})">🚫</button>
         `;
       case "pending-requests":
         if (player.direction === "received") {
           return `
-            <button title="Aceitar" onclick="acceptFriendRequest(${player.id})">✔</button>
-            <button title="Rejeitar" onclick="rejectFriendRequest(${player.id})">❌</button>
+            <button title="Aceitar" onclick="acceptFriendRequest(${player.id}, ${player.user_id})">✔</button>
+            <button title="Rejeitar" onclick="rejectFriendRequest(${player.id}, ${player.user_id})">❌</button>
           `;
         } else {
           return `
@@ -155,7 +152,7 @@
       case "blocked-users":
         return `
           <button title="Ver Perfil" onclick="viewProfile(${player.id})">👤</button>
-          <button title="Desbloquear" onclick="unblockUser(${player.blocked_record_id})">🔓</button>
+          <button title="Desbloquear" onclick="unblockUser(${player.blocked_record_id}, ${player.id})">🔓</button>
         `;
       case "all-users":
         return `

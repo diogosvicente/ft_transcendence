@@ -1,12 +1,7 @@
 /* ========================= */
 /* 🌟 Estilos Gerais */
 /* ========================= */
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f8f9fa;
-    margin: 0;
-    padding: 0;
-  }
+
   
   /* ========================= */
   /* 📌 Container Principal */
@@ -64,7 +59,7 @@ body {
   }
   
   /* Avatar */
-  .user-avatar {
+  .user-list-avatar {
     width: 45px; /* Menor */
     height: 45px;
     border-radius: 50%;
@@ -117,6 +112,7 @@ body {
     display: flex;
     margin-top: 10px;
   }
+
   #message-input {
     flex-grow: 1;
     padding: 8px;
