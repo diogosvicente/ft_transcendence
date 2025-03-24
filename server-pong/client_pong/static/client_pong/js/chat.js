@@ -1,18 +1,12 @@
 (function() {
-  console.log("✅ [chat.js] Carregado...");
-
-  // Obtém o loggedID do localStorage (como string) e também sua versão numérica para comparações
+ 
   const loggedID = localStorage.getItem("id");
   const loggedIDNum = parseInt(loggedID || "0", 10);
 
-  // Variável global para armazenar detalhes dos usuários bloqueados
   window.blockedUsersDetails = window.blockedUsersDetails || [];
 
-  // Socket do chat global
   let globalSocket = null;
-  // Objeto para guardar sockets privados: { "private_1_2": WebSocket, ... }
   const privateSockets = {};
-  // Sala ativa atualmente ("global" ou "private_x_y")
   let activeChatRoom = "global";
 
   // Configurações de API
@@ -31,9 +25,6 @@
     });
   };
 
-  // ------------------------------------------------------------------
-  // Função para buscar a lista completa de bloqueados
-  // ------------------------------------------------------------------
   function fetchBlockedUsers() {
     return fetch(`${API_BASE_URL}/api/chat/blocked-users-ids-list/`, {
       headers: { Authorization: `Bearer ${accessToken}` }
@@ -51,9 +42,6 @@
       .catch(err => console.error("Erro ao buscar lista de bloqueados:", err));
   }
 
-  // ------------------------------------------------------------------
-  // Função de polling para aguardar os elementos do chat no DOM
-  // ------------------------------------------------------------------
   function waitForChatElements(timeout = 5000) {
     return new Promise((resolve, reject) => {
       const start = Date.now();
@@ -77,15 +65,11 @@
     });
   }
 
-  // ------------------------------------------------------------------
-  // Inicialização Unificada do Chat (com Polling)
-  // ------------------------------------------------------------------
   window.initChatGlobal = function() {
     console.log("✅ Iniciando Chat");
 
     fetchBlockedUsers().then(() => {
       waitForChatElements().then(({ chatTabsDiv, globalMessagesDiv, messageInput, sendMessageBtn }) => {
-        console.log("✅ Elementos do chat encontrados, prosseguindo...");
 
         // Conecta ao chat global
         globalSocket = initializeWebSocket("global");
@@ -307,11 +291,9 @@
             console.warn("Global socket não está aberto para enviar convite.");
           }
         }
-  
-        console.log("✅ Chat Unificado (Global + Privado) inicializado (com polling).");
       })
       .catch(err => {
-        console.error("❌ Erro ao aguardar elementos do chat:", err);
+        console.error("Erro ao aguardar elementos do chat:", err);
       });
     });
   };
@@ -331,17 +313,14 @@
     })
     .then(r => r.json())
     .then(data => {
-      alert(data.message || data.error || "Solicitação enviada.");
-      // Notificação para o remetente: "Você enviou uma solicitação de amizade."
-      sendNotification("notification", "addFriend", loggedID, targetUserId, "Você enviou uma solicitação de amizade.", { sender_id: loggedID, receiver_id: targetUserId });
-      // Notificação para o destinatário: "Você recebeu uma solicitação de amizade."
+      sendNotification("notification", "addFriend", targetUserId, loggedID,"Você enviou uma solicitação de amizade.", { sender_id: targetUserId, receiver_id: loggedID });
       sendNotification("notification", "addFriend", loggedID, targetUserId, "Você recebeu uma solicitação de amizade.", { sender_id: loggedID, receiver_id: targetUserId });
       if (window.fetchPlayers) window.fetchPlayers();
     })
     .catch(err => console.error("Erro ao adicionar amigo:", err));
   };
   
-  window.removeFriend = function(requestId) {
+  window.removeFriend = function(requestId, targetUserId) {
     fetch(`${API_BASE_URL}/api/chat/remove-friend/`, {
       method: "DELETE",
       headers: {
@@ -352,8 +331,7 @@
     })
     .then(r => r.json())
     .then(data => {
-      alert(data.message || data.error || "Amizade removida.");
-      sendNotification("notification", "removeFriend", loggedID, null, "Amizade removida.", { request_id: requestId });
+      sendNotification("notification", "removeFriend", loggedID, targetUserId, "Sua amizade foi removida.", { sender_id: loggedID, receiver_id: targetUserId });
       if (window.fetchPlayers) window.fetchPlayers();
     })
     .catch(err => console.error("Erro ao remover amigo:", err));
@@ -370,17 +348,13 @@
     })
     .then(r => r.json())
     .then(data => {
-      alert(data.message || data.error || "Usuário bloqueado.");
-      // Notificação para o remetente: "Você bloqueou um usuário."
-      sendNotification("notification", "blockUser", loggedID, targetUserId, "Você bloqueou um usuário.", { sender_id: loggedID, receiver_id: targetUserId });
-      // Notificação para o destinatário: "Você foi bloqueado."
       sendNotification("notification", "blockUser", loggedID, targetUserId, "Você foi bloqueado.", { sender_id: loggedID, receiver_id: targetUserId });
-      if (window.fetchPlayers) window.fetchPlayers();
+      sendNotification("notification", "blockUser", targetUserId, loggedID, "Você bloqueou o usuário.", { sender_id: targetUserId, receiver_id: loggedID });
     })
     .catch(err => console.error("Erro ao bloquear usuário:", err));
   };
   
-  window.unblockUser = function(blockedRecordId) {
+  window.unblockUser = function(blockedRecordId, targetUserId) {
     fetch(`${API_BASE_URL}/api/chat/unblock-user/`, {
       method: "POST",
       headers: {
@@ -391,14 +365,13 @@
     })
     .then(r => r.json())
     .then(data => {
-      alert(data.message || data.error || "Usuário desbloqueado.");
-      sendNotification("notification", "unblockUser", loggedID, null, "Usuário desbloqueado.", { blockedRecordId: blockedRecordId });
-      if (window.fetchPlayers) window.fetchPlayers();
+      sendNotification("notification", "unblockUser", targetUserId, loggedID, "Você desbloqueou o usuário.", { sender_id: targetUserId, receiver_id: loggedID });
+      sendNotification("notification", "unblockUser", loggedID, targetUserId, "Você foi desbloqueado.", { sender_id: loggedID, receiver_id: targetUserId });
     })
     .catch(err => console.error("Erro ao desbloquear usuário:", err));
   };
   
-  window.acceptFriendRequest = function(requestId) {
+  window.acceptFriendRequest = function(requestId, targetUserId) {
     fetch(`${API_BASE_URL}/api/chat/accept-friend/`, {
       method: "POST",
       headers: {
@@ -409,16 +382,14 @@
     })
     .then(r => r.json())
     .then(data => {
-      // Notificação para o remetente: "Você aceitou uma solicitação de amizade."
-      sendNotification("notification", "acceptFriend", loggedID, null, "Você aceitou uma solicitação de amizade.", { request_id: requestId });
-      // Notificação para o destinatário: "Sua solicitação foi aceita."
-      sendNotification("notification", "acceptFriend", loggedID, null, "Sua solicitação foi aceita.", { request_id: requestId });
+      sendNotification("notification", "acceptFriend", targetUserId, loggedID, "Você aceitou uma solicitação de amizade.", { sender_id: targetUserId, receiver_id: loggedID });
+      sendNotification("notification", "acceptFriend", loggedID, targetUserId, "Sua solicitação foi aceita.", { sender_id: loggedID, receiver_id: targetUserId });
       if (window.fetchPlayers) window.fetchPlayers();
     })
     .catch(err => console.error("Erro ao aceitar solicitação:", err));
   };
   
-  window.rejectFriendRequest = function(requestId) {
+  window.rejectFriendRequest = function(requestId, targetUserId) {
     fetch(`${API_BASE_URL}/api/chat/reject-friend/`, {
       method: "POST",
       headers: {
@@ -429,11 +400,9 @@
     })
     .then(r => r.json())
     .then(data => {
-      alert(data.message || data.error || "Solicitação rejeitada.");
-      // Notificação para o remetente: "Você rejeitou uma solicitação de amizade."
-      sendNotification("notification", "rejectFriend", loggedID, null, "Você rejeitou uma solicitação de amizade.", { request_id: requestId });
-      // Notificação para o destinatário: "Sua solicitação foi rejeitada."
-      sendNotification("notification", "rejectFriend", loggedID, null, "Sua solicitação foi rejeitada.", { request_id: requestId });
+      alert(requestId);
+      sendNotification("notification", "rejectFriend", targetUserId, loggedID, "Você rejeitou uma solicitação de amizade.", { sender_id: targetUserId, receiver_id: loggedID });
+      sendNotification("notification", "rejectFriend", loggedID, targetUserId, "Sua solicitação foi rejeitada.", { sender_id: loggedID, receiver_id: targetUserId });
       if (window.fetchPlayers) window.fetchPlayers();
     })
     .catch(err => console.error("Erro ao rejeitar solicitação:", err));

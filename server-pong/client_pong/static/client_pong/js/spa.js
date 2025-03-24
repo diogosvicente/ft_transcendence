@@ -161,6 +161,8 @@ const routes = [
   {
     path: "^/pong/chat$",
     partial: "chat.html",
+    script: "chat.js",
+    initFunction: "initChatGlobal",
     private: true,
     layout: "private",
   },
@@ -229,23 +231,13 @@ async function handleRoute() {
         return;
       }
 
-      // Para /pong/chat (rota do chat)
-      if (route.path === "^/pong/chat$") {
-        // Carrega scripts na ordem correta
+      // Exemplo para a rota /pong/home
+      if (route.path === "^/pong/home$") {
         try {
-          await loadScript("webSocketProvider.js");
-          await loadScript("websocket.js");
-          await loadScript("playerList.js");
-          console.log("✅ Scripts do chat carregados.");
-
-          // Agora chamamos a função initChatGlobal() definida em chat.js
-          if (window.initChatGlobal) {
-            window.initChatGlobal();
-          } else {
-            console.error("❌ initChatGlobal não foi definido em chat.js");
-          }
+          await loadScript("home.js");
+          // Se quiser, chamar algo como window.initHome();
         } catch (err) {
-          console.error("❌ Erro ao carregar scripts do chat:", err);
+          console.error("Erro ao carregar home.js:", err);
         }
       }
 
@@ -270,6 +262,21 @@ async function handleRoute() {
 
       // Insere o conteúdo final no #root
       document.getElementById("root").innerHTML = finalHTML;
+
+      // Para /pong/chat (rota do chat)
+      if (route.path === "^/pong/chat$") {
+        // Carrega scripts na ordem correta
+        try {
+          await loadScript("websocket.js");
+          await loadScript("playerList.js");
+
+          if (window.initPlayerList)
+            window.initPlayerList();  
+        } catch (err) {
+          console.error("❌ Erro ao carregar scripts do chat:", err);
+        }
+      }
+            
 
       // Eventos pós-render e carregamento dinâmico de script
       attachEventsAfterRender(route, match.groups || {});
@@ -328,16 +335,3 @@ async function attachEventsAfterRender(route, params) {
 document.addEventListener("DOMContentLoaded", () => {
   handleRoute();
 });
-
-// Adicione esta função no final de spa.js
-window.reRenderCurrentRoute = function() {
-  // (Opcional) Se a rota atual tiver cleanupFunction, chamamos antes de recarregar
-  const path = window.location.pathname;
-  const route = routes.find(r => new RegExp(r.path).test(path));
-  if (route && route.cleanupFunction && window[route.cleanupFunction]) {
-    window[route.cleanupFunction]();
-  }
-
-  // Agora chamamos handleRoute() para recarregar a rota atual
-  handleRoute();
-};

@@ -70,8 +70,6 @@
     function processWebSocketMessage(event) {
       try {
         var data = JSON.parse(event.data);
-        console.log("Mensagem recebida do WebSocket:", data);
-  
         if (data.type === "game_challenge") {
           // Exibe um toast interativo para aceitar ou recusar o desafio 1vs1
           showChallengeToast(data.message, data.match_id);
@@ -81,17 +79,24 @@
           if (
             data.message === "Você foi bloqueado." ||
             data.message === "Você bloqueou o usuário." ||
-            data.message === "Você foi removido da lista de amigos." ||
-            data.message === "Você removeu um amigo da sua lista."
+            data.message === "Você recebeu uma solicitação de amizade." ||
+            data.message === "Sua solicitação foi aceita." ||
+            data.message === "Sua solicitação foi rejeitada." ||
+            data.message === "Você foi desbloqueado." ||
+            data.message === "Sua amizade foi removida." ||
+            data.message === "Você desbloqueou o usuário."
           ) {
-            console.log("Bloqueio detectado. Ativando flag para resetar ChatWindow...");
             shouldResetChatWindow = true;
+            if (window.initChatGlobal)
+              window.initChatGlobal();
+            if (window.fetchPlayers)
+              window.fetchPlayers();
           }
         } else if (data.type === "game_start") {
           var message = (data.state && data.state.message) || data.message;
           var matchId = (data.state && data.state.match_id) || data.match_id;
           showToast("success", message);
-          navigateTo("/game/" + matchId);
+          navigateTo("/pong/game/" + matchId);
         } else if (data.type === "game_challenge_declined") {
           showToast("info", data.message);
         } else if (data.type === "tournament") {
@@ -122,7 +127,7 @@
         return response.json();
       })
       .then(function() {
-        navigateTo("/game/" + matchId);
+        navigateTo("/pong/game/" + matchId);
       })
       .catch(function(err) {
         console.error("Erro ao aceitar desafio:", err);
@@ -217,6 +222,7 @@
     }
   
     function showToast(type, message) {
+      console.log("Teste Toast");
       var toastElem = document.createElement("div");
       toastElem.className = "toast " + type;
       toastElem.innerHTML = message;

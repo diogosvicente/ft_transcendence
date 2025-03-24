@@ -1,15 +1,7 @@
 (function() {
   // Dicionário global para armazenar as conexões WebSocket por sala
   window.roomSockets = window.roomSockets || {};
-
-  /**
-   * Inicializa (ou retorna) um WebSocket para a sala (roomName).
-   * Verifica se já existe um socket ativo para essa sala, caso sim, retorna ele.
-   * @param {string} roomName Ex.: "global" ou "private_1_2"
-   * @returns {WebSocket} WebSocket conectado (ou já existente)
-   */
   window.initializeWebSocket = function(roomName) {
-    // Se já existir um socket aberto para esta sala, retorna-o
     const existingSocket = window.roomSockets[roomName];
     if (existingSocket && existingSocket.readyState === WebSocket.OPEN) {
       console.log(`🔌 [${roomName}] WebSocket já está ativo, retornando socket existente.`);
@@ -25,7 +17,6 @@
     // Ajuste conforme seu backend
     const WS_BASE_URL = "ws://127.0.0.1:8000/ws/chat";
     const wsUrl = `${WS_BASE_URL}/${roomName}/?access_token=${accessToken}`;
-    console.log(`🔌 Iniciando WebSocket para sala: ${roomName}`, wsUrl);
 
     const socket = new WebSocket(wsUrl);
 
@@ -84,7 +75,6 @@
       message: message,
       timestamp: new Date().toISOString(),
     };
-    console.log(`[${roomName}] ✉️ Enviando mensagem:`, payload);
     socket.send(JSON.stringify(payload));
   };
 

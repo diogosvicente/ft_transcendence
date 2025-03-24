@@ -1,0 +1,198 @@
+/* Layout Principal */
+.game-room {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+    height: calc(100vh - 70px); /* Altura total menos o Navbar */
+    padding: 20px 40px; /* Espaçamento lateral */
+    background: linear-gradient(to right, #f9f9f9, #ffffff);
+  }
+  
+  /* Seção de Informações */
+  .game-info {
+    width: 25%;
+    max-width: 300px;
+    background-color: #ffffff; /* Fundo claro */
+    padding: 30px 20px;
+    border-radius: 15px;
+    box-shadow: 0px 10px 15px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 25px;
+    text-align: center;
+  }
+  
+  .game-info h1 {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #2c3e50; /* Azul escuro */
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    border-bottom: 2px solid #4caf50;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+  }
+  
+  .players-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+  }
+  
+  .player {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .player img.avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 3px solid #4caf50;
+    box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.15);
+  }
+  
+  .player p {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #34495e;
+  }
+  
+  .players-info span {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #4caf50;
+  }
+  
+  /* Detalhes Adicionais */
+  .game-info p {
+    font-size: 1.1rem;
+    color: #7f8c8d;
+  }
+  
+  /* Tabuleiro do Jogo */
+  .game-board {
+    flex-grow: 1; /* Ocupa todo o espaço restante */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    position: relative;
+  }
+  
+  canvas {
+    background-color: #000; /* Fundo preto do jogo */
+    border-radius: 10px;
+    border: 3px solid #4caf50;
+    box-shadow: 0px 8px 12px rgba(0, 0, 0, 0.15);
+    width: 100%;
+    max-width: 800px;
+    height: 600px;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 1;
+  }
+  
+  /* Indicador de Paddle */
+  .paddle-info {
+    font-size: 1.3rem;
+    color: #4caf50;
+    text-align: center;
+    margin-top: 10px;
+    font-weight: bold;
+  }
+  
+  /* Contagem Regressiva */
+  .countdown-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.8);
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    z-index: 1000;
+    box-shadow: 0px 8px 12px rgba(0, 0, 0, 0.3);
+  }
+  
+  .countdown-text {
+    font-size: 4rem;
+    color: #ffffff;
+    font-weight: bold;
+    animation: countdown-blink 1s infinite;
+  }
+  
+  /* Animação da Contagem Regressiva */
+  @keyframes countdown-blink {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+  
+  /* Efeito Hover no Avatar */
+  .player img.avatar:hover {
+    transform: scale(1.1);
+    transition: transform 0.3s ease-in-out;
+  }
+  
+  /* Responsividade */
+  @media (max-width: 768px) {
+    .game-room {
+      flex-direction: column;
+      align-items: center;
+      height: auto;
+      margin-top: 20px;
+    }
+  
+    .game-info {
+      width: 90%;
+      margin-bottom: 20px;
+    }
+  
+    canvas {
+      width: 100%;
+      height: auto;
+    }
+  }
+  
+  .mobile-controls {
+    display: none; /* Escondido por padrão no desktop */
+    gap: 20px;
+    margin-top: 10px;
+  }
+  
+  .mobile-controls button {
+    padding: 15px 25px;
+    font-size: 1.5rem;
+    border: none;
+    border-radius: 8px;
+    background-color: #4caf50;
+    color: #fff;
+    cursor: pointer;
+    user-select: none;    /* Evita seleção de texto */
+    touch-action: none;   /* Evita zoom/scroll no mobile */
+  }
+  
+  .mobile-controls button:hover {
+    background-color: #45a049;
+  }
+  
+  /* Em telas menores, exibimos */
+  @media (max-width: 768px) {
+    .mobile-controls {
+      display: flex;
+      justify-content: center;
+    }
+  }
+  

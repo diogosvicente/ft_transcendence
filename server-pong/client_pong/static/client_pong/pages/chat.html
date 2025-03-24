@@ -3,50 +3,63 @@
 <head>
   <meta charset="UTF-8">
   <title>Chat</title>
+  
   <link rel="stylesheet" href="/static/client_pong/css/chat.css">
 </head>
 <body>
-  <div class="chat-container">
-    <!-- Lista de Jogadores -->
-    <div class="players-list">
-      <h3 class="list-title">Lista de Jogadores</h3>
-      <div class="accordion-section">
-        <h4 class="accordion-header">Amigos ▶</h4>
-        <div class="accordion-content" id="friends-container">
-          <p>Carregando...</p>
-        </div>
-      </div>
-      <div class="accordion-section">
-        <h4 class="accordion-header">Solicitações Pendentes ▶</h4>
-        <div class="accordion-content" id="pending-container">
-          <p>Carregando...</p>
-        </div>
-      </div>
-      <div class="accordion-section">
-        <h4 class="accordion-header">Usuários Bloqueados ▶</h4>
-        <div class="accordion-content" id="blocked-container">
-          <p>Carregando...</p>
-        </div>
-      </div>
-      <div class="accordion-section">
-        <h4 class="accordion-header">Outros Jogadores ▶</h4>
-        <div class="accordion-content" id="non-friends-container">
-          <p>Carregando...</p>
-        </div>
-      </div>
-    </div>
 
-    <!-- Janela de Chat -->
-    <div class="chat-window">
-      <div class="chat-tabs" id="chat-tabs">
-        <!-- Aba do Chat Global -->
-        <button class="chat-tab active" data-room="global">Chat Global</button>
+  <!-- Loading Global para a lista de jogadores -->
+  <div id="player-list-loading" class="text-center">
+    Carregando Chat...
+  </div>
+
+  <!-- Container para exibir erros -->
+  <div id="player-list-error" class="alert alert-danger d-none"></div>
+
+  <!-- Container principal do conteúdo -->
+  <div id="player-list-content" class="d-none">
+    <div class="chat-container">
+      <!-- Lista de Jogadores -->
+      <div class="players-list">
+        <h3 class="list-title">Lista de Jogadores</h3>
+        <div class="accordion-section">
+          <h4 class="accordion-header">Amigos ▶</h4>
+          <div class="accordion-content" id="friends-container">
+            <p>Carregando...</p>
+          </div>
+        </div>
+        <div class="accordion-section">
+          <h4 class="accordion-header">Solicitações Pendentes ▶</h4>
+          <div class="accordion-content" id="pending-container">
+            <p>Carregando...</p>
+          </div>
+        </div>
+        <div class="accordion-section">
+          <h4 class="accordion-header">Usuários Bloqueados ▶</h4>
+          <div class="accordion-content" id="blocked-container">
+            <p>Carregando...</p>
+          </div>
+        </div>
+        <div class="accordion-section">
+          <h4 class="accordion-header">Outros Jogadores ▶</h4>
+          <div class="accordion-content" id="non-friends-container">
+            <p>Carregando...</p>
+          </div>
+        </div>
       </div>
-      <!-- Área de mensagens do Chat Global -->
-      <div class="chat-messages" id="chat-messages"></div>
-      <div class="chat-input">
-        <textarea id="message-input" placeholder="Digite sua mensagem..."></textarea>
-        <button id="send-message">Enviar</button>
+
+      <!-- Janela de Chat -->
+      <div class="chat-window">
+        <div class="chat-tabs" id="chat-tabs">
+          <!-- Aba do Chat Global -->
+          <button class="chat-tab active" data-room="global">Chat Global</button>
+        </div>
+        <!-- Área de mensagens do Chat Global -->
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-input">
+          <textarea id="message-input" placeholder="Digite sua mensagem..."></textarea>
+          <button id="send-message">Enviar</button>
+        </div>
       </div>
     </div>
   </div>
