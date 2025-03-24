@@ -91,7 +91,7 @@
           var message = (data.state && data.state.message) || data.message;
           var matchId = (data.state && data.state.match_id) || data.match_id;
           showToast("success", message);
-          navigateTo("/game/" + matchId);
+          navigateTo("/pong/game/" + matchId);
         } else if (data.type === "game_challenge_declined") {
           showToast("info", data.message);
         } else if (data.type === "tournament") {
@@ -122,7 +122,7 @@
         return response.json();
       })
       .then(function() {
-        navigateTo("/game/" + matchId);
+        navigateTo("/pong/game/" + matchId);
       })
       .catch(function(err) {
         console.error("Erro ao aceitar desafio:", err);
