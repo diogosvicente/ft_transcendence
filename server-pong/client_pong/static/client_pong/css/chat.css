@@ -65,11 +65,11 @@ body {
   
   /* Avatar */
   .user-avatar {
-    width: 60px;
-    height: 60px;
-    object-fit: cover; /* Garante que a imagem fique proporcional */
-    border-radius: 50%; /* Avatar redondo */
-    border: 2px solid #007bff; /* Borda azul */
+    width: 45px; /* Menor */
+    height: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #ddd;
   }
 
   /* ========================= */
@@ -147,3 +147,106 @@ body {
     background-color: gray;
   }
   
+
+  .player-item {
+    display: flex;
+    align-items: center; /* Alinha conteúdo horizontalmente */
+    gap: 15px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    max-width: 400px; /* Reduzi a largura máxima */
+    margin-bottom: 10px;
+  }
+
+  /* Nome e status do jogador */
+  .player-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .player-name {
+    font-weight: bold;
+    font-size: 0.9rem; /* Reduzi o tamanho da fonte */
+    margin: 0;
+  }
+  
+  .player-status {
+    font-size: 0.8rem; /* Reduzi o tamanho da fonte */
+    margin: 0;
+  }
+  
+  .player-status.online {
+    color: green;
+  }
+  
+  .player-status.offline {
+    color: red;
+  }
+
+  /* Ações disponíveis para cada jogador */
+.player-actions {
+  display: flex;
+  gap: 8px; /* Ajuste entre os botões */
+  flex-wrap: wrap; /* Para não quebrar em telas menores */
+}
+
+.player-actions button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem; /* Reduzi o tamanho do ícone */
+  color: #555;
+  transition: color 0.2s ease;
+}
+
+.player-actions button:hover {
+  color: #007bff;
+}
+
+.player-actions .remove {
+  color: #ff5c5c;
+}
+
+.player-actions .block {
+  color: #ff9f1c;
+}
+
+
+/* Área de abas para chat privado e global */
+.chat-tabs {
+  display: flex;
+  justify-content: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+  overflow-x: auto;
+  border-bottom: 1px solid #ddd;
+}
+
+.chat-tab {
+  padding: 8px 12px;
+  border-radius: 8px 8px 0 0;
+  background-color: #f1f1f1;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.chat-tab.active {
+  background-color: #007bff;
+  color: #fff;
+}
+
+.chat-tab:hover:not(.active) {
+  background-color: #ddd;
+}
+
+/* Área de conteúdo para cada aba de chat */
+.chat-content {
+  height: calc(100% - 50px); /* Espaço para as abas */
+  overflow-y: auto;
+}
