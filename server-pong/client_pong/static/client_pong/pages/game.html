@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Remote Match</title>
+</head>
+<body>
+  <div class="game-room-container">
+    <!-- Loading/Error Containers -->
+    <div id="game-loading" class="text-center mt-4">Loading game...</div>
+    <div id="game-error" class="alert alert-danger d-none"></div>
+
+    <!-- Game Content -->
+    <div id="game-content" class="d-none">
+      <div class="game-info">
+        <h1 id="game-title" class="text-center">Remote Match</h1>
+        <button id="pause-button" class="btn btn-warning">Pause</button>
+      </div>
+
+      <!-- Players Info -->
+      <div class="players-info d-flex justify-content-around my-4">
+        <div class="player">
+          <img id="player1-avatar" class="avatar img-thumbnail" alt="Player 1 Avatar">
+          <p id="player1-name"></p>
+          <p id="player1-you" class="text-muted d-none">(You)</p>
+        </div>
+        <span class="vs-text">VS</span>
+        <div class="player">
+          <img id="player2-avatar" class="avatar img-thumbnail" alt="Player 2 Avatar">
+          <p id="player2-name"></p>
+          <p id="player2-you" class="text-muted d-none">(You)</p>
+        </div>
+      </div>
+
+      <!-- Game Board -->
+      <div class="game-board">
+        <canvas id="pongCanvas" width="800" height="600"></canvas>
+        <div id="game-over-message" class="d-none text-center"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Carregue o script depois que o DOM estiver pronto -->
+  <script src="/static/client_pong/js/game.js"></script>
+</body>
+</html>
