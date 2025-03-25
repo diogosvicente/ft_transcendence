@@ -52,6 +52,9 @@ window.initLanding = function() {
   // Botão local match
   const btnLocalMatch = document.getElementById("btnLocalMatch");
 
+  // Botão Jogo 3D
+  const btnGame3D = document.getElementById("btnGame3D");
+
   // Botões de toggle de senha
   const toggleLoginPassword = document.getElementById("toggleLoginPassword");
   const toggleRegisterPassword = document.getElementById("toggleRegisterPassword");
@@ -325,6 +328,13 @@ window.initLanding = function() {
       navigateTo("/pong/local-match");
     });
   }
+
+    // ==========================================================
+    if (btnGame3D) {
+      btnGame3D.addEventListener("click", () => {
+        navigateTo("/pong/game3D");
+      });
+    }
 
   // ==========================================================
   // H) Lógica de Idioma (Dummy)

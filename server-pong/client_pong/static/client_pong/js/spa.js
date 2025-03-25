@@ -215,6 +215,14 @@ const routes = [
     private: true,
     layout: "private",
   },
+  {
+    path: "^/pong/game3D$",
+    partial: "game3D.html",
+    script: "game3D.js",
+    initFunction: "initGame3D",
+    private: false,
+    layout: "public",
+  },
 ];
 
 /* ========== 7. Roteador (History API) ========== */

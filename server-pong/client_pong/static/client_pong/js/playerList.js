@@ -5,7 +5,7 @@
   const accessToken  = localStorage.getItem("access");
 
   if (!accessToken) {
-    console.warn("⚠️ Sem token de acesso, não será possível carregar a lista de jogadores.");
+    console.log("Sem token de acesso, não será possível carregar a lista de jogadores.");
   }
 
   // Exponha a função fetchPlayers se quiser chamá-la externamente

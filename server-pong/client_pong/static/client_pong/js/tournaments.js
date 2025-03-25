@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("[DEBUG] DOMContentLoaded disparado!");
 
   // --------------------------------------------------------
   // VARIÁVEIS GLOBAIS
@@ -457,7 +456,6 @@ document.addEventListener("DOMContentLoaded", () => {
       !tournamentsBody ||
       !backToListBtn
     ) {
-      console.log("[DEBUG] Nem todos os elementos essenciais foram encontrados ainda.");
       return false;
     }
 

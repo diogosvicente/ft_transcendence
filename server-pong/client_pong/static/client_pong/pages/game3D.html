@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Jogo Pong 3D</title>
+  <!-- Carregue o CSS externo -->
+  <link rel="stylesheet" href="/static/client_pong/css/game3D.css" />
+</head>
+<body>
+  <h1>Jogo Pong 3D</h1>
+
+  <!-- Container principal com 3 colunas -->
+  <div id="mainWrapper">
+    <!-- Painel de informações (score) à esquerda -->
+    <div id="infoPanel">
+      <div id="scoreboard">Jogador 1: 0 | Jogador 2: 0</div>
+    </div>
+
+    <!-- Container do jogo 3D no centro -->
+    <div id="gameContainer">
+      <div id="countdownOverlay">3</div>
+    </div>
+
+    <!-- Painel de configurações à direita -->
+    <div id="configPanel">
+      <h3>Configurações</h3>
+      <label>Velocidade da Bola: 
+        <input type="number" id="ballSpeed" value="0.3" step="0.1">
+      </label>
+      <label>Velocidade da Raquete: 
+        <input type="number" id="paddleSpeed" value="0.5" step="0.1">
+      </label>
+      <br>
+      <label>Cor do Chão: 
+        <input type="color" id="floorColor" value="#ffff66">
+      </label>
+      <label>Cor da Parede: 
+        <input type="color" id="wallColor" value="#9999ff">
+      </label>
+      <br>
+      <label>Cor da Raquete 1: 
+        <input type="color" id="paddle1Color" value="#ff0000">
+      </label>
+      <label>Cor da Raquete 2: 
+        <input type="color" id="paddle2Color" value="#0000ff">
+      </label>
+      <br>
+      <label>Cor da Bola: 
+        <input type="color" id="ballColor" value="#ff0000">
+      </label>
+      <br>
+      <button id="startGame">Iniciar Jogo</button>
+      <button id="updateSettings">Atualizar Configurações</button>
+    </div>
+  </div>
+
+  <!-- Carrega Three.js globalmente (SEM type="module") -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.js"></script>
+
+  <!-- Script principal (game3D.js) -->
+  <script src="game3D.js"></script>
+</body>
+</html>

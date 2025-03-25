@@ -1,0 +1,155 @@
+/* Reset básico */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  /* Corpo */
+  body {
+    background-color: #fff;
+    color: #000;
+    font-family: Arial, sans-serif;
+    text-align: center;
+  }
+  
+  /* Título */
+  h1 {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    font-size: 1.8rem;
+  }
+  
+  /* Container principal com 3 colunas */
+  #mainWrapper {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;  /* centraliza horizontalmente */
+    align-items: flex-start;
+    gap: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    flex-wrap: wrap; /* permite quebrar em telas menores */
+  }
+  
+  /* Painel de informações (score) à esquerda */
+  #infoPanel {
+    flex: 1 1 200px;
+    max-width: 200px;
+    text-align: left;
+    background-color: #f9f9f9;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 20px;
+  }
+  
+  /* Placar */
+  #scoreboard {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    color: #000;
+  }
+  
+  /* Container do jogo 3D (coluna do meio) */
+  #gameContainer {
+    flex: 3 1 600px;
+    position: relative;
+    background: #000;   /* Jogo com fundo preto */
+    width: 800px;
+    height: 400px;
+    margin: 0 auto;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  /* Overlay para contagem regressiva */
+  #countdownOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    color: #fff;
+    font-size: 3rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+    display: none; /* Inicialmente oculto */
+  }
+  
+  /* Painel de configurações à direita */
+  #configPanel {
+    flex: 1 1 250px;
+    max-width: 250px;
+    text-align: left;
+    background-color: #f9f9f9;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 20px;
+  }
+  
+  /* Título do painel de configurações (opcional) */
+  #configPanel h3 {
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+    color: #000;
+  }
+  
+  /* Inputs e botões de configuração */
+  #configPanel label {
+    display: inline-block;
+    margin: 5px 0;
+    font-size: 1rem;
+    color: #000;
+  }
+  
+  #configPanel input {
+    margin-left: 5px;
+    margin-right: 10px;
+    padding: 4px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  #configPanel button {
+    margin: 5px 5px 5px 0;
+    padding: 8px 16px;
+    font-size: 1rem;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #eee;
+    color: #000;
+  }
+  #configPanel button:hover {
+    background-color: #ddd;
+  }
+  
+  /* Responsividade */
+  @media (max-width: 1000px) {
+    #gameContainer {
+      width: 100%;
+      height: 300px;
+    }
+  }
+  
+  @media (max-width: 820px) {
+    #mainWrapper {
+      flex-direction: column;
+      align-items: center;
+    }
+    #infoPanel, #configPanel {
+      max-width: 90%;
+      margin-bottom: 20px;
+    }
+    #gameContainer {
+      width: 100%;
+      height: 300px;
+    }
+  }
+  
