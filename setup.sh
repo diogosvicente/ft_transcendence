@@ -5,7 +5,8 @@ read -p "Digite o IP para o servidor (ex: 192.168.1.138): " IP_ADDRESS
 export IP_ADDRESS
 
 # 2) Tenta criar /goinfre/$USER com sudo; se falhar, cria ~/goinfre
-TARGET_DIR="/goinfre/$USER"
+TARGET_DIR="$HOME/goinfre/$USER" # TODO: Mudar para /goinfre/$USER na hora da avaliação
+# TARGET_DIR="$HOME/goinfre/$USER"
 export VOLUME_BASE_PATH="$TARGET_DIR/ft_transcendence"
 
 # 3) Define a subpasta 'ft_transcendence' e exporta como VOLUME_BASE_PATH
@@ -18,8 +19,7 @@ mkdir -p "$VOLUME_BASE_PATH/redis_data" \
          "$VOLUME_BASE_PATH/postgres_data" \
          "$VOLUME_BASE_PATH/django_app" \
          "$VOLUME_BASE_PATH/staticfiles" \
-         "$VOLUME_BASE_PATH/media" \
-         "$VOLUME_BASE_PATH/react_app"
+         "$VOLUME_BASE_PATH/media"
 
 chmod -R 775 "$VOLUME_BASE_PATH"
 chown -R "$USER" "$VOLUME_BASE_PATH"
@@ -36,13 +36,9 @@ envsubst < templates/env.template > .env
 echo "Gerando nginx.conf a partir de nginx.conf.template..."
 envsubst '$IP_ADDRESS' < templates/nginx.conf.template > nginx.conf
 
-# 7) Gera vite.config.js (substitui todas as variáveis)
-echo "Gerando vite.config.js a partir de vite.config.js.template..."
-envsubst < templates/vite.config.js.template > client-pong/vite.config.js
-
 # 8) Gera config.js (substitui $IP_ADDRESS)
 echo "Gerando config.js a partir de config.js.template..."
-envsubst '$IP_ADDRESS' < templates/config.js.template > client-pong/src/assets/config/config.js
+envsubst '$IP_ADDRESS' < templates/config.js.template > server-pong/client_pong/static/client_pong/js/config.js
 
 # 9) Gera docker-compose.yml (substitui $VOLUME_BASE_PATH, $PROJECT_PATH e $IP_ADDRESS)
 #    Necessário ter um docker-compose.yml.template com $VOLUME_BASE_PATH e $PROJECT_PATH

@@ -20,21 +20,6 @@ services:
       - redis
 
   #
-  # React (Vite) - Porta 3000 interna
-  #
-  frontend:
-    build:
-      context: ./client-pong
-      target: development
-    volumes:
-      - react_app_data:/app
-    ports:
-      - "3000:3000"
-    depends_on:
-      - web
-      - db
-
-  #
   # Nginx - Porta 443 (SSL) e 80 (redirecionamento)
   #
   nginx:
@@ -49,7 +34,6 @@ services:
       - "4443:443"
     depends_on:
       - web
-      - frontend
 
   #
   # Banco de Dados PostgreSQL
@@ -114,11 +98,4 @@ volumes:
     driver_opts:
       type: none
       device: "$VOLUME_BASE_PATH/redis_data"
-      o: bind
-
-  react_app_data:
-    driver: local
-    driver_opts:
-      type: none
-      device: "$VOLUME_BASE_PATH/react_app"
       o: bind

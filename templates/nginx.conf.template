@@ -11,6 +11,17 @@ events {
 http {
     # SERVIDOR HTTPS
     server {
+
+       types {
+			application/javascript js;
+			application/json json;
+			text/html html;
+			text/css css;
+			image/svg+xml svg;
+			image/jpeg jpeg;
+			image/png png;
+		}
+
         listen 443 ssl;
         server_name ${IP_ADDRESS};  # IP no server_name
 
@@ -27,9 +38,9 @@ http {
             alias /app/media/;
         }
 
-        # Frontend React (porta 3000 em HTTP interno)
+        # Frontend (porta 8000 em HTTP interno)
         location / {
-            proxy_pass http://frontend:3000;
+            proxy_pass http://web:8000;
             proxy_http_version 1.1;
             proxy_set_header Upgrade $http_upgrade;
             proxy_set_header Connection "Upgrade";
