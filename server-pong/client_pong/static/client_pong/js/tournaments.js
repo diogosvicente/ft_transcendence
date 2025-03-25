@@ -159,7 +159,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // FUNÇÃO: handleViewTournament
   // --------------------------------------------------------
   async function handleViewTournament(tournamentId) {
-    console.log("[DEBUG] handleViewTournament() para ID:", tournamentId);
     try {
       const response = await authorizedFetch(`/api/game/tournaments/${tournamentId}/`);
       if (!response.ok) {
