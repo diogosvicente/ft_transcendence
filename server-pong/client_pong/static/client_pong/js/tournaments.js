@@ -32,11 +32,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // FUNÇÃO: authorizedFetch
   // --------------------------------------------------------
   async function authorizedFetch(url, options = {}) {
-    if (!token) {
+    token2 = localStorage.getItem("access");
+    if (!token2) {
       throw new Error("Token não encontrado. Faça login.");
     }
     if (!options.headers) options.headers = {};
-    options.headers["Authorization"] = `Bearer ${token}`;
+    options.headers["Authorization"] = `Bearer ${token2}`;
     return fetch(url, options);
   }
 
@@ -299,7 +300,6 @@ document.addEventListener("DOMContentLoaded", () => {
       alert("Torneio iniciado com sucesso!");
       loadingTournaments(); // Recarrega a lista
     } catch (error) {
-      console.error("[DEBUG] Erro ao iniciar torneio:", error);
       alert("Erro ao iniciar torneio.");
     }
   }
@@ -323,7 +323,6 @@ document.addEventListener("DOMContentLoaded", () => {
       alert("Próxima partida iniciada com sucesso!");
       handleViewTournament(tournamentId);
     } catch (error) {
-      console.error("[DEBUG] Erro ao iniciar a próxima partida:", error);
       alert("Erro ao iniciar a próxima partida.");
     }
   }
@@ -369,7 +368,6 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("create-tournament-section").style.display = "none";
       alert(`Torneio '${createdTournament.name}' criado com sucesso!`);
     } catch (error) {
-      console.error("[DEBUG] Erro ao criar torneio:", error);
       alert("Erro ao criar torneio.");
     }
   }
