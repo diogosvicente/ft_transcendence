@@ -1,7 +1,6 @@
 (function() {
   console.log("✅ [playerList.js] Carregado...");
 
-  const API_BASE_URL = "http://127.0.0.1:8000";
   const accessToken  = localStorage.getItem("access");
 
   if (!accessToken) {

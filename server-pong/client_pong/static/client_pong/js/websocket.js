@@ -15,9 +15,7 @@
     }
 
     // Ajuste conforme seu backend
-    const WS_BASE_URL = "ws://127.0.0.1:8000/ws/chat";
-    const wsUrl = `${WS_BASE_URL}/${roomName}/?access_token=${accessToken}`;
-
+    const wsUrl = getWsUrl(`/ws/chat/${roomName}/?access_token=${accessToken}`);
     const socket = new WebSocket(wsUrl);
 
     socket.onopen = () => {

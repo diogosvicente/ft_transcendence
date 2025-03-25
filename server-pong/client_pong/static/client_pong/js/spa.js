@@ -4,9 +4,6 @@
  * e carregamento dinâmico de scripts (landing.js, home.js, etc.).
  **************************************************************/
 
-// Defina a variável global API_BASE_URL
-const API_BASE_URL = "http://127.0.0.1:8000";
-
 /* ========== 1. Checagem de Autenticação ========== */
 function isAuthenticated() {
   return !!localStorage.getItem("access");

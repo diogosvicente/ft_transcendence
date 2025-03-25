@@ -33,9 +33,6 @@
         return newUri;
       }
 
-      const API_BASE_URL = "http://127.0.0.1:8000";
-      console.log("[DEBUG] API_BASE_URL:", API_BASE_URL);
-
       const defaultAvatar = `${API_BASE_URL}/media/avatars/default.png`;
 
       // Seleção dos elementos do DOM
@@ -265,7 +262,7 @@
         }
 
         const accessToken = localStorage.getItem("access");
-        const wsUrl = `ws://${window.location.host}/ws/game/${matchId}/?access_token=${accessToken}`;
+        const wsUrl = getWsUrl(`/ws/game/${matchId}/?access_token=${accessToken}`);
 
         socket = new WebSocket(wsUrl);
 

@@ -9,8 +9,6 @@
   const privateSockets = {};
   let activeChatRoom = "global";
 
-  // Configurações de API
-  const API_BASE_URL = "http://127.0.0.1:8000";
   const accessToken = localStorage.getItem("access");
 
   // Função para enviar notificações via WebSocket

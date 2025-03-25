@@ -8,7 +8,7 @@ window.setApiLanguage = (language) => {
   localStorage.setItem("language", language);
 };
 
-window.API_BASE_URL = "https://${IP_ADDRESS}:4443";
+window.API_BASE_URL = "https://192.168.1.138:4443";
 
 window.DEFAULT_AVATAR = `${window.API_BASE_URL}/media/avatars/default.png`;
 
@@ -22,5 +22,5 @@ window.getAvatar = (avatarPath) => {
 };
 
 window.getWsUrl = (path = "") => {
-  return "wss://${IP_ADDRESS}:4443" + path;  // e.g. /ws/chat/
+  return "wss://192.168.1.138:4443" + path;  // e.g. /ws/chat/
 };

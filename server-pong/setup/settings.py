@@ -5,16 +5,13 @@ from django.utils.translation import gettext_lazy as _
 import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent  # server-pong/
-ENV_PATH = '.env'               # ft_transcendence/.env
+ENV_PATH = BASE_DIR.parent / '.env'               # ft_transcendence/.env
 load_dotenv(ENV_PATH)
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'fallback')
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 
 DEBUG = True  # (apenas em desenvolvimento)
-SECURE_SSL_REDIRECT = False
-CSRF_COOKIE_SECURE = False
-SESSION_COOKIE_SECURE = False
 
 INSTALLED_APPS = ['django_extensions','daphne',
     # Apps integrados do Django
@@ -118,7 +115,7 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            'hosts': [('localhost', 6380)],
+            'hosts': [('redis', 6379)],
         }
     }
 }
