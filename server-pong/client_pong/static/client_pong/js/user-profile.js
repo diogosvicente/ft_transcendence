@@ -133,6 +133,7 @@ window.initUserProfile = async () => {
 
         // Atualizar estado
         state = { ...state, user: userData, matches: matchesData };
+        console.log(state.matches[0])
 
         // Atualizar UI
         elements.loading.classList.add('d-none');
@@ -154,15 +155,23 @@ window.initUserProfile = async () => {
             : 0;
         elements.winrate.textContent = `${winRate}%`;
 
-        // Preencher histórico
         elements.matchList.innerHTML = state.matches.map(match => `
-      <li class="list-group-item d-flex justify-content-between align-items-center">
-        <span>${new Date(match.date).toLocaleDateString()}</span>
-        <span class="badge ${match.winner_id === user_id ? 'bg-success' : 'bg-danger'}">
-          ${match.winner_id === user_id ? 'Vitória' : 'Derrota'}
-        </span>
-      </li>
-    `).join('');
+  <li class="list-group-item">
+    <div class="d-flex justify-content-between align-items-center">
+      <span>${new Date(match.date).toLocaleDateString()}</span>
+      <span class="badge ${match.result === "Derrota" ? 'bg-danger' : 'bg-success'}">
+        ${match.result}
+      </span>
+    </div>
+    <div class="mt-2">
+      <strong>Oponente:</strong> ${match.opponent_display_name}${match.opponent_alias ? ' (' + match.opponent_alias + ')' : ''}
+    </div>
+    <div>
+      <strong>Placar:</strong> ${match.score.player1} x ${match.score.player2}
+    </div>
+    ${match.tournament_name ? `<div><strong>Torneio:</strong> ${match.tournament_name}</div>` : ''}
+  </li>
+`).join('');
 
         if (isOwnProfile) {
             document.getElementById('edit-profile-btn').classList.remove('d-none');
