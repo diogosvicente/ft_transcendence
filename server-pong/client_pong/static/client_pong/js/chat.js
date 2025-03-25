@@ -37,7 +37,6 @@
       })
       .then(data => {
         window.blockedUsersDetails = data.blocked_users || [];
-        console.log("🚫 Bloqueados atualizados:", window.blockedUsersDetails);
       })
       .catch(err => console.error("Erro ao buscar lista de bloqueados:", err));
   }

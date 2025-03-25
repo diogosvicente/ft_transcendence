@@ -6,9 +6,6 @@
       return;
     }
 
-    console.log("[DEBUG] Página de jogo detectada. Iniciando polling...");
-
-
     // Função de polling para aguardar que os elementos essenciais existam no DOM
     function waitForElements() {
       const loadingEl = document.getElementById("game-loading");
@@ -34,7 +31,6 @@
       }
 
       const API_BASE_URL = "http://127.0.0.1:8000";
-      console.log("[DEBUG] API_BASE_URL:", API_BASE_URL);
 
       const defaultAvatar = `${API_BASE_URL}/media/avatars/default.png`;
 
@@ -65,8 +61,6 @@
       let pendingState = null;
       let isPaused = false;
       let moveInterval = null;
-
-      console.log("[DEBUG] Elements:", elements);
 
       // Função que define o core do jogo: renderização do canvas
       const gameCore = (canvas) => {
@@ -257,11 +251,9 @@
 
         if (elements.loading) {
           elements.loading.classList.add("d-none");
-          console.log("[DEBUG] Ocultou loading");
         }
         if (elements.content) {
           elements.content.classList.remove("d-none");
-          console.log("[DEBUG] Exibiu conteúdo do jogo");
         }
 
         const accessToken = localStorage.getItem("access");

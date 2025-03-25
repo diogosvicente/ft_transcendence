@@ -1,19 +1,112 @@
-<!-- static/client_pong/pages/local-match.html -->
-<div class="game-container">
-  <div class="pong-header">
-    <h2>Modo Local</h2>
-    <div class="score-board">
-      <span id="player1-score">0</span>
-      <span id="player2-score">0</span>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Jogo Pong - Modo Local</title>
+  <!-- CSS principal -->
+  <link rel="stylesheet" href="/static/client_pong/css/local-match.css" />
+</head>
+<body>
+  <div class="main-container">
+    <!-- Botão de voltar à página inicial -->
+    <div class="back-home-container">
+      <button id="backHomeBtn" class="btn-back-home">Voltar à Página Inicial</button>
+    </div>
+
+    <!-- Título do modo local -->
+    <h2 class="local-mode-title">Modo Local</h2>
+
+    <!-- Menu de seleção de modo -->
+    <div class="local-match-menu">
+      <button id="single-match-btn" class="btn btn-primary">Iniciar Partida Simples</button>
+      <button id="tournament-btn" class="btn btn-success">Iniciar Torneio</button>
+    </div>
+
+    <!-- Botão de pausa (fica oculto até iniciar jogo/torneio) -->
+    <div id="pause-container" class="d-none">
+      <button id="pauseBtn" class="btn btn-warning">Pausar / Retomar</button>
+    </div>
+
+    <!-- Seção para Partida Simples -->
+    <div id="single-match-container" class="d-none" style="margin-top: 30px;">
+      <h3>Partida Simples (W|S vs ↑|↓) - Até 5 pontos</h3>
+
+      <!-- Contêiner relativo para canvas + overlay -->
+      <div style="position: relative; display: inline-block;">
+        <!-- Overlay para iniciar partida -->
+        <div id="single-overlay-start" class="overlay-start d-none">
+          <button id="single-start-btn" class="btn btn-info">Iniciar Partida</button>
+        </div>
+        <canvas id="single-canvas" class="game-canvas"></canvas>
+      </div>
+
+      <!-- Botões de controle mobile (apenas em telas pequenas) -->
+      <div class="mobile-controls" id="single-mobile-controls">
+        <button data-key="KeyW">W</button>
+        <button data-key="KeyS">S</button>
+        <button data-key="ArrowUp">↑</button>
+        <button data-key="ArrowDown">↓</button>
+      </div>
+    </div>
+
+    <!-- Mensagem de fim de partida simples -->
+    <div id="single-game-over" class="d-none"></div>
+
+    <!-- Seção para o Torneio Local -->
+    <div id="tournament-container" class="d-none" style="margin-top: 30px;">
+      <!-- Contêiner flex para bracket à esquerda e canvas à direita -->
+      <div class="tournament-container-inner">
+        <!-- Bracket (esquerda) -->
+        <div class="tournament-bracket">
+          <!-- Round 1 -->
+          <div class="round round1">
+            <div class="match">
+              <div class="player" id="player1-match1">PLAYER1</div>
+              <div class="player" id="player2-match1">PLAYER2</div>
+              <div class="winner" id="winner-match1">Vencedor: ?</div>
+            </div>
+          </div>
+          <!-- Round 2 -->
+          <div class="round round2">
+            <div class="match">
+              <div class="player" id="player1-match2">PLAYER3</div>
+              <div class="player" id="player2-match2">PLAYER4</div>
+              <div class="winner" id="winner-match2">Vencedor: ?</div>
+            </div>
+          </div>
+          <!-- Round 3 (Final) -->
+          <div class="round round3">
+            <div class="match">
+              <div class="player" id="final-match-left">?</div>
+              <div class="player" id="final-match-right">?</div>
+              <div class="winner" id="champion-span">Vencedor: ?</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Canvas (direita) + overlay para iniciar partida -->
+        <div class="tournament-canvas-container" style="position: relative;">
+          <div id="tournament-overlay-start" class="overlay-start d-none">
+            <button id="tournament-start-btn" class="btn btn-info">Iniciar Partida</button>
+          </div>
+          <canvas id="tournament-canvas" class="game-canvas"></canvas>
+
+          <!-- Botões de controle mobile para torneio -->
+          <div class="mobile-controls" id="tournament-mobile-controls">
+            <button data-key="KeyW">W</button>
+            <button data-key="KeyS">S</button>
+            <button data-key="ArrowUp">↑</button>
+            <button data-key="ArrowDown">↓</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mensagem de finalização do torneio -->
+      <div id="tournament-game-over" class="d-none"></div>
     </div>
   </div>
 
-  <div id="game-container" class="position-relative">
-    <canvas id="pongCanvas" width="800" height="600"></canvas>
-  </div>
-
-  <div class="controls">
-    <p>Jogador 1: W/S | Jogador 2: ↑/↓</p>
-    <button id="pauseBtn" class="btn btn-sm btn-secondary">Pausar</button>
-  </div>
-</div>
+  <!-- Script com todo o código do jogo (local-match.js) -->
+  <script src="/static/client_pong/js/local-match.js"></script>
+</body>
+</html>

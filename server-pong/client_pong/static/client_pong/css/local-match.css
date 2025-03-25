@@ -1,53 +1,209 @@
-/* static/client_pong/css/local_match.css */
-.game-container {
+/* Container Principal */
+.main-container {
+  padding: 2rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  padding: 2rem;
 }
 
-#pongCanvas {
-  background: #000;
-  border: 2px solid #fff;
-  border-radius: 5px;
-}
-
-.pong-header {
-  display: flex;
-  justify-content: space-between;
-  width: 800px;
-}
-
-.score-board {
-  font-size: 1.5rem;
-  gap: 2rem;
-  display: flex;
-}
-
-.controls {
+/* Botão "Voltar" */
+.back-home-container {
+  margin: 1rem 0;
   text-align: center;
 }
-
-#game-container {
-  position: relative;
+.btn-back-home {
+  background-color: #6c757d;
+  border: none;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
-#game-over-message {
+/* Título */
+.local-mode-title {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Menu (Partida Simples / Torneio) */
+.local-match-menu {
+  margin: 1rem 0;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.btn-primary {
+  background-color: #007bff;
+  color: #fff;
+}
+.btn-success {
+  background-color: #28a745;
+  color: #fff;
+}
+.btn-warning {
+  background-color: #ffc107;
+  color: #000;
+}
+.btn-info {
+  background-color: #17a2b8;
+  color: #fff;
+}
+
+/* Botão de Pausa */
+#pause-container {
+  text-align: center;
+  margin: 1rem 0;
+}
+#pauseBtn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Canvas do Jogo */
+.game-canvas {
+  width: 800px;
+  height: 400px;
+  background-color: #222;
+  border: 2px solid #4caf50;
+  border-radius: 8px;
+  display: block;
+  margin-bottom: 20px;
+}
+@media (max-width: 768px) {
+  .game-canvas {
+    width: 100%;
+    max-width: 800px;
+    height: auto;
+  }
+}
+
+/* Overlay para "Iniciar Partida" */
+.overlay-start {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 1000;
-  background: rgba(0, 0, 0, 0.8);
+  z-index: 2000;
+  background: rgba(0, 0, 0, 0.6);
   padding: 20px;
-  border-radius: 10px;
-  color: white;
-  width: 80%;
-  max-width: 400px;
-  text-align: center;
+  border-radius: 8px;
+}
+.overlay-start button {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
-#game-over-message.d-none {
+/* Torneio (Bracket) */
+.tournament-container-inner {
+  display: flex;
+  flex-direction: row;      /* bracket à esquerda, canvas à direita */
+  align-items: flex-start;  /* alinha no topo */
+  justify-content: center;  /* ou space-between, se preferir */
+  gap: 2rem;                /* espaço horizontal */
+  margin-top: 20px;
+}
+.tournament-bracket {
+  width: 250px; /* Ajuste se quiser */
+  text-align: left;
+}
+.tournament-canvas-container {
+  position: relative;
+}
+.round {
+  margin: 20px 0;
+  position: relative;
+}
+.match {
+  background-color: #fff;    /* Caixa branca */
+  border: 2px solid #ccc;    /* Borda cinza */
+  width: 150px;
+  text-align: center;
+  padding: 10px;
+  border-radius: 8px;
+  margin: 0 auto;
+  position: relative;
+}
+.player {
+  padding: 5px;
+  font-weight: bold;
+  font-size: 0.95rem;
+}
+.winner {
+  margin-top: 5px;
+  font-size: 0.85rem;
+  color: #333;
+}
+
+/* Destaque do match atual */
+.match.current {
+  border-color: #007bff;
+  box-shadow: 0 0 8px rgba(0, 123, 255, 0.5);
+}
+
+/* Exemplo de linhas de conexão (opcional) */
+.round1 .match::after {
+  content: "";
+  position: absolute;
+  width: 40px;
+  height: 2px;
+  background: #999;
+  right: -40px;
+  top: 50%;
+}
+.round2 .match::before {
+  content: "";
+  position: absolute;
+  width: 40px;
+  height: 2px;
+  background: #999;
+  left: -40px;
+  top: 50%;
+}
+
+/* Ocultar/Mostrar */
+.d-none {
   display: none;
 }
+
+/* ---------------------------------------------
+   Mobile Controls
+--------------------------------------------- */
+
+.mobile-controls button {
+  padding: 3rem 4.5rem;
+  font-size: 3rem;
+  border-radius: 16px;
+  border: none;
+  background-color: #4caf50;
+  color: #fff;
+  cursor: pointer;
+  user-select: none;
+  touch-action: none;
+}
+
+.mobile-controls {
+  display: none;
+  gap: 1rem;
+  justify-content: center;
+  margin: 1rem 0;
+}
+
+@media (max-width: 992px) {
+  .mobile-controls {
+    display: flex;
+  }
+}
+

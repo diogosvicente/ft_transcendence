@@ -170,7 +170,7 @@ const routes = [
     path: "^/pong/tournaments$",
     partial: "tournaments.html",
     script: "tournaments.js",
-    initFunction: "initTournaments",
+    initFunction: "loadingTournaments",
     private: true,
     layout: "private",
   },
@@ -275,6 +275,15 @@ async function handleRoute() {
         } catch (err) {
           console.error("❌ Erro ao carregar scripts do chat:", err);
         }
+      }
+
+      if (route.path === "^/pong/tournaments$") {
+        
+        await loadScript("tournaments.js");
+
+        if (window.initTournaments)
+          window.initTournaments(); 
+
       }
             
 

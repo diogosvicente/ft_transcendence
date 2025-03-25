@@ -8,15 +8,28 @@ document.addEventListener("DOMContentLoaded", () => {
   let selectedTournament = null;
   let participants = [];
   let matches = [];
-  let currentFilter = "all"; // Pode ser "all", "planned", "ongoing", "completed"
+  let currentFilter = "all"; // "all", "planned", "ongoing", "completed"
 
-  // Token e ID do usuário obtidos do localStorage (exemplo)
+  // Token e ID do usuário do localStorage
   const token = localStorage.getItem("access");
   const loggedID = parseInt(localStorage.getItem("id") || "0", 10);
 
   // --------------------------------------------------------
+  // FUNÇÃO: formatDate
+  // Formata a data para "dia/mes/ano às hh:mm"
+  // --------------------------------------------------------
+  function formatDate(dateString) {
+    const d = new Date(dateString);
+    const day = d.getDate().toString().padStart(2, '0');
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    const year = d.getFullYear();
+    const hours = d.getHours().toString().padStart(2, '0');
+    const minutes = d.getMinutes().toString().padStart(2, '0');
+    return `${day}/${month}/${year} às ${hours}:${minutes}`;
+  }
+
+  // --------------------------------------------------------
   // FUNÇÃO: authorizedFetch
-  // Adiciona o cabeçalho Authorization com Bearer <token>
   // --------------------------------------------------------
   async function authorizedFetch(url, options = {}) {
     if (!token) {
@@ -24,16 +37,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (!options.headers) options.headers = {};
     options.headers["Authorization"] = `Bearer ${token}`;
-    console.log(`[DEBUG] authorizedFetch -> '${url}'`, options);
     return fetch(url, options);
   }
 
   // --------------------------------------------------------
   // FUNÇÃO: loadingTournaments
-  // Busca a lista de torneios da API e chama renderTournaments
+  // Exibe o loading e busca os torneios
   // --------------------------------------------------------
   async function loadingTournaments() {
-    console.log("[DEBUG] Iniciando loadingTournaments()...");
+    const loadingEl = document.getElementById("tournaments-loading");
+    if (loadingEl) loadingEl.style.display = "block"; // Exibe o loading
+
     try {
       const response = await authorizedFetch("/api/game/tournaments/");
       if (!response.ok) {
@@ -41,7 +55,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       tournaments = await response.json();
-      console.log("[DEBUG] Torneios obtidos:", tournaments);
 
       // Ordena do mais recente para o mais antigo (opcional)
       tournaments.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -49,20 +62,23 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (error) {
       console.error("[DEBUG] Erro ao carregar torneios:", error);
       document.getElementById("error-message").textContent = "Erro ao carregar torneios.";
+    } finally {
+      if (loadingEl) loadingEl.style.display = "none";
+      const tableSection = document.getElementById("tournaments-table-section");
+      if (tableSection) tableSection.style.display = "block";
     }
   }
 
   // --------------------------------------------------------
   // FUNÇÃO: renderTournaments
-  // Exibe a lista de torneios no <tbody id="tournaments-body">
-  // Respeita o filtro (currentFilter)
   // --------------------------------------------------------
   function renderTournaments() {
     const tournamentsBody = document.getElementById("tournaments-body");
     tournamentsBody.innerHTML = "";
 
-    // Filtra se o status do torneio bater com currentFilter (ou "all" = sem filtro)
-    const filtered = tournaments.filter(t => (currentFilter === "all" ? true : t.status === currentFilter));
+    const filtered = tournaments.filter(t =>
+      currentFilter === "all" ? true : t.status === currentFilter
+    );
 
     filtered.forEach((t, idx) => {
       const row = document.createElement("tr");
@@ -82,7 +98,7 @@ document.addEventListener("DOMContentLoaded", () => {
       tdCreator.textContent = t.creator_display_name || "Desconhecido";
       row.appendChild(tdCreator);
 
-      // Data de criação
+      // Data de criação formatada
       const tdCreatedAt = document.createElement("td");
       tdCreatedAt.textContent = t.created_at;
       row.appendChild(tdCreatedAt);
@@ -99,13 +115,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Ações
       const tdActions = document.createElement("td");
-      // Botão de Detalhes
       const btnDetails = document.createElement("button");
       btnDetails.textContent = "Detalhes";
       btnDetails.addEventListener("click", () => handleViewTournament(t.id));
       tdActions.appendChild(btnDetails);
 
-      // Se status = planned e !user_registered => Botão Inscrever-se
       if (t.status === "planned" && !t.user_registered) {
         const btnRegister = document.createElement("button");
         btnRegister.textContent = "Inscrever-se";
@@ -119,7 +133,6 @@ document.addEventListener("DOMContentLoaded", () => {
         tdActions.appendChild(btnRegister);
       }
 
-      // Se usuário já inscrito => exibe "Inscrito como: alias"
       if (t.user_registered) {
         const badge = document.createElement("span");
         badge.textContent = `Inscrito como: ${t.user_alias}`;
@@ -128,7 +141,6 @@ document.addEventListener("DOMContentLoaded", () => {
         tdActions.appendChild(badge);
       }
 
-      // Se status=planned, user é criador e >=3 participantes => Botão Iniciar
       if (t.status === "planned" && t.creator_id === loggedID && t.total_participants >= 3) {
         const btnStart = document.createElement("button");
         btnStart.textContent = "Iniciar";
@@ -144,7 +156,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --------------------------------------------------------
   // FUNÇÃO: handleViewTournament
-  // Busca detalhes (tournament, participants, matches) e exibe
   // --------------------------------------------------------
   async function handleViewTournament(tournamentId) {
     console.log("[DEBUG] handleViewTournament() para ID:", tournamentId);
@@ -159,7 +170,6 @@ document.addEventListener("DOMContentLoaded", () => {
       participants = data.participants || [];
       matches = data.matches || [];
 
-      // Esconde a tabela e mostra a seção de detalhes
       document.getElementById("tournaments-table-section").style.display = "none";
       document.getElementById("tournament-details").style.display = "block";
       renderTournamentDetails();
@@ -171,7 +181,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --------------------------------------------------------
   // FUNÇÃO: renderTournamentDetails
-  // Renderiza participantes e partidas no DOM
   // --------------------------------------------------------
   function renderTournamentDetails() {
     if (!selectedTournament) return;
@@ -183,15 +192,10 @@ document.addEventListener("DOMContentLoaded", () => {
     detailsInfo.innerHTML = `
       <p><strong>Nome:</strong> ${tournament.name}</p>
       <p><strong>Status:</strong> ${tournament.status}</p>
-      <p><strong>Criado em:</strong> ${tournament.created_at}</p>
+      <p><strong>Criado em:</strong> ${formatDate(tournament.created_at)}</p>
       <p><strong>Total de Participantes:</strong> ${participants.length}</p>
     `;
 
-    // --------------------------------------------------------
-    // EXIBE BOTÃO "INICIAR PRÓXIMA PARTIDA"
-    // Caso o torneio esteja em andamento (ongoing) e o usuário logado seja o criador
-    // --------------------------------------------------------
-    console.log("✨ testando os valores tournaments: ", tournament);
     if (tournament.status === "ongoing" && tournament.created_by === loggedID) {
       const btnNextMatch = document.createElement("button");
       btnNextMatch.textContent = "Iniciar Próxima Partida";
@@ -199,11 +203,9 @@ document.addEventListener("DOMContentLoaded", () => {
       btnNextMatch.addEventListener("click", () => {
         handleStartNextMatch(tournament.id);
       });
-      // Insere o botão no topo das informações
       detailsInfo.insertAdjacentElement("afterbegin", btnNextMatch);
     }
 
-    // Participantes
     if (participants.length > 0) {
       let partHTML = `<table border="1" cellpadding="6">
         <tr><th>#</th><th>Display Name</th><th>Alias</th><th>Points</th></tr>`;
@@ -223,7 +225,6 @@ document.addEventListener("DOMContentLoaded", () => {
       detailsParts.innerHTML = "<p>Nenhum participante inscrito.</p>";
     }
 
-    // Partidas
     if (matches.length > 0) {
       let matchHTML = `<table border="1" cellpadding="6">
         <tr><th>Partida</th><th>Placar</th><th>Status</th></tr>`;
@@ -243,7 +244,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --------------------------------------------------------
-  // FUNÇÃO: handleRegister (Inscrever-se)
+  // FUNÇÃO: handleRegister
   // --------------------------------------------------------
   async function handleRegister(tournamentId, alias) {
     try {
@@ -257,8 +258,7 @@ document.addEventListener("DOMContentLoaded", () => {
         alert(errorData.error || "Erro ao registrar no torneio.");
         return;
       }
-      const data = await response.json(); // { tournament: {...} }
-      // Atualiza localmente
+      const data = await response.json();
       tournaments = tournaments.map(t => {
         if (t.id === data.tournament.id) {
           return {
@@ -279,7 +279,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --------------------------------------------------------
-  // FUNÇÃO: handleStartTournament (Iniciar torneio)
+  // FUNÇÃO: handleStartTournament
   // --------------------------------------------------------
   async function handleStartTournament(tournamentId) {
     const t = tournaments.find(t => t.id === tournamentId);
@@ -297,7 +297,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       alert("Torneio iniciado com sucesso!");
-      loadingTournaments();
+      loadingTournaments(); // Recarrega a lista
     } catch (error) {
       console.error("[DEBUG] Erro ao iniciar torneio:", error);
       alert("Erro ao iniciar torneio.");
@@ -305,11 +305,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --------------------------------------------------------
-  // FUNÇÃO: handleStartNextMatch (Iniciar próxima partida)
+  // FUNÇÃO: handleStartNextMatch
   // --------------------------------------------------------
   async function handleStartNextMatch(tournamentId) {
     try {
-      // Exemplo de rota: ajuste conforme sua API
       const response = await authorizedFetch('/api/game/tournament/next-match/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -322,8 +321,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       const data = await response.json();
       alert("Próxima partida iniciada com sucesso!");
-
-      // Atualiza os detalhes do torneio para exibir a nova partida
       handleViewTournament(tournamentId);
     } catch (error) {
       console.error("[DEBUG] Erro ao iniciar a próxima partida:", error);
@@ -332,7 +329,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --------------------------------------------------------
-  // FUNÇÃO: handleCreateTournament (Criar torneio)
+  // FUNÇÃO: handleCreateTournament
   // --------------------------------------------------------
   async function handleCreateTournament() {
     const name = document.getElementById("new-tournament-name").value.trim();
@@ -354,7 +351,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       const data = await response.json();
-      // Ajuste local do torneio criado
       const createdAt = new Date().toLocaleDateString("pt-BR");
       const createdTournament = {
         ...data.tournament,
@@ -379,21 +375,74 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --------------------------------------------------------
-  // FUNÇÃO: initTournaments
+  // ENVOLVENDO initTournaments EM window E RECARREGANDO TODOS OS ELEMENTOS
   // --------------------------------------------------------
-  function initTournaments() {
-    console.log("[DEBUG] initTournaments() chamado. Carregando torneios...");
+  window.initTournaments = function () {
+
+    // Reinicia a exibição dos elementos essenciais
+    const tableSection = document.getElementById("tournaments-table-section");
+    const tournamentDetails = document.getElementById("tournament-details");
+    const errorMsg = document.getElementById("error-message");
+    const successMsg = document.getElementById("success-message");
+    const createTournamentSection = document.getElementById("create-tournament-section");
+
+    if (tableSection) tableSection.style.display = "none";
+    if (tournamentDetails) tournamentDetails.style.display = "none";
+    if (errorMsg) errorMsg.textContent = "";
+    if (successMsg) successMsg.textContent = "";
+    if (createTournamentSection) createTournamentSection.style.display = "none";
+
+    // Anexa eventos aos elementos essenciais
+    const toggleCreateFormBtn = document.getElementById("toggle-create-form");
+    const createTournamentBtn = document.getElementById("create-tournament-btn");
+    const btnsFiltro = document.querySelectorAll(".btn-filtro");
+    const backToListBtn = document.getElementById("back-to-list");
+
+    if (toggleCreateFormBtn && createTournamentSection) {
+      toggleCreateFormBtn.addEventListener("click", () => {
+        if (createTournamentSection.style.display === "none" || createTournamentSection.style.display === "") {
+          createTournamentSection.style.display = "block";
+        } else {
+          createTournamentSection.style.display = "none";
+        }
+      });
+    }
+
+    if (createTournamentBtn) {
+      createTournamentBtn.addEventListener("click", () => {
+        handleCreateTournament();
+      });
+    }
+
+    btnsFiltro.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        currentFilter = btn.getAttribute("data-filter");
+        renderTournaments();
+      });
+    });
+
+    if (backToListBtn) {
+      backToListBtn.addEventListener("click", () => {
+        selectedTournament = null;
+        participants = [];
+        matches = [];
+        document.getElementById("tournaments-table-section").style.display = "block";
+        document.getElementById("tournament-details").style.display = "none";
+        if (errorMsg) errorMsg.textContent = "";
+        if (successMsg) successMsg.textContent = "";
+      });
+    }
+
+    // Inicia o carregamento dos torneios
     loadingTournaments();
-  }
+  };
 
   // --------------------------------------------------------
   // FUNÇÃO: attachTournamentEvents
-  //  Anexa eventos aos elementos do DOM (form, botões, etc.)
+  // Verifica se elementos essenciais existem, anexa eventos e retorna true se tudo estiver presente.
   // --------------------------------------------------------
   function attachTournamentEvents() {
-    console.log("[DEBUG] Tentando obter elementos essenciais do DOM...");
 
-    // Captura todos os elementos que precisamos
     const errorMsg = document.getElementById("error-message");
     const successMsg = document.getElementById("success-message");
     const toggleCreateFormBtn = document.getElementById("toggle-create-form");
@@ -402,7 +451,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const tournamentsBody = document.getElementById("tournaments-body");
     const backToListBtn = document.getElementById("back-to-list");
 
-    // Verifica se todos existem
     if (
       !errorMsg ||
       !successMsg ||
@@ -416,69 +464,27 @@ document.addEventListener("DOMContentLoaded", () => {
       return false;
     }
 
-    console.log("[DEBUG] Elementos essenciais encontrados! Anexando eventos...");
-
-    // Botão para exibir/ocultar formulário de criação
-    toggleCreateFormBtn.addEventListener("click", () => {
-      if (createTournamentSection.style.display === "none" || createTournamentSection.style.display === "") {
-        createTournamentSection.style.display = "block";
-      } else {
-        createTournamentSection.style.display = "none";
-      }
-    });
-
-    // Botão para criar torneio
-    createTournamentBtn.addEventListener("click", () => {
-      handleCreateTournament();
-    });
-
-    // Botões de filtro
-    const btnsFiltro = document.querySelectorAll(".btn-filtro");
-    btnsFiltro.forEach((btn) => {
-      btn.addEventListener("click", () => {
-        currentFilter = btn.getAttribute("data-filter");
-        renderTournaments();
-      });
-    });
-
-    // Botão de voltar para lista
-    backToListBtn.addEventListener("click", () => {
-      selectedTournament = null;
-      participants = [];
-      matches = [];
-      document.getElementById("tournaments-table-section").style.display = "block";
-      document.getElementById("tournament-details").style.display = "none";
-      errorMsg.textContent = "";
-      successMsg.textContent = "";
-    });
-
-    // Se o usuário tem token, inicia a listagem
-    if (!token) {
-      errorMsg.textContent = "Token não encontrado. Faça login antes.";
-    } else {
-      initTournaments();
-    }
-
-    return true; // Indica que deu certo
+    return true;
   }
 
   // --------------------------------------------------------
-  // MÉTODO DE POLLING
-  //  Espera até 5 segundos para achar todos os elementos essenciais
+  // MÉTODO DE POLLING COM LOADING
+  // Enquanto não achar os elementos essenciais, exibe loading.
+  // Quando achar, chama attachTournamentEvents() e window.initTournaments()
   // --------------------------------------------------------
   const maxWaitTime = 5000; // 5 segundos
   const pollStartTime = Date.now();
   const pollingInterval = setInterval(() => {
-    console.log("[DEBUG] Polling: verificando se os elementos essenciais estão no DOM...");
 
-    // Tenta rodar attachTournamentEvents()
     if (attachTournamentEvents()) {
-      console.log("[DEBUG] Eventos anexados com sucesso! Encerrando polling.");
+      const loadingEl = document.getElementById("tournaments-loading");
+      if (loadingEl) loadingEl.style.display = "none";
+      window.initTournaments();
       clearInterval(pollingInterval);
     } else {
-      // Se não achou tudo, verifica se passou do tempo máximo
+      const loadingEl = document.getElementById("tournaments-loading");
+      if (loadingEl) loadingEl.style.display = "block";
       if (Date.now() - pollStartTime > maxWaitTime) {
-        console.error("[DEBUG] Tempo esgotado. Elementos essenciais não encontrados no DOM.");
         clearInterval(pollingInterval);
       }
     }
