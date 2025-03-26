@@ -24,8 +24,12 @@ setup:
 up:
 	@printf "🚀 Subindo serviços com docker-compose...\n"
 	@docker compose -f $(DOCKER_COMPOSE_FILE) up -d --build
+
 	@printf "⏳ Aguardando containers e executando migrations...\n"
 	@docker compose -f $(DOCKER_COMPOSE_FILE) exec -it web python manage.py migrate
+
+	@printf "✅ Copiando arquivos estáticos...\n"
+	@docker compose -f $(DOCKER_COMPOSE_FILE) exec -it web cp -R /app/client_pong/static/client_pong/ /app/staticfiles/
 
 down:
 	@printf "🛑 Parando serviços...\n"

@@ -18,8 +18,7 @@ mkdir -p "$VOLUME_BASE_PATH/redis_data" \
          "$VOLUME_BASE_PATH/postgres_data" \
          "$VOLUME_BASE_PATH/django_app" \
          "$VOLUME_BASE_PATH/staticfiles" \
-         "$VOLUME_BASE_PATH/media" \
-         "$VOLUME_BASE_PATH/react_app"
+         "$VOLUME_BASE_PATH/media"
 
 chmod -R 775 "$VOLUME_BASE_PATH"
 chown -R "$USER" "$VOLUME_BASE_PATH"
@@ -36,20 +35,16 @@ envsubst < templates/env.template > .env
 echo "Gerando nginx.conf a partir de nginx.conf.template..."
 envsubst '$IP_ADDRESS' < templates/nginx.conf.template > nginx.conf
 
-# 7) Gera vite.config.js (substitui todas as variáveis)
-echo "Gerando vite.config.js a partir de vite.config.js.template..."
-envsubst < templates/vite.config.js.template > client-pong/vite.config.js
-
-# 8) Gera config.js (substitui $IP_ADDRESS)
+# 7) Gera config.js (substitui $IP_ADDRESS)
 echo "Gerando config.js a partir de config.js.template..."
-envsubst '$IP_ADDRESS' < templates/config.js.template > client-pong/src/assets/config/config.js
+envsubst '$IP_ADDRESS' < templates/config.js.template > server-pong/client_pong/static/client_pong/js/config.js
 
-# 9) Gera docker-compose.yml (substitui $VOLUME_BASE_PATH, $PROJECT_PATH e $IP_ADDRESS)
+# 8) Gera docker-compose.yml (substitui $VOLUME_BASE_PATH, $PROJECT_PATH e $IP_ADDRESS)
 #    Necessário ter um docker-compose.yml.template com $VOLUME_BASE_PATH e $PROJECT_PATH
 echo "Gerando docker-compose.yml a partir de docker-compose.yml.template..."
 envsubst '$VOLUME_BASE_PATH $PROJECT_PATH $IP_ADDRESS' < templates/docker-compose.yml.template > docker-compose.yml
 
-# 10) Gera certificado autoassinado para $IP_ADDRESS
+# 9) Gera certificado autoassinado para $IP_ADDRESS
 echo "Gerando certificado autoassinado para $IP_ADDRESS..."
 openssl req -x509 -newkey rsa:4096 -days 365 -nodes \
   -keyout server-pong/certs/key.pem -out server-pong/certs/cert.pem \
@@ -60,7 +55,6 @@ echo
 echo "Setup finalizado com sucesso! Confira os arquivos gerados:"
 echo " - .env"
 echo " - nginx.conf"
-echo " - client-pong/vite.config.js"
 echo " - client-pong/src/assets/config/config.js"
 echo " - docker-compose.yml"
 echo " - server-pong/certs/key.pem e cert.pem"

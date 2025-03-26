@@ -1,7 +1,6 @@
 // websocketManager.js
 (function(){
     // Configurações e funções auxiliares
-    var API_BASE_URL = ""; // Substitua pela sua URL de API
     function getWsUrl(path){
       return path;
     }

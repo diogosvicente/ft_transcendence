@@ -4,9 +4,6 @@
  * e carregamento dinâmico de scripts (landing.js, home.js, etc.).
  **************************************************************/
 
-// Defina a variável global API_BASE_URL
-const API_BASE_URL = "http://127.0.0.1:8000";
-
 /* ========== 1. Checagem de Autenticação ========== */
 function isAuthenticated() {
   return !!localStorage.getItem("access");
@@ -23,9 +20,12 @@ async function loadPartial(partialFile) {
 }
 
 /* ========== 3. Carregar script dinamicamente (ex.: landing.js, navbar.js) ========== */
-function loadScript(scriptName) {
+function loadScript(scriptName, isModule = false) {
   return new Promise((resolve, reject) => {
     const script = document.createElement("script");
+    if (isModule) {
+      script.type = "module";  // <-- Faz o navegador interpretar como ES Module
+    }
     script.src = `/static/client_pong/js/${scriptName}`;
     script.onload = () => resolve();
     script.onerror = () =>
@@ -222,6 +222,7 @@ const routes = [
     initFunction: "initGame3D",
     private: false,
     layout: "public",
+    isModule: true 
   },
 ];
 
@@ -329,7 +330,10 @@ async function attachEventsAfterRender(route, params) {
   // 8.1. Carregar script dinâmico da rota, se definido
   if (route.script) {
     try {
-      await loadScript(route.script);
+      // Se a rota tiver isModule = true, carrega como módulo
+      await loadScript(route.script, route.isModule === true);
+
+      // Depois que o script carrega, chamamos a função init, se existir
       if (route.initFunction && window[route.initFunction]) {
         window[route.initFunction]();
       }
@@ -337,15 +341,6 @@ async function attachEventsAfterRender(route, params) {
       console.error(`Erro ao carregar script ${route.script}:`, err);
     }
   }
-
-  // 8.2. Seletor de idioma (opcional, caso não esteja no navbar.js)
-  // document.querySelectorAll("[data-lang]").forEach((langEl) => {
-  //   langEl.addEventListener("click", () => {
-  //     const lang = langEl.getAttribute("data-lang");
-  //     console.log("Mudando idioma para:", lang);
-  //     // Implemente a lógica de troca de idioma, se necessário
-  //   });
-  // });
 }
 
 /* ========== 9. Início da aplicação ========== */

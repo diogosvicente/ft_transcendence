@@ -141,7 +141,7 @@ window.initUserProfile = async () => {
 
         // Preencher dados
         elements.avatar.src = userData.avatar
-            ? `http://localhost:8000${userData.avatar}`
+            ? `${API_BASE_URL}${userData.avatar}`
             : '/static/client_pong/avatars/default.png';
         elements.avatar.src += `?v=${new Date().getTime()}`;
 

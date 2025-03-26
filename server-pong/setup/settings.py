@@ -1,3 +1,4 @@
+
 from pathlib import Path
 from dotenv import load_dotenv
 from datetime import timedelta
@@ -5,16 +6,13 @@ from django.utils.translation import gettext_lazy as _
 import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent  # server-pong/
-ENV_PATH = '.env'               # ft_transcendence/.env
+ENV_PATH = BASE_DIR.parent / '.env'               # ft_transcendence/.env
 load_dotenv(ENV_PATH)
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'fallback')
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 
 DEBUG = True  # (apenas em desenvolvimento)
-SECURE_SSL_REDIRECT = False
-CSRF_COOKIE_SECURE = False
-SESSION_COOKIE_SECURE = False
 
 INSTALLED_APPS = ['django_extensions','daphne',
     # Apps integrados do Django
@@ -80,7 +78,7 @@ DATABASES = {
         'NAME': os.getenv('DB_NAME', 'ft_transcendence'),
         'USER': os.getenv('DB_USER', 'postgres'),
         'PASSWORD': os.getenv('DB_PASSWORD', '123456'),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'HOST': os.getenv('DB_HOST', 'db'),
         'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
@@ -118,7 +116,7 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            'hosts': [('localhost', 6380)],
+            'hosts': [('redis', 6379)],
         }
     }
 }
@@ -162,7 +160,7 @@ LOCALE_PATHS = [
     os.path.join(BASE_DIR, 'locale'),
 ]
 
-#SECURE_SSL_REDIRECT = True
-#SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-#CSRF_COOKIE_SECURE = True
-#SESSION_COOKIE_SECURE = True
+SECURE_SSL_REDIRECT = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
