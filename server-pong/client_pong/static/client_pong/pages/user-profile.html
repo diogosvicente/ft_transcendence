@@ -69,8 +69,16 @@
 
         <div class="mb-3">
           <label for="new-password" class="form-label">Nova Senha</label>
-          <input type="password" class="form-control" id="new-password" autocomplete="new-password" minlength="8">
+          <input type="password" class="form-control" id="new-password" autocomplete="new-password" minlength="12">
           <div class="form-text">Deixe em branco para não alterar</div>
+          <!-- Lista de requisitos de senha -->
+          <ul class="list-unstyled" id="passwordRequirements">
+            <li id="reqMinLength" style="color: red;">Mínimo de 12 caracteres</li>
+            <li id="reqUppercase" style="color: red;">Ao menos uma letra maiúscula</li>
+            <li id="reqLowercase" style="color: red;">Ao menos uma letra minúscula</li>
+            <li id="reqNumber" style="color: red;">Ao menos um número</li>
+            <li id="reqSpecialChar" style="color: red;">Ao menos um caractere especial</li>
+          </ul>
         </div>
 
         <div class="mb-3">

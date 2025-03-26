@@ -65,7 +65,7 @@ class MatchHistoryAPIView(APIView):
             if match.winner_id is not None:
                 result = "Vitória" if match.winner_id == user.id else "Derrota"
             else:
-                result = "Não definido"
+                result = "Não disputada"
 
             match_history.append({
                 "id": match.id,

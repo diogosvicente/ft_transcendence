@@ -296,26 +296,28 @@ window.initLanding = function() {
   // ==========================================================
   // F) Mostrar/Esconder senha
   // ==========================================================
+  // Toggle para o campo de login
   if (toggleLoginPassword) {
     toggleLoginPassword.addEventListener("click", () => {
       if (loginPassword.type === "password") {
         loginPassword.type = "text";
-        toggleLoginPassword.innerHTML = '<i class="fas fa-eye-slash"></i>';
+        toggleLoginPassword.innerHTML = '<i class="fa fa-eye-slash"></i>';
       } else {
         loginPassword.type = "password";
-        toggleLoginPassword.innerHTML = '<i class="fas fa-eye"></i>';
+        toggleLoginPassword.innerHTML = '<i class="fa fa-eye"></i>';
       }
     });
   }
 
+  // Toggle para o campo de registro
   if (toggleRegisterPassword) {
     toggleRegisterPassword.addEventListener("click", () => {
       if (registerPassword.type === "password") {
         registerPassword.type = "text";
-        toggleRegisterPassword.innerHTML = '<i class="fas fa-eye-slash"></i>';
+        toggleRegisterPassword.innerHTML = '<i class="fa fa-eye-slash"></i>';
       } else {
         registerPassword.type = "password";
-        toggleRegisterPassword.innerHTML = '<i class="fas fa-eye"></i>';
+        toggleRegisterPassword.innerHTML = '<i class="fa fa-eye"></i>';
       }
     });
   }
@@ -329,21 +331,10 @@ window.initLanding = function() {
     });
   }
 
-    // ==========================================================
-    if (btnGame3D) {
-      btnGame3D.addEventListener("click", () => {
-        navigateTo("/pong/game3D");
-      });
-    }
-
   // ==========================================================
-  // H) Lógica de Idioma (Dummy)
-  // ==========================================================
-  document.querySelectorAll(".language-card").forEach((card) => {
-    card.addEventListener("click", () => {
-      const lang = card.getAttribute("data-lang");
-      alert("Mudando idioma para: " + lang);
-      // Implemente sua lógica real de i18n ou recarregue a página com param de idioma etc.
+  if (btnGame3D) {
+    btnGame3D.addEventListener("click", () => {
+      navigateTo("/pong/game3D");
     });
-  });
+  }
 };
