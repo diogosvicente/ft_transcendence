@@ -6,9 +6,6 @@
       return;
     }
 
-    console.log("[DEBUG] Página de jogo detectada. Iniciando polling...");
-
-
     // Função de polling para aguardar que os elementos essenciais existam no DOM
     function waitForElements() {
       const loadingEl = document.getElementById("game-loading");
@@ -24,6 +21,14 @@
 
     // Função principal do jogo, chamada após os elementos existirem
     function initGame(loadingEl, contentEl) {
+
+      // Função utilitária para construir a URL do WebSocket
+      function getWsUrl(endpoint) {
+        const loc = window.location;
+        let newUri = loc.protocol === "https:" ? "wss:" : "ws:";
+        newUri += "//" + loc.host + endpoint;
+        return newUri;
+      }
 
       const defaultAvatar = `${API_BASE_URL}/media/avatars/default.png`;
 
@@ -54,8 +59,6 @@
       let pendingState = null;
       let isPaused = false;
       let moveInterval = null;
-
-      console.log("[DEBUG] Elements:", elements);
 
       // Função que define o core do jogo: renderização do canvas
       const gameCore = (canvas) => {
@@ -246,16 +249,13 @@
 
         if (elements.loading) {
           elements.loading.classList.add("d-none");
-          console.log("[DEBUG] Ocultou loading");
         }
         if (elements.content) {
           elements.content.classList.remove("d-none");
-          console.log("[DEBUG] Exibiu conteúdo do jogo");
         }
 
         const accessToken = localStorage.getItem("access");
-        // const wsUrl = `wss://${window.location.host}/ws/game/${matchId}/?access_token=${accessToken}`; VERSÃO PEDRO
-        const wsUrl = getWsUrl(`/ws/game/${matchId}/?access_token=${accessToken}`); // getWsUrl vem do config.js
+        const wsUrl = `${getWsUrl(`/ws/game/${matchId}/`)}?access_token=${accessToken}`;
 
         socket = new WebSocket(wsUrl);
 
