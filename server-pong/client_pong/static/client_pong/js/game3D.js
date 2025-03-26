@@ -193,6 +193,49 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
     window.addEventListener('resize', onWindowResize, false);
   }
 
+  // Vincula os botões mobile (W, S, ↑, ↓) para toque/clique
+  function bindMobileControls() {
+    const btnW = document.getElementById('btnW');
+    const btnS = document.getElementById('btnS');
+    const btnUp = document.getElementById('btnUp');
+    const btnDown = document.getElementById('btnDown');
+
+  
+    // Funções auxiliares para pressionar/soltar
+    const pressKey = (key) => {
+      keysPressed[key] = true;
+    };
+    const releaseKey = (key) => {
+      keysPressed[key] = false;
+    };
+
+    // Se existirem, adiciona listeners
+    if (btnW) {
+      btnW.addEventListener('mousedown', () => pressKey('KeyW'));
+      btnW.addEventListener('mouseup',   () => releaseKey('KeyW'));
+      btnW.addEventListener('touchstart', (e) => { e.preventDefault(); pressKey('KeyW'); });
+      btnW.addEventListener('touchend',   () => releaseKey('KeyW'));
+    }
+    if (btnS) {
+      btnS.addEventListener('mousedown', () => pressKey('KeyS'));
+      btnS.addEventListener('mouseup',   () => releaseKey('KeyS'));
+      btnS.addEventListener('touchstart', (e) => { e.preventDefault(); pressKey('KeyS'); });
+      btnS.addEventListener('touchend',   () => releaseKey('KeyS'));
+    }
+    if (btnUp) {
+      btnUp.addEventListener('mousedown', () => pressKey('ArrowUp'));
+      btnUp.addEventListener('mouseup',   () => releaseKey('ArrowUp'));
+      btnUp.addEventListener('touchstart', (e) => { e.preventDefault(); pressKey('ArrowUp'); });
+      btnUp.addEventListener('touchend',   () => releaseKey('ArrowUp'));
+    }
+    if (btnDown) {
+      btnDown.addEventListener('mousedown', () => pressKey('ArrowDown'));
+      btnDown.addEventListener('mouseup',   () => releaseKey('ArrowDown'));
+      btnDown.addEventListener('touchstart', (e) => { e.preventDefault(); pressKey('ArrowDown'); });
+      btnDown.addEventListener('touchend',   () => releaseKey('ArrowDown'));
+    }
+  }
+  
   // Reseta a bola no centro com direção aleatória
   gameLogic.resetBall = function resetBall() {
     if (!ball) return;
@@ -318,10 +361,12 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
     const startBtn = document.getElementById('startGame');
     const updateBtn = document.getElementById('updateSettings');
     const countdown = document.getElementById('countdownOverlay');
+    const btnW = document.getElementById('btnW');
+    const btnS = document.getElementById('btnS');
+    const btnUp = document.getElementById('btnUp');
+    const btnDown = document.getElementById('btnDown');
 
-    // Se os elementos existem, anexamos listeners e paramos o polling
-    if (startBtn && updateBtn) {
-      console.log("[DEBUG] Botões encontrados. Anexando event listeners.");
+    if (startBtn && updateBtn && btnW && btnS &&  btnUp && btnDown ) {
 
       // Botão "Iniciar Jogo"
       startBtn.addEventListener('click', () => {

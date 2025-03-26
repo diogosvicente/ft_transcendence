@@ -10,8 +10,10 @@
     function waitForElements() {
       const loadingEl = document.getElementById("game-loading");
       const contentEl = document.getElementById("game-content");
+      const upBtn = document.getElementById("mobile-control-up");
+      const downBtn = document.getElementById("mobile-control-down");
 
-      if (!loadingEl || !contentEl) {
+      if (!loadingEl || !contentEl || !upBtn || !downBtn) {
         setTimeout(waitForElements, 200);
         return;
       }

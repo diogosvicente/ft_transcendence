@@ -141,7 +141,7 @@ document.addEventListener("DOMContentLoaded", () => {
         tdActions.appendChild(badge);
       }
 
-      if (t.status === "planned" && t.creator_id === loggedID && t.total_participants >= 3) {
+      if (t.status === "planned" && t.creator_display_name === localStorage.getItem("displayName") && t.total_participants >= 3) {
         const btnStart = document.createElement("button");
         btnStart.textContent = "Iniciar";
         btnStart.style.marginLeft = "8px";

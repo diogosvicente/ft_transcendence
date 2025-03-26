@@ -21,12 +21,15 @@ async function saveProfileChanges(user_id) {
         formData.append('is_2fa_verified', enable2FA);
         if (avatarFile) formData.append('avatar', avatarFile);
 
+        const csrfToken = getCSRFToken();
+        const headers = {
+            'Authorization': `Bearer ${localStorage.getItem('access')}`
+        };
+        if (csrfToken) headers['X-CSRFToken'] = csrfToken;
+
         const response = await fetch(`/api/user-management/user-profile/${user_id}/`, {
             method: 'PATCH',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('access')}`,
-                'X-CSRFToken': getCSRFToken(),
-            },
+            headers,
             body: formData
         });
 
@@ -40,7 +43,7 @@ async function saveProfileChanges(user_id) {
             document.getElementById('edit-profile-form').classList.add('d-none');
             document.getElementById('profile-content').classList.remove('d-none');
 
-            showSuccess('Alterações salvas com sucesso!'); // Exemplo: toast ou mensagem
+            showSuccess('Alterações salvas com sucesso!');
         } else {
             const errorData = await response.json();
             showError(errorData.error || 'Erro ao atualizar perfil');
@@ -51,32 +54,24 @@ async function saveProfileChanges(user_id) {
     }
 }
 
-// Função para atualizar o perfil com os novos dados
 function updateProfileUI(updatedData) {
-    // Atualiza os campos do perfil
     document.getElementById('profile-username').textContent = updatedData.display_name;
     document.getElementById('stats-wins').textContent = updatedData.wins;
     document.getElementById('stats-losses').textContent = updatedData.losses;
     document.getElementById('stats-winrate').textContent = `${updatedData.winrate}%`;
 
-    // Atualiza o avatar (adiciona timestamp para evitar cache)
     if (updatedData.avatar_url) {
         const avatarImg = document.getElementById('profile-avatar');
         avatarImg.src = updatedData.avatar_url + '?t=' + Date.now();
     }
-
-    // Atualiza o switch de 2FA no perfil (se aplicável)
-    // (Você pode precisar de um elemento separado no perfil para exibir o status do 2FA)
 }
 
-// Função para carregar estado atual do 2FA
 function loadCurrentSettings(userData) {
     document.getElementById('display-name').value = userData.display_name || '';
     document.getElementById('2fa-switch').checked = userData.is_2fa_verified || false;
 }
 
 window.initUserProfile = async () => {
-    // Elementos do DOM
     const elements = {
         loading: document.getElementById('profile-loading'),
         error: document.getElementById('profile-error'),
@@ -89,14 +84,12 @@ window.initUserProfile = async () => {
         matchList: document.getElementById('match-history-list')
     };
 
-    // Estado inicial
     let state = {
         user: null,
         matches: [],
         error: null
     };
 
-    // Helpers
     const showError = (message) => {
         elements.error.textContent = message;
         elements.error.classList.remove('d-none');
@@ -104,7 +97,6 @@ window.initUserProfile = async () => {
         elements.loading.classList.add('d-none');
     };
 
-    // Obter user_id da URL
     const pathSegments = window.location.pathname.split('/');
     const user_id = pathSegments[pathSegments.length - 1];
 
@@ -114,7 +106,6 @@ window.initUserProfile = async () => {
     try {
         const accessToken = localStorage.getItem('access');
 
-        // Buscar dados do usuário
         const userRes = await fetch(`/api/user-management/user-profile/${user_id}/`, {
             headers: { Authorization: `Bearer ${accessToken}` }
         });
@@ -122,24 +113,18 @@ window.initUserProfile = async () => {
 
         const userData = await userRes.json();
 
-        // Buscar histórico de partidas
         const matchesRes = await fetch(`/api/game/match-history/${user_id}/`, {
             headers: { Authorization: `Bearer ${accessToken}` }
         });
         if (!matchesRes.ok) throw new Error('Falha ao carregar histórico');
 
-        // Not implemented yet
         const matchesData = await matchesRes.json();
 
-        // Atualizar estado
         state = { ...state, user: userData, matches: matchesData };
-        console.log(state.matches[0])
 
-        // Atualizar UI
         elements.loading.classList.add('d-none');
         elements.content.classList.remove('d-none');
 
-        // Preencher dados
         elements.avatar.src = userData.avatar
             ? `${API_BASE_URL}${userData.avatar}`
             : '/static/client_pong/avatars/default.png';
@@ -188,7 +173,6 @@ window.initUserProfile = async () => {
     }
 };
 
-// Verificar se é o próprio perfil
 function checkOwnProfile(userId) {
     const loggedId = localStorage.getItem('id');
     return parseInt(loggedId, 10) === parseInt(userId, 10);
@@ -196,41 +180,36 @@ function checkOwnProfile(userId) {
 
 function showError(message, duration = 5000) {
     const errorElement = document.getElementById('profile-error');
-
-    // Define a mensagem e mostra o elemento
     errorElement.textContent = message;
     errorElement.classList.remove('d-none');
-
-    // Opcional: Esconde o erro após um tempo
     setTimeout(() => {
         errorElement.classList.add('d-none');
     }, duration);
 }
 
-// Mostrar formulário de edição
+function showSuccess(mensagem) {
+    const errorDiv = document.getElementById('profile-error');
+    errorDiv.textContent = mensagem;
+    errorDiv.classList.remove('d-none', 'alert-danger');
+    errorDiv.classList.add('alert-success');
+    setTimeout(() => errorDiv.classList.add('d-none'), 3000);
+}
+
 function showEditForm() {
     document.getElementById('edit-profile-form').classList.remove('d-none');
     document.getElementById('profile-content').classList.add('d-none');
 }
 
-// Cancelar edição
 function cancelEdit() {
-    // Oculta o formulário e mostra o perfil
     document.getElementById('edit-profile-form').classList.add('d-none');
     document.getElementById('profile-content').classList.remove('d-none');
-
-    // Opcional: Reseta os campos do formulário
     document.getElementById('profile-form').reset();
 }
 
 function getCSRFToken() {
-    return document.cookie.split('csrftoken=')[1].split(';')[0];
-}
+    const cookieValue = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken='));
 
-function showSuccess(mensagem) {
-    const errorDiv = document.getElementById('profile-error');
-    errorDiv.textContent = mensagem;
-    errorDiv.classList.remove('d-none', 'alert-danger'); // Remove classe de erro
-    errorDiv.classList.add('alert-success'); // Adiciona classe de sucesso (verde)
-    setTimeout(() => errorDiv.classList.add('d-none'), 3000); // Esconde após 3 segundos
+    return cookieValue ? cookieValue.split('=')[1] : null;
 }

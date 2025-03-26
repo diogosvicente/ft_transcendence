@@ -39,9 +39,9 @@ window.initRanking = async () => {
         <tr>
           <th>#</th>
           <th>Avatar</th>
-          <th>Name</th>
-          <th>${type === "tournament" ? "Tournaments Won" : "Wins"}</th>
-          ${type !== "tournament" ? "<th>Losses</th>" : ""}
+          <th>Nome</th>
+          <th>${type === "tournament" ? "Torneios Ganhos" : "Vitórias"}</th>
+          ${type !== "tournament" ? "<th>Derrotas</th>" : ""}
         </tr>
       `;
       table.appendChild(thead);
@@ -140,14 +140,14 @@ window.initRanking = async () => {
     renderRankingTable(
       elements.content,
       state.tournamentRanking,
-      "Most Tournaments Won",
-      "tournament"
+      "Ranking de Torneios",
+      "Torneio"
     );
     renderRankingTable(
       elements.content,
       state.victoriesRanking,
-      "Most Victories",
-      "victories"
+      "Ranking de Vitórias",
+      "Vitória"
     );
   } catch (err) {
     console.error("Error loading rankings:", err);
