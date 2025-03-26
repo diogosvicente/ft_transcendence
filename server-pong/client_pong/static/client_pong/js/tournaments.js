@@ -195,7 +195,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <p><strong>Total de Participantes:</strong> ${participants.length}</p>
     `;
 
-    if (tournament.status === "ongoing" && tournament.created_by === loggedID) {
+    if (tournament.status === "ongoing" && tournament.created_by === parseInt(localStorage.getItem("id"))) {
       const btnNextMatch = document.createElement("button");
       btnNextMatch.textContent = "Iniciar Próxima Partida";
       btnNextMatch.style.marginRight = "10px";
