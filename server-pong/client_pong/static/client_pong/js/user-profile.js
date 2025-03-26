@@ -256,6 +256,7 @@
     }
 
     function getCSRFToken() {
-        return document.cookie.split('csrftoken=')[1].split(';')[0];
+      const cookieValue = document.cookie.split('; ').find(row => row.startsWith('csrftoken='));
+      return cookieValue ? cookieValue.split('=')[1] : null;
     }
 })();
