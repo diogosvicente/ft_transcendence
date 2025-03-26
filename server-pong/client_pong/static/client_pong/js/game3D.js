@@ -1,24 +1,18 @@
-// game3D.js (ES Module)
-
 // Importa a versão ES Module do Three.js
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.module.js';
 
+
 (() => {
-  // Cria o objeto global "gameLogic" no window.
   const gameLogic = {};
 
-  // -------------------------------------------------------
-  // 1. Estado centralizado do jogo
-  // -------------------------------------------------------
+  // Estado do jogo
   gameLogic.gameState = {
     gameStarted: false,
     paused: false,
     animationFrameId: null,
   };
 
-  // -------------------------------------------------------
-  // 2. Variáveis centrais
-  // -------------------------------------------------------
+  // Variáveis centrais
   let scene, camera, renderer;
   let paddle1, paddle2, ball;
   let floor, walls = [];
@@ -30,20 +24,12 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
   let gameContainer = null;
   let countdownOverlay = null;
 
-  // Expondo variáveis, se precisar acessá-las externamente
+  // Expondo (se precisar)
   gameLogic.scene = () => scene;
   gameLogic.camera = () => camera;
   gameLogic.renderer = () => renderer;
-  gameLogic.paddle1 = () => paddle1;
-  gameLogic.paddle2 = () => paddle2;
-  gameLogic.ball = () => ball;
-  gameLogic.floor = () => floor;
-  gameLogic.walls = () => walls;
-  gameLogic.keysPressed = () => keysPressed;
 
-  // -------------------------------------------------------
-  // 3. initGame: inicializa a cena e os objetos
-  // -------------------------------------------------------
+  // initGame
   gameLogic.initGame = function initGame() {
     initContainer();
     initScene();
@@ -53,11 +39,9 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
     applySettings();
     initObjects();
     bindEvents();
+    bindMobileControls(); // Importante para os botões mobile
   };
 
-  // -------------------------------------------------------
-  // 4. Funções internas de inicialização
-  // -------------------------------------------------------
   function initContainer() {
     gameContainer = document.getElementById('gameContainer');
     if (!gameContainer) {
@@ -99,18 +83,13 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
     scene.add(light);
   }
 
-  // Lê as configurações de velocidade dos inputs
   function applySettings() {
-    const bs = document.getElementById('ballSpeed');
-    const ps = document.getElementById('paddleSpeed');
-    ballSpeed = parseFloat(bs?.value) || 0.2;
-    paddleSpeed = parseFloat(ps?.value) || 0.5;
+    ballSpeed = parseFloat(document.getElementById('ballSpeed')?.value) || 0.2;
+    paddleSpeed = parseFloat(document.getElementById('paddleSpeed')?.value) || 0.5;
   }
   gameLogic.applySettings = applySettings;
 
-  // -------------------------------------------------------
-  // 5. updateGameSettings: atualiza speeds e cores
-  // -------------------------------------------------------
+  // updateGameSettings
   gameLogic.updateGameSettings = function updateGameSettings() {
     ballSpeed = parseFloat(document.getElementById('ballSpeed')?.value) || 0.2;
     paddleSpeed = parseFloat(document.getElementById('paddleSpeed')?.value) || 0.5;
@@ -141,16 +120,13 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
     }
   };
 
-  // Cria os objetos do jogo: chão, paredes, paddles, bola
   function initObjects() {
-    // Floor
     const floorColor = document.getElementById('floorColor')?.value || '#ffff66';
     const floorMaterial = new THREE.MeshBasicMaterial({ color: floorColor });
     floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 20), floorMaterial);
     floor.rotation.x = -Math.PI / 2;
     scene.add(floor);
 
-    // Walls
     const wallColor = document.getElementById('wallColor')?.value || '#9999ff';
     const wallMaterial = new THREE.MeshBasicMaterial({ color: wallColor });
     const wallGeometry = new THREE.BoxGeometry(40, 2, 1);
@@ -165,7 +141,6 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
     scene.add(wall2);
     walls.push(wall2);
 
-    // Paddles
     const paddleGeometry = new THREE.BoxGeometry(1, 2, 4);
     const paddle1Color = document.getElementById('paddle1Color')?.value || '#ff0000';
     const paddleMaterial1 = new THREE.MeshPhongMaterial({ color: paddle1Color });
@@ -179,14 +154,12 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
     paddle2.position.x = 18;
     scene.add(paddle2);
 
-    // Ball
     const ballColor = document.getElementById('ballColor')?.value || '#ff0000';
     const ballMaterial = new THREE.MeshPhongMaterial({ color: ballColor });
     ball = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32), ballMaterial);
     scene.add(ball);
   }
 
-  // Anexa eventos de teclado e resize
   function bindEvents() {
     document.addEventListener('keydown', onDocumentKeyDown);
     document.addEventListener('keyup', onDocumentKeyUp);
@@ -200,7 +173,6 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
     const btnUp = document.getElementById('btnUp');
     const btnDown = document.getElementById('btnDown');
 
-  
     // Funções auxiliares para pressionar/soltar
     const pressKey = (key) => {
       keysPressed[key] = true;
@@ -235,8 +207,8 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
       btnDown.addEventListener('touchend',   () => releaseKey('ArrowDown'));
     }
   }
-  
-  // Reseta a bola no centro com direção aleatória
+
+  // Reseta bola
   gameLogic.resetBall = function resetBall() {
     if (!ball) return;
     ball.position.set(0, 0.5, 0);
@@ -249,7 +221,7 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
     ).normalize();
   };
 
-  // Atualiza a posição das paddles
+  // Atualiza paddles
   gameLogic.updatePaddles = function updatePaddles() {
     if (!paddle1 || !paddle2) return;
 
@@ -265,12 +237,11 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
     if (keysPressed['ArrowDown']) {
       paddle2.position.z += paddleSpeed;
     }
-    // Limita o movimento
     paddle1.position.z = THREE.MathUtils.clamp(paddle1.position.z, -8, 8);
     paddle2.position.z = THREE.MathUtils.clamp(paddle2.position.z, -8, 8);
   };
 
-  // Atualiza a bola, colisões e pontuação
+  // Atualiza bola e pontuação
   gameLogic.updateBall = function updateBall() {
     if (!ball) return;
     ball.position.addScaledVector(ballDirection, ballSpeed);
@@ -281,7 +252,7 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
       ballSpeed += 0.05;
     }
 
-    // Colisão com raquete esquerda
+    // Colisão raquete esquerda
     if (
       paddle1 &&
       ball.position.x <= paddle1.position.x + 1 &&
@@ -292,7 +263,7 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
       ballDirection.x = Math.abs(ballDirection.x);
     }
 
-    // Colisão com raquete direita
+    // Colisão raquete direita
     if (
       paddle2 &&
       ball.position.x >= paddle2.position.x - 1 &&
@@ -316,7 +287,6 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
     }
   };
 
-  // Atualiza o scoreboard
   function updateScore() {
     const scoreboard = document.getElementById('scoreboard');
     if (scoreboard) {
@@ -324,7 +294,7 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
     }
   }
 
-  // Eventos de teclado
+  // Teclado
   function onDocumentKeyDown(event) {
     keysPressed[event.code] = true;
   }
@@ -332,7 +302,7 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
     keysPressed[event.code] = false;
   }
 
-  // Ajusta renderer e câmera no resize
+  // Resize
   function onWindowResize() {
     if (!gameContainer || !renderer || !camera) return;
     const width = gameContainer.clientWidth;
@@ -342,7 +312,7 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
     camera.updateProjectionMatrix();
   }
 
-  // Loop de animação
+  // Loop animação
   gameLogic.animate = function animate() {
     if (gameLogic.gameState.paused) return;
     gameLogic.gameState.animationFrameId = requestAnimationFrame(animate);
@@ -354,10 +324,10 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
   };
 
   // ---------------------------------------------------------
-  // 6. Polling: Verifica a existência dos botões no DOM
+  // Polling: Verifica se os botões existem
+  // e anexa event listeners
   // ---------------------------------------------------------
   const pollInterval = setInterval(() => {
-    console.log("[DEBUG] Polling: verificando startGame e updateSettings...");
     const startBtn = document.getElementById('startGame');
     const updateBtn = document.getElementById('updateSettings');
     const countdown = document.getElementById('countdownOverlay');
@@ -385,6 +355,6 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.m
     }
   }, 200);
 
-  // Expõe o objeto global
+  // Expondo o objeto global
   window.gameLogic = gameLogic;
 })();
