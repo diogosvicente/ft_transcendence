@@ -4,12 +4,12 @@
 
 Este projeto roda em **rede local**, permitindo que múltiplos usuários se conectem sem depender de serviços externos.
 
-⚠️ **Antes de iniciar, rode `make setup` para configurar o IP da máquina servidora** e criar as pastas de volumes em `/goinfre/$USER` ou `~/goinfre`.
+⚠️ **Antes de iniciar, rode `make setup` para configurar o IP da máquina servidora** e criar as pastas de volumes em `/goinfre/$USER/ft_transcendence`.
 
 Diferente de aplicações tradicionais que rodam em `https://localhost:PORTA`, este projeto estará disponível em:
 
 🔗 **`https://IP_DA_SUA_MAQUINA:4443`** ou  
-🔗 **`http://IP_DA_SUA_MAQUINA:8080`**
+🔗 **`http://IP_DA_SUA_MAQUINA:8080`** (somente a API)
 
 ---
 
@@ -42,7 +42,7 @@ make setup
 
 - Pergunta o IP da máquina servidora.
 - Cria a pasta de volumes em `/goinfre/$USER/ft_transcendence`.
-- Gera `docker-compose.yml`, `.env`, `nginx.conf`, certificados etc.
+- Gera `docker-compose.yml`, `.env`, `nginx.conf` e `config.js` e os 2 certificados autoassinados para SSL/HTTPS.
 
 ### 🚀 Iniciando os Contêineres
 
@@ -52,7 +52,7 @@ make up
 
 - Sobe todos os serviços (Django, Nginx, Postgres, Redis).
 - Executa `python manage.py migrate` ao final.
-- Acesse o app via **`https://IP_DA_SUA_MAQUINA:4443`** ou **`http://IP_DA_SUA_MAQUINA:8080`**.
+- Acesse o app via **`https://IP_DA_SUA_MAQUINA:4443`** (ou **`http://IP_DA_SUA_MAQUINA:8080`** somente para API).
 
 ### 🏠 Parando os Contêineres
 
