@@ -14,7 +14,7 @@ Diferente de aplicações tradicionais que rodam em `https://localhost:PORTA`, e
 ## 🛠️ Tecnologias Utilizadas
 
 - 🐍 **Django** (Backend)
-- ⚫️ **React JS** (Frontend)
+- ⚫️ **Javascript Vanilla + Boostrap** (Frontend)
 - 🐓 **PostgreSQL** (Banco de Dados)
 - 🔄 **Redis** (Gerenciamento de WebSockets)
 - 🐳 **Docker & Docker Compose** (Orquestração de Contêineres)
@@ -31,7 +31,7 @@ make setup
 ```
 
 - Pergunta o IP da máquina servidora.
-- Cria pasta de volumes em `/goinfre/$USER` (ou `~/goinfre` se falhar).
+- Cria pasta de volumes em `/goinfre/$USER/ft_transcendence`
 - Gera `docker-compose.yml`, `.env`, `nginx.conf`, certificados etc.
 
 ### 🚀 Iniciando os Contêineres
@@ -40,7 +40,7 @@ make setup
 make up
 ```
 
-- Sobe todos os serviços (Django, React, Nginx, Postgres, Redis).
+- Sobe todos os serviços (Django, Nginx, Postgres, Redis).
 - Executa `python manage.py migrate` ao final.
 - Acesse o app via **`https://IP_DA_SUA_MAQUINA:4443`** ou **`http://IP_DA_SUA_MAQUINA:8080`**.
 
@@ -121,10 +121,6 @@ Para visualizar os logs de cada serviço:
   ```bash
   docker compose logs -f db
   ```
-- **Frontend (React JS)**:
-  ```bash
-  docker compose logs -f frontend
-  ```
 - **Nginx (Proxy Reverso)**:
   ```bash
   docker compose logs -f nginx
@@ -140,6 +136,6 @@ Para visualizar os logs de cada serviço:
 
 - **Acesse sempre via** `https://IP_DA_SUA_MAQUINA:4443` ou `http://IP_DA_SUA_MAQUINA:8080`.
 - **Certifique-se** de que o firewall permite conexões nessas portas.
-- **make fclean** apaga completamente containers, imagens e a pasta local de volumes (`/goinfre/$USER/ft_transcendence` ou `~/goinfre/ft_transcendence`).
+- **make fclean** apaga completamente containers, imagens e a pasta local de volumes (`/goinfre/$USER/ft_transcendence`).
 
 💪 **Tudo pronto!** Agora é só começar a usar! 🎮
