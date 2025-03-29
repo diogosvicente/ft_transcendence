@@ -11,14 +11,24 @@ Diferente de aplicações tradicionais que rodam em `https://localhost:PORTA`, e
 🔗 **`https://IP_DA_SUA_MAQUINA:4443`** ou  
 🔗 **`http://IP_DA_SUA_MAQUINA:8080`**
 
+---
+
 ## 🛠️ Tecnologias Utilizadas
 
-- 🐍 **Django** (Backend)
-- ⚫️ **Javascript Vanilla + Boostrap** (Frontend)
-- 🐓 **PostgreSQL** (Banco de Dados)
+- 🐍 **Django** (Backend e Servidor de Arquivos Estáticos)
+- ⚫️ **Javascript Vanilla + Bootstrap** (Frontend SPA desenvolvido por nós)
+- 👓 **PostgreSQL** (Banco de Dados)
 - 🔄 **Redis** (Gerenciamento de WebSockets)
-- 🐳 **Docker & Docker Compose** (Orquestração de Contêineres)
+- 👓 **Docker & Docker Compose** (Orquestração de Contêineres)
 - 🔧 **Nginx** (Proxy Reverso)
+
+---
+
+## 🧹 Arquitetura do Frontend
+
+Nosso frontend é um **SPA (Single Page Application) construído artesanalmente**, sem uso de frameworks prontos como React ou Vue. Toda a estrutura da interface foi desenvolvida do zero, com **Javascript puro (Vanilla JS)** e **Bootstrap** para estilização.
+
+O SPA é entregue como arquivos estáticos diretamente pelo Django, que serve esses recursos a partir de sua configuração padrão. Isso garante uma integração direta e simples com o backend, sem necessidade de servidores separados para o frontend.
 
 ---
 
@@ -31,7 +41,7 @@ make setup
 ```
 
 - Pergunta o IP da máquina servidora.
-- Cria pasta de volumes em `/goinfre/$USER/ft_transcendence`
+- Cria a pasta de volumes em `/goinfre/$USER/ft_transcendence`.
 - Gera `docker-compose.yml`, `.env`, `nginx.conf`, certificados etc.
 
 ### 🚀 Iniciando os Contêineres
@@ -44,7 +54,7 @@ make up
 - Executa `python manage.py migrate` ao final.
 - Acesse o app via **`https://IP_DA_SUA_MAQUINA:4443`** ou **`http://IP_DA_SUA_MAQUINA:8080`**.
 
-### 🏰 Parando os Contêineres
+### 🏠 Parando os Contêineres
 
 ```bash
 make down
@@ -74,7 +84,7 @@ make clean
 make fclean
 ```
 
-- Remove containers, imagens, volumes e **também** a pasta `/goinfre/$USER/ft_transcendence` (ou `~/goinfre/ft_transcendence`).
+- Remove containers, imagens, volumes e **também** a pasta `/goinfre/$USER/ft_transcendence`.
 
 ### 🗑️ Limpando as Tabelas do Banco de Dados
 
@@ -86,46 +96,45 @@ make migrate
 
 ---
 
-## WSL: Expondo Portas para a Rede Local
+## 💻 WSL: Expondo Portas para a Rede Local
 
-Se estiver usando **WSL2** no Windows e quiser que outras máquinas acessem a aplicação (porta 4443 e 8080), faça:
+Se estiver usando **WSL2** no Windows e quiser que outras máquinas acessem a aplicação (porta 4443 e 8080), siga os passos:
 
-1. No **WSL**, descubra o IP local rodando:
+1. No **WSL**, descubra o IP local:
    ```bash
    hostname -I
    ```
-   Exemplo de saída: `172.23.131.177 ...`
 
-2. No **PowerShell** (como Administrador) no Windows, crie as regras de redirecionamento:
+2. No **PowerShell** (como Administrador), crie as regras de redirecionamento:
    ```powershell
-   netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=4443 connectaddress=172.23.131.177 connectport=4443
-   netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=8080 connectaddress=172.23.131.177 connectport=8080
+   netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=4443 connectaddress=IP_DO_WSL connectport=4443
+   netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=8080 connectaddress=IP_DO_WSL connectport=8080
    ```
-   (Substitua `172.23.131.177` pelo IP do seu WSL.)
 
-3. Verifique se o **Firewall do Windows** está liberando conexões nessas portas.
-
-Dessa forma, você pode acessar de outra máquina via `https://SEU_IP_WINDOWS:4443` ou `http://SEU_IP_WINDOWS:8080`.
+3. Certifique-se de que o **Firewall do Windows** está liberando conexões nessas portas.
 
 ---
 
 ## 🤔 Logs e Debugging
 
-Para visualizar os logs de cada serviço:
+Visualize os logs de cada serviço com os seguintes comandos:
 
-- **Backend (Django + Daphne)**:
+- **Backend (Django + Daphne):**
   ```bash
   docker compose logs -f web
   ```
-- **Banco de Dados (PostgreSQL)**:
+
+- **Banco de Dados (PostgreSQL):**
   ```bash
   docker compose logs -f db
   ```
-- **Nginx (Proxy Reverso)**:
+
+- **Nginx (Proxy Reverso):**
   ```bash
   docker compose logs -f nginx
   ```
-- **Redis (Gerenciamento de WebSockets)**:
+
+- **Redis (Gerenciamento de WebSockets):**
   ```bash
   docker compose logs -f redis
   ```
@@ -134,8 +143,11 @@ Para visualizar os logs de cada serviço:
 
 ## 📌 Observações
 
-- **Acesse sempre via** `https://IP_DA_SUA_MAQUINA:4443` ou `http://IP_DA_SUA_MAQUINA:8080`.
-- **Certifique-se** de que o firewall permite conexões nessas portas.
-- **make fclean** apaga completamente containers, imagens e a pasta local de volumes (`/goinfre/$USER/ft_transcendence`).
+- Acesse sempre via `https://IP_DA_SUA_MAQUINA:4443` ou `http://IP_DA_SUA_MAQUINA:8080`.
+- Certifique-se de que o firewall permite conexões nessas portas.
+- `make fclean` apaga completamente containers, imagens e a pasta local de volumes.
 
-💪 **Tudo pronto!** Agora é só começar a usar! 🎮
+---
+
+💪 **Tudo pronto!** Agora é só começar a usar! 🎾
+

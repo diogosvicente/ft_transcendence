@@ -1,9 +1,0 @@
-.icon-hover {
-    cursor: pointer;
-    transition: transform 0.2s ease-in-out;
-  }
-  
-  .icon-hover:hover {
-    transform: scale(1.2);
-  }
-  
